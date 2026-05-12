@@ -1,0 +1,15 @@
+{
+  "site.description": "Page pour voter pour les pays de l'Eurovision 2026 avec sauvegarde locale, exportation et importation JSON.",
+  "nav.home": "Accueil",
+  "footer.createdWith": "Créé avec Astro.",
+  "home.eyebrow": "Eurovision 2026",
+  "home.title": "Votez pour vos chansons préférées de l'Eurovision 2026",
+  "home.description": "Attribuez une note de 0 à 10 à chaque pays en demi-finale 1, demi-finale 2 et finale. Les votes sont enregistrés sur cet appareil et peuvent être exportés ou importés en JSON.",
+  "home.docs": "Documentation Astro",
+  "home.repository": "Dépôt",
+  "notFound.title": "Page introuvable",
+  "notFound.description": "La page que vous cherchez n'existe pas.",
+  "notFound.eyebrow": "Erreur 404",
+  "notFound.message": "La page que vous cherchez n'existe pas, a été déplacée ou n'a pas encore été créée.",
+  "notFound.backHome": "Retour à l'accueil"
+}
