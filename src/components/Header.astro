@@ -14,11 +14,12 @@ const alternateLocales = getAlternateLocales(locale);
 ---
 
 <header class="site-header">
-  <Container class="flex items-center justify-between gap-3 py-4">
-    <a class="font-bold tracking-tight" href={homeUrl}>{siteConfig.name}</a>
-    <nav aria-label="Navegación principal" class="main-nav flex items-center gap-2 text-sm text-[var(--color-muted)]">
-      <a class="hover:text-[var(--color-text)]" href={homeUrl}>{t('nav.home')}</a>
-      <a class="hover:text-[var(--color-text)]" href="/stats/">Estadísticas</a>
+  <Container class="header-inner">
+    <a class="site-brand" href={homeUrl} aria-label="Eurovision Votes 2026">{siteConfig.name}</a>
+
+    <nav aria-label="Navegación principal" class="main-nav main-nav--desktop">
+      <a href={homeUrl}>{t('nav.home')}</a>
+      <a href="/stats/">Estadísticas</a>
       <details class="locale-menu">
         <summary>{localeLabels[locale]}</summary>
         <div class="locale-menu__list">
@@ -29,5 +30,24 @@ const alternateLocales = getAlternateLocales(locale);
       </details>
       <button class="settings-trigger" type="button" data-open-settings>Ajustes</button>
     </nav>
+
+    <details class="mobile-menu">
+      <summary aria-label="Abrir menú">
+        <span></span>
+        <span></span>
+        <span></span>
+      </summary>
+      <nav aria-label="Menú móvil" class="mobile-menu__panel">
+        <a href={homeUrl}>{t('nav.home')}</a>
+        <a href="/stats/">Estadísticas</a>
+        <button type="button" data-open-settings>Ajustes</button>
+        <div class="mobile-menu__languages" aria-label="Cambiar idioma">
+          <strong>Idioma</strong>
+          {alternateLocales.map((alternateLocale) => (
+            <a href={getLocalizedPath('/', alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
+          ))}
+        </div>
+      </nav>
+    </details>
   </Container>
 </header>
