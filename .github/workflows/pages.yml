@@ -26,6 +26,7 @@ jobs:
     environment:
       name: github-pages
     env:
+      FIREBASE: ${{ vars.FIREBASE || secrets.FIREBASE }}
       PUBLIC_FIREBASE_API_KEY: ${{ vars.PUBLIC_FIREBASE_API_KEY || secrets.PUBLIC_FIREBASE_API_KEY }}
       PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.PUBLIC_FIREBASE_AUTH_DOMAIN || secrets.PUBLIC_FIREBASE_AUTH_DOMAIN }}
       PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.PUBLIC_FIREBASE_PROJECT_ID || secrets.PUBLIC_FIREBASE_PROJECT_ID }}
@@ -51,6 +52,26 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Import Firebase dotenv config
+        shell: bash
+        run: |
+          if [ -n "$FIREBASE" ]; then
+            echo "$FIREBASE" | while IFS= read -r line; do
+              [ -z "$line" ] && continue
+              case "$line" in \#*) continue ;; esac
+              name="${line%%=*}"
+              value="${line#*=}"
+              name="$(echo "$name" | xargs)"
+              value="$(echo "$value" | xargs)"
+
+              case "$name" in
+                PUBLIC_FIREBASE_API_KEY|PUBLIC_FIREBASE_AUTH_DOMAIN|PUBLIC_FIREBASE_PROJECT_ID|PUBLIC_FIREBASE_STORAGE_BUCKET|PUBLIC_FIREBASE_MESSAGING_SENDER_ID|PUBLIC_FIREBASE_APP_ID)
+                  printf '%s=%s\n' "$name" "$value" >> "$GITHUB_ENV"
+                  ;;
+              esac
+            done
+          fi
+
       - name: Check Firebase config
         shell: bash
         run: |
@@ -72,7 +93,7 @@ jobs:
           done
 
           if [ "$missing_required" -eq 1 ]; then
-            echo "Configura las variables PUBLIC_FIREBASE_* en Settings > Secrets and variables > Actions y vuelve a ejecutar el deploy."
+            echo "Configura las variables PUBLIC_FIREBASE_* por separado o una variable FIREBASE con formato .env en Settings > Secrets and variables > Actions y vuelve a ejecutar el deploy."
             exit 1
           fi
 
