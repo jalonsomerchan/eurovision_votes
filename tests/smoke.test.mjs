@@ -82,6 +82,21 @@ describe('project smoke checks', () => {
     assert.ok(en['home.title']);
   });
 
+  it('includes the Eurovision voting app', () => {
+    const home = readText('src/pages/index.astro');
+    const app = readText('src/components/EurovisionVoteApp.astro');
+
+    assert.match(home, /EurovisionVoteApp/);
+    assert.match(app, /localStorage/);
+    assert.match(app, /Exportar JSON/);
+    assert.match(app, /Importar JSON/);
+    assert.match(app, /Resetear votos/);
+    assert.match(app, /flagsapi\.com/);
+    assert.match(app, /Semifinal 1/);
+    assert.match(app, /Semifinal 2/);
+    assert.match(app, /Final/);
+  });
+
   it('includes GitHub workflows for CI and Pages', () => {
     const pagesWorkflow = readText('.github/workflows/pages.yml');
     const ciWorkflow = readText('.github/workflows/ci.yml');
