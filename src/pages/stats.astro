@@ -1,4 +1,33 @@
 ---
-const title = 'Stats';
+import Container from '../components/Container.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { defaultLocale } from '../config/site';
+import { eurovision2026Contests } from '../config/eurovision2026';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY ?? '',
+  authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
+  projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID ?? '',
+  storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET ?? '',
+  messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
+  appId: import.meta.env.PUBLIC_FIREBASE_APP_ID ?? '',
+};
 ---
-<html><head><title>{title}</title></head><body><h1>{title}</h1></body></html>
+
+<BaseLayout title="Estadisticas de Eurovision Votes 2026" description="Informe completo de votos y medias." locale={defaultLocale}>
+  <Container>
+    <section class="stats-app" aria-labelledby="stats-title">
+      <script type="application/json" id="stats-contests" set:html={JSON.stringify(eurovision2026Contests)}></script>
+      <script type="application/json" id="stats-firebase-config" set:html={JSON.stringify(firebaseConfig)}></script>
+      <div class="hero-card stats-hero"><div><p class="eyebrow">Informe</p><h1 id="stats-title">Estadisticas</h1><p class="hero-copy">Medias por pais, numero de votos y detalle de votos por usuario.</p></div><div class="stats-actions"><button class="action-button action-button--primary" type="button" data-refresh-stats>Actualizar</button><a class="action-button" href="/">Volver a votar</a></div></div>
+      <p class="feedback" data-stats-status>Cargando estadisticas...</p>
+      <div class="stats-filter"><button class="tab is-active" type="button" data-stats-filter="all">Todo</button>{eurovision2026Contests.map((contest) => <button class="tab" type="button" data-stats-filter={contest.id}>{contest.name}</button>)}</div>
+      <div class="stats-summary" data-stats-summary></div>
+      <article class="stats-card"><p class="eyebrow">Paises</p><h2>Ranking por media</h2><div class="stats-table-wrap" data-country-ranking></div></article>
+      <article class="stats-card"><p class="eyebrow">Puntuaciones</p><h2>Distribucion de votos por pais</h2><div class="stats-grid-list" data-country-distribution></div></article>
+      <article class="stats-card"><p class="eyebrow">Usuarios</p><h2>Medias por usuario</h2><div class="stats-table-wrap" data-user-summary></div></article>
+      <article class="stats-card"><p class="eyebrow">Detalle</p><h2>Votos por usuario y pais</h2><div class="stats-table-wrap stats-table-wrap--wide" data-user-votes></div></article>
+    </section>
+  </Container>
+</BaseLayout>
+<script type="module" src="/stats.js"></script>
