@@ -11,7 +11,6 @@ const controlCollection = 'eurovision2026Control';
 const controlDocument = 'results';
 let db = null;
 let saveTimer = null;
-let isSaving = false;
 let control = { semifinals: {}, final: { positions: {} } };
 
 const keyFor = (song) => `${song.flag}-${song.country}`.toLowerCase();
@@ -28,13 +27,18 @@ try {
 }
 
 function getSemiState(contestId) {
-  return control.semifinals?.[contestId] || { qualifiers: [], status: 'pending' };
+  return control.semifinals?.[contestId] || { qualifiers: [], status: 'pending', closed: false };
 }
 
-function getSemiStatus(contestId) {
-  const state = getSemiState(contestId);
-  if (state.status) return state.status;
-  return state.closed ? 'closed' : 'open';
+function normalizeStatus(state) {
+  if (state?.status) return state.status;
+  return state?.closed ? 'closed' : 'pending';
+}
+
+function statusLabel(status) {
+  if (status === 'open') return 'Votación abierta';
+  if (status === 'closed') return 'Votación cerrada';
+  return 'Votación pendiente';
 }
 
 function getFinalSongs() {
@@ -57,34 +61,63 @@ function render() {
   listNode.innerHTML = [
     ...semifinals.map((contest) => {
       const state = getSemiState(contest.id);
-      const status = getSemiStatus(contest.id);
+      const status = normalizeStatus(state);
       const qualifiers = new Set(state.qualifiers || []);
-      return `<section class="admin-card" data-admin-semi="${contest.id}"><header><div><p class="eyebrow">Semifinal</p><h3>${html(contest.name)}</h3><small>${status === 'closed' ? 'Votación cerrada' : status === 'open' ? 'Votación abierta' : 'Votación pendiente'}</small></div><div class="admin-actions"><label><input type="radio" name="status-${contest.id}" data-semi-status="${contest.id}" value="pending" ${status === 'pending' ? 'checked' : ''}> Pendiente</label><label><input type="radio" name="status-${contest.id}" data-semi-status="${contest.id}" value="open" ${status === 'open' ? 'checked' : ''}> Iniciar</label><label><input type="radio" name="status-${contest.id}" data-semi-status="${contest.id}" value="closed" ${status === 'closed' ? 'checked' : ''}> Cerrar</label></div></header><div class="admin-grid">${contest.songs.map((song) => `<div class="admin-row"><label><input type="checkbox" data-qualifier-contest="${contest.id}" data-song-key="${keyFor(song)}" ${qualifiers.has(keyFor(song)) ? 'checked' : ''}><span><strong>${html(song.country)}</strong><small>${html(song.artist)} - ${html(song.song)}</small></span></label></div>`).join('')}</div></section>`;
+      return `<section class="admin-card" data-admin-semi="${contest.id}"><header><div><p class="eyebrow">Semifinal</p><h3>${html(contest.name)}</h3><small>${statusLabel(status)}</small></div><div class="admin-actions"><button class="action-button ${status === 'pending' ? 'action-button--primary' : ''}" type="button" data-semi-set-status="pending" data-contest-id="${contest.id}">Pendiente</button><button class="action-button ${status === 'open' ? 'action-button--primary' : ''}" type="button" data-semi-set-status="open" data-contest-id="${contest.id}">Iniciar votación</button><button class="action-button ${status === 'closed' ? 'action-button--primary' : ''}" type="button" data-semi-set-status="closed" data-contest-id="${contest.id}">Cerrar votación</button></div></header><div class="admin-grid">${contest.songs.map((song) => `<div class="admin-row"><label><input type="checkbox" data-qualifier-contest="${contest.id}" data-song-key="${keyFor(song)}" ${qualifiers.has(keyFor(song)) ? 'checked' : ''}><span><strong>${html(song.country)}</strong><small>${html(song.artist)} - ${html(song.song)}</small></span></label></div>`).join('')}</div></section>`;
     }),
     `<section class="admin-card"><header><div><p class="eyebrow">Final</p><h3>Posiciones finales</h3><small>${finalSongs.length ? 'Ordena los puestos cuando termine la final' : 'Aparecerán aquí los clasificados'}</small></div></header><div class="admin-grid">${finalSongs.length ? finalSongs.map((song) => `<div class="admin-row"><label><span><strong>${html(song.country)}</strong><small>${html(song.artist)} - ${html(song.song)}</small></span></label><input class="position-input" type="number" min="1" step="1" data-final-position="${keyFor(song)}" value="${finalPositions[keyFor(song)] || ''}" placeholder="Puesto"></div>`).join('') : '<p class="stats-empty">Todavía no hay países clasificados.</p>'}</div></section>`,
   ].join('');
 }
 
-function readForm() {
-  const semifinals = {};
-  contests.filter((contest) => isSemi(contest.id)).forEach((contest) => {
-    const qualifiers = [...document.querySelectorAll(`[data-qualifier-contest="${contest.id}"]:checked`)].map((input) => input.dataset.songKey);
-    const statusInput = document.querySelector(`[data-semi-status="${contest.id}"]:checked`);
-    const status = statusInput?.value || 'pending';
-    semifinals[contest.id] = { qualifiers, status, closed: status === 'closed' };
-  });
+function readQualifiersFromDom(contestId) {
+  return [...document.querySelectorAll(`[data-qualifier-contest="${contestId}"]:checked`)].map((input) => input.dataset.songKey);
+}
+
+function readPositionsFromDom() {
   const positions = {};
   document.querySelectorAll('[data-final-position]').forEach((input) => {
     const value = Number(input.value);
     if (Number.isFinite(value) && value > 0) positions[input.dataset.finalPosition] = value;
   });
-  control = { semifinals, final: { positions }, updatedAt: new Date().toISOString() };
+  return positions;
+}
+
+function syncFormToControl() {
+  const semifinals = { ...(control.semifinals || {}) };
+  contests.filter((contest) => isSemi(contest.id)).forEach((contest) => {
+    const previous = getSemiState(contest.id);
+    const status = normalizeStatus(previous);
+    semifinals[contest.id] = {
+      qualifiers: readQualifiersFromDom(contest.id),
+      status,
+      closed: status === 'closed',
+    };
+  });
+  control = { semifinals, final: { positions: readPositionsFromDom() }, updatedAt: new Date().toISOString() };
+}
+
+function setSemiStatus(contestId, status) {
+  syncFormToControl();
+  const previous = control.semifinals?.[contestId] || { qualifiers: [] };
+  control = {
+    ...control,
+    semifinals: {
+      ...(control.semifinals || {}),
+      [contestId]: {
+        ...previous,
+        status,
+        closed: status === 'closed',
+      },
+    },
+  };
+  render();
+  queueSave(false);
 }
 
 function queueSave(renderAfterSave = false) {
   window.clearTimeout(saveTimer);
   setStatus('Cambios pendientes de guardar...');
-  saveTimer = window.setTimeout(() => saveControl(renderAfterSave), 650);
+  saveTimer = window.setTimeout(() => saveControl(renderAfterSave), 450);
 }
 
 async function loadControl() {
@@ -102,10 +135,9 @@ async function loadControl() {
 }
 
 async function saveControl(renderAfterSave = false) {
-  if (!db || isSaving) return;
+  if (!db) return;
   try {
-    isSaving = true;
-    readForm();
+    syncFormToControl();
     setStatus('Guardando automáticamente...');
     await setDoc(doc(db, controlCollection, controlDocument), { ...control, updatedAt: serverTimestamp() }, { merge: true });
     if (renderAfterSave) render();
@@ -113,17 +145,20 @@ async function saveControl(renderAfterSave = false) {
   } catch (error) {
     console.error(error);
     setStatus(`No se pudieron guardar los resultados: ${error?.message || 'error'}.`, true);
-  } finally {
-    isSaving = false;
   }
 }
 
+listNode?.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-semi-set-status]');
+  if (!button) return;
+  setSemiStatus(button.dataset.contestId, button.dataset.semiSetStatus);
+});
+
 listNode?.addEventListener('change', (event) => {
-  if (event.target.matches('[data-semi-status], [data-qualifier-contest], [data-final-position]')) {
-    readForm();
-    const shouldRender = event.target.matches('[data-semi-status], [data-qualifier-contest]');
-    if (shouldRender) render();
-    queueSave(shouldRender);
+  if (event.target.matches('[data-qualifier-contest]')) {
+    syncFormToControl();
+    render();
+    queueSave(false);
   }
 });
 
