@@ -1,11 +1,16 @@
 export const defaultLocale = 'es' as const;
-export const locales = ['es', 'en'] as const;
+export const locales = ['es', 'en', 'fr', 'pt', 'ca', 'eu', 'gl'] as const;
 
 export type Locale = (typeof locales)[number];
 
 export const localeLabels: Record<Locale, string> = {
   es: 'Español',
   en: 'English',
+  fr: 'Français',
+  pt: 'Português',
+  ca: 'Català',
+  eu: 'Euskara',
+  gl: 'Galego',
 };
 
 export const siteConfig = {
