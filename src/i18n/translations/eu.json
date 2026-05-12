@@ -1,0 +1,15 @@
+{
+  "site.description": "Eurovision 2026ko herrialdeei botoa emateko orria, tokiko gordetzearekin eta JSON esportazio eta inportazioarekin.",
+  "nav.home": "Hasiera",
+  "footer.createdWith": "Astrorekin sortua.",
+  "home.eyebrow": "Eurovision 2026",
+  "home.title": "Bozkatu Eurovision 2026ko zure abesti gogokoenak",
+  "home.description": "Eman 0tik 10era puntuazioa herrialde bakoitzari 1. finalerdian, 2. finalerdian eta finalean. Botoak gailu honetan gordetzen dira eta JSON gisa esportatu edo inportatu daitezke.",
+  "home.docs": "Astroren dokumentazioa",
+  "home.repository": "Biltegia",
+  "notFound.title": "Orria ez da aurkitu",
+  "notFound.description": "Bilatzen ari zaren orria ez da existitzen.",
+  "notFound.eyebrow": "404 errorea",
+  "notFound.message": "Bilatzen ari zaren orria ez da existitzen, mugitu egin da edo oraindik ez da sortu.",
+  "notFound.backHome": "Itzuli hasierara"
+}
