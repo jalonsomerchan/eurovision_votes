@@ -19,6 +19,11 @@ html {
   scroll-behavior: smooth;
 }
 
+html.has-modal,
+html.has-modal body {
+  overflow: hidden;
+}
+
 body {
   min-height: 100%;
   margin: 0;
@@ -48,6 +53,39 @@ video {
   outline-offset: 3px;
 }
 
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-bg), transparent 8%);
+  backdrop-filter: blur(16px);
+}
+
+.settings-trigger,
+.mini-button,
+.modal-close {
+  min-height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.settings-trigger {
+  padding: 0.45rem 0.8rem;
+  color: var(--color-primary);
+}
+
+.mini-button {
+  margin-top: 0.65rem;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.85rem;
+}
+
 .eurovision-vote-app {
   display: grid;
   gap: 1rem;
@@ -57,7 +95,9 @@ video {
 .hero-card,
 .status-card,
 .song-card,
-.empty-state {
+.empty-state,
+.user-card,
+.modal-panel {
   border: 1px solid color-mix(in srgb, var(--color-border), transparent 15%);
   background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%);
   box-shadow: 0 20px 55px rgb(15 23 42 / 0.08);
@@ -83,6 +123,18 @@ video {
   pointer-events: none;
 }
 
+.user-card {
+  z-index: 1;
+  border-radius: 1.35rem;
+  padding: 1rem;
+}
+
+.user-card strong {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 1.15rem;
+}
+
 .eyebrow {
   margin: 0 0 0.5rem;
   color: var(--color-primary);
@@ -105,12 +157,6 @@ video {
   max-width: 42rem;
   color: var(--color-muted);
   font-size: clamp(1rem, 2.5vw, 1.2rem);
-}
-
-.hero-actions {
-  display: grid;
-  gap: 0.6rem;
-  z-index: 1;
 }
 
 .action-button,
@@ -141,7 +187,10 @@ video {
 
 .action-button:hover,
 .tab:hover,
-.score-button:hover {
+.score-button:hover,
+.settings-trigger:hover,
+.mini-button:hover,
+.modal-close:hover {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--color-primary), var(--color-border) 30%);
 }
@@ -330,6 +379,80 @@ video {
   color: var(--color-muted);
 }
 
+.app-modal[hidden] {
+  display: none;
+}
+
+.app-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: end center;
+  padding: 1rem;
+  background: rgb(15 10 30 / 0.58);
+  backdrop-filter: blur(10px);
+}
+
+.modal-panel {
+  width: min(100%, 32rem);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  border-radius: 1.75rem;
+  padding: 1.2rem;
+}
+
+.modal-panel h2,
+.modal-panel p {
+  margin: 0;
+}
+
+.modal-panel p {
+  color: var(--color-muted);
+}
+
+.modal-header-row {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.modal-close {
+  width: 2.65rem;
+  height: 2.65rem;
+  padding: 0;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.field-label {
+  display: block;
+  margin: 1rem 0 0.35rem;
+  color: var(--color-muted);
+  font-weight: 800;
+}
+
+.text-input {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1rem;
+  padding: 0.75rem 0.9rem;
+}
+
+.modal-actions,
+.settings-grid {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -346,12 +469,8 @@ video {
   }
 
   .hero-card {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, auto);
     align-items: end;
-  }
-
-  .hero-actions {
-    min-width: 13rem;
   }
 
   .song-card {
@@ -360,6 +479,10 @@ video {
 
   .score-grid {
     grid-template-columns: repeat(11, minmax(0, 1fr));
+  }
+
+  .app-modal {
+    place-items: center;
   }
 }
 
@@ -376,7 +499,9 @@ video {
   .hero-card,
   .status-card,
   .song-card,
-  .empty-state {
+  .empty-state,
+  .user-card,
+  .modal-panel {
     box-shadow: 0 20px 55px rgb(0 0 0 / 0.28);
   }
 
