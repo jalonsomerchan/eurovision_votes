@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import { initializeFirestore, collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { initializeFirestore, collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 const storageKey = 'eurovision-2026-votes-v1';
 const voterKey = 'eurovision-2026-voter-v1';
@@ -33,6 +33,7 @@ let voter = loadJson(voterKey, null);
 let deviceId = localStorage.getItem(deviceKey);
 let allVoters = [];
 let control = { semifinals: {}, final: { positions: {} } };
+let realtimeReady = false;
 
 if (!deviceId) {
   deviceId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
@@ -231,6 +232,26 @@ async function loadCloudData() {
   }
 }
 
+function startRealtimeListeners() {
+  if (!db || realtimeReady) return;
+  realtimeReady = true;
+
+  onSnapshot(doc(db, controlCollection, controlDocument), (snapshot) => {
+    control = snapshot.exists() ? { semifinals: {}, final: { positions: {} }, ...snapshot.data() } : { semifinals: {}, final: { positions: {} } };
+    renderSongs();
+  }, (error) => {
+    console.error('Control realtime error:', error);
+    loadCloudData();
+  });
+
+  onSnapshot(collection(db, votesCollection), (snapshot) => {
+    allVoters = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+    renderSongs();
+  }, (error) => {
+    console.error('Votes realtime error:', error);
+  });
+}
+
 async function saveCloudVotes() {
   if (!db) return;
   if (!voter?.name) {
@@ -254,7 +275,6 @@ async function saveCloudVotes() {
       updatedAt: serverTimestamp(),
     }, { merge: true }), 12000);
     setCloudStatus('Guardado');
-    await loadCloudData();
   } catch (error) {
     console.error('Firestore save error:', error);
     setCloudStatus('Error');
@@ -341,6 +361,7 @@ $('[data-reset]')?.addEventListener('click', () => {
 
 renderVoter();
 renderSongs();
+startRealtimeListeners();
 loadCloudData();
 if (!voter?.name) openModal(nameModal);
 queueCloudSave();
