@@ -9,8 +9,8 @@ export const localeLabels: Record<Locale, string> = {
 };
 
 export const siteConfig = {
-  name: 'Astro Template',
-  description: 'Plantilla base para crear proyectos con Astro.',
+  name: 'Eurovision Votes 2026',
+  description: 'Página para votar los países de Eurovision 2026 con guardado local, exportación e importación JSON.',
   url: import.meta.env.ASTRO_SITE ?? 'https://jalonsomerchan.github.io',
   base: import.meta.env.ASTRO_BASE ?? '/',
   author: 'Jorge Alonso',
