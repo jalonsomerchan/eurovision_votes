@@ -18,12 +18,12 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   ASTRO_SITE: https://eurovision2026.alon.one
   ASTRO_BASE: /
-  PUBLIC_FIREBASE_API_KEY: ${{ secrets.PUBLIC_FIREBASE_API_KEY }}
-  PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.PUBLIC_FIREBASE_AUTH_DOMAIN }}
-  PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.PUBLIC_FIREBASE_PROJECT_ID }}
-  PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.PUBLIC_FIREBASE_STORAGE_BUCKET }}
-  PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-  PUBLIC_FIREBASE_APP_ID: ${{ secrets.PUBLIC_FIREBASE_APP_ID }}
+  PUBLIC_FIREBASE_API_KEY: ${{ vars.PUBLIC_FIREBASE_API_KEY || secrets.PUBLIC_FIREBASE_API_KEY }}
+  PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ vars.PUBLIC_FIREBASE_AUTH_DOMAIN || secrets.PUBLIC_FIREBASE_AUTH_DOMAIN }}
+  PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.PUBLIC_FIREBASE_PROJECT_ID || secrets.PUBLIC_FIREBASE_PROJECT_ID }}
+  PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ vars.PUBLIC_FIREBASE_STORAGE_BUCKET || secrets.PUBLIC_FIREBASE_STORAGE_BUCKET }}
+  PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.PUBLIC_FIREBASE_MESSAGING_SENDER_ID || secrets.PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+  PUBLIC_FIREBASE_APP_ID: ${{ vars.PUBLIC_FIREBASE_APP_ID || secrets.PUBLIC_FIREBASE_APP_ID }}
 
 jobs:
   build:
@@ -47,6 +47,31 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
+
+      - name: Check Firebase config
+        shell: bash
+        run: |
+          required_vars=(PUBLIC_FIREBASE_API_KEY PUBLIC_FIREBASE_PROJECT_ID PUBLIC_FIREBASE_APP_ID)
+          optional_vars=(PUBLIC_FIREBASE_AUTH_DOMAIN PUBLIC_FIREBASE_STORAGE_BUCKET PUBLIC_FIREBASE_MESSAGING_SENDER_ID)
+          missing_required=0
+
+          for name in "${required_vars[@]}"; do
+            if [ -z "${!name}" ]; then
+              echo "::error title=Firebase sin configurar::$name no está definido como variable o secret de GitHub."
+              missing_required=1
+            fi
+          done
+
+          for name in "${optional_vars[@]}"; do
+            if [ -z "${!name}" ]; then
+              echo "::warning title=Firebase incompleto::$name no está definido. Revisa la configuración de tu app web de Firebase."
+            fi
+          done
+
+          if [ "$missing_required" -eq 1 ]; then
+            echo "Configura las variables PUBLIC_FIREBASE_* en Settings > Secrets and variables > Actions y vuelve a ejecutar el deploy."
+            exit 1
+          fi
 
       - name: Build site
         run: npm run build
