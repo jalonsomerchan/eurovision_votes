@@ -14,7 +14,7 @@ const firebaseConfig = {
 };
 ---
 
-<BaseLayout title="Admin resultados" description="Página oculta para gestionar clasificados y posiciones finales." locale={defaultLocale}>
+<BaseLayout title="Admin resultados" description="Página oculta para gestionar votaciones, clasificados y posiciones finales." locale={defaultLocale}>
   <Container>
     <section class="stats-app" aria-labelledby="admin-title">
       <script type="application/json" id="admin-contests" set:html={JSON.stringify(eurovision2026Contests)}></script>
@@ -23,10 +23,9 @@ const firebaseConfig = {
         <div>
           <p class="eyebrow">Admin</p>
           <h1 id="admin-title">Resultados</h1>
-          <p class="hero-copy">Marca los países que pasan a la final y define la posición final.</p>
+          <p class="hero-copy">Inicia o cierra votaciones, marca los países que pasan a la final y define la posición final. Los cambios se guardan automáticamente.</p>
         </div>
         <div class="stats-actions">
-          <button class="action-button action-button--primary" type="button" data-admin-save>Guardar resultados</button>
           <button class="action-button" type="button" data-admin-refresh>Recargar</button>
         </div>
       </div>
