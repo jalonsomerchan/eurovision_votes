@@ -22,7 +22,9 @@ const t = useTranslations(locale);
 const description = Astro.props.description ?? t('site.description');
 const pageTitle = title === siteConfig.name ? title : `${title} · ${siteConfig.name}`;
 const basePath = import.meta.env.BASE_URL ?? siteConfig.base;
+const assetVersion = '20260512-5';
 const withBase = (path: string) => `${basePath.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+const withVersion = (path: string) => `${withBase(path)}?v=${assetVersion}`;
 const canonicalUrl = new URL(Astro.url.pathname, siteConfig.url).toString();
 const imageUrl = new URL(withBase(image), siteConfig.url).toString();
 const ogLocale = locale === 'es' ? 'es_ES' : 'en_US';
@@ -40,7 +42,7 @@ const ogLocale = locale === 'es' ? 'es_ES' : 'en_US';
     <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
     <link rel="icon" href={withBase('favicon.ico')} />
     <link rel="manifest" href={withBase('manifest.webmanifest')} />
-    <link rel="stylesheet" href={withBase('extra.css')} />
+    <link rel="stylesheet" href={withVersion('extra.css')} />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
