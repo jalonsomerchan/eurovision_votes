@@ -1,0 +1,38 @@
+---
+import Container from '../components/Container.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { defaultLocale } from '../config/site';
+import { eurovision2026Contests } from '../config/eurovision2026';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY ?? '',
+  authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
+  projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID ?? '',
+  storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET ?? '',
+  messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
+  appId: import.meta.env.PUBLIC_FIREBASE_APP_ID ?? '',
+};
+---
+
+<BaseLayout title="Votaciones compartidas" description="Consulta las votaciones compartidas de un usuario." locale={defaultLocale}>
+  <Container>
+    <section class="stats-app" aria-labelledby="shared-title">
+      <script type="application/json" id="shared-contests" set:html={JSON.stringify(eurovision2026Contests)}></script>
+      <script type="application/json" id="shared-firebase-config" set:html={JSON.stringify(firebaseConfig)}></script>
+      <div class="hero-card stats-hero">
+        <div>
+          <p class="eyebrow">Votaciones</p>
+          <h1 id="shared-title">Votos compartidos</h1>
+          <p class="hero-copy" data-shared-subtitle>Cargando votaciones...</p>
+        </div>
+        <div class="stats-actions">
+          <a class="action-button action-button--primary" href="/">Votar yo también</a>
+        </div>
+      </div>
+      <p class="feedback" data-shared-status>Cargando...</p>
+      <div class="stats-summary" data-shared-summary></div>
+      <div class="admin-list" data-shared-list></div>
+    </section>
+  </Container>
+</BaseLayout>
+<script type="module" src="/shared-votes.js?v=20260512-1"></script>
