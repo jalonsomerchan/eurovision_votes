@@ -9,14 +9,13 @@ const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? 'astro-te
 const site = process.env.ASTRO_SITE ?? `https://${process.env.GITHUB_REPOSITORY_OWNER ?? 'jalonsomerchan'}.github.io`;
 const base = process.env.ASTRO_BASE ?? (process.env.GITHUB_ACTIONS ? `/${repositoryName}` : '/');
 
-// https://astro.build/config
 export default defineConfig({
   site,
   base,
 
   i18n: {
     defaultLocale: 'es',
-    locales: ['es', 'en'],
+    locales: ['es', 'en', 'fr', 'pt', 'ca', 'eu', 'gl'],
     routing: {
       prefixDefaultLocale: false,
     },
