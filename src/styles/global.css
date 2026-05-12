@@ -2,11 +2,11 @@
 
 :root {
   color-scheme: light;
-  --color-bg: #ffffff;
-  --color-text: #111827;
-  --color-muted: #4b5563;
-  --color-border: #e5e7eb;
-  --color-primary: #2563eb;
+  --color-bg: #fbf7ff;
+  --color-text: #161225;
+  --color-muted: #625a74;
+  --color-border: #e8dff3;
+  --color-primary: #7c3aed;
   --container-width: 72rem;
 }
 
@@ -22,7 +22,9 @@ html {
 body {
   min-height: 100%;
   margin: 0;
-  background: var(--color-bg);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-primary), transparent 82%), transparent 26rem),
+    var(--color-bg);
   color: var(--color-text);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -44,4 +46,15 @@ video {
 :focus-visible {
   outline: 3px solid color-mix(in srgb, var(--color-primary), transparent 35%);
   outline-offset: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-bg: #100b1f;
+    --color-text: #f7f2ff;
+    --color-muted: #c4b8d8;
+    --color-border: #322647;
+    --color-primary: #a78bfa;
+  }
 }
