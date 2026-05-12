@@ -282,6 +282,45 @@ async function saveCloudVotes() {
   }
 }
 
+function getShareUrl() {
+  const url = new URL('/votos/', window.location.origin);
+  url.searchParams.set('u', deviceId);
+  if (voter?.name) url.searchParams.set('nombre', voter.name);
+  return url.toString();
+}
+
+async function shareVotes() {
+  if (!voter?.name) {
+    openModal(nameModal);
+    nameInput?.focus();
+    showFeedback('Guarda tu nombre antes de compartir tus votaciones.');
+    return;
+  }
+
+  await saveCloudVotes();
+  const shareUrl = getShareUrl();
+  const title = `Votaciones de ${voter.name} en Eurovision Votes 2026`;
+  const text = `Consulta mis votaciones de Eurovision 2026.`;
+
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text, url: shareUrl });
+      showFeedback('Enlace preparado para compartir.');
+      return;
+    }
+  } catch (error) {
+    if (error?.name === 'AbortError') return;
+    console.error('Share error:', error);
+  }
+
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    showFeedback('Enlace copiado al portapapeles.');
+  } catch {
+    window.prompt('Copia este enlace para compartir tus votaciones:', shareUrl);
+  }
+}
+
 tabs?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-contest-id]');
   if (!button) return;
@@ -303,6 +342,7 @@ songList?.addEventListener('click', (event) => {
 
 $('[data-open-settings]')?.addEventListener('click', () => openModal(settingsModal));
 $('[data-close-settings]')?.addEventListener('click', () => closeModal(settingsModal));
+$('[data-share-votes]')?.addEventListener('click', shareVotes);
 $('[data-open-name]')?.addEventListener('click', () => {
   if (nameInput && voter?.name) nameInput.value = voter.name;
   openModal(nameModal);
