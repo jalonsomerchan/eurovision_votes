@@ -13,10 +13,10 @@ const homeUrl = getLocalizedPath('/', locale);
 const alternateLocales = getAlternateLocales(locale);
 ---
 
-<header class="border-b border-[var(--color-border)] bg-white/80 backdrop-blur">
-  <Container class="flex items-center justify-between py-4">
+<header class="site-header">
+  <Container class="flex items-center justify-between gap-3 py-4">
     <a class="font-bold tracking-tight" href={homeUrl}>{siteConfig.name}</a>
-    <nav aria-label="Navegación principal" class="flex items-center gap-4 text-sm text-[var(--color-muted)]">
+    <nav aria-label="Navegación principal" class="flex items-center gap-2 text-sm text-[var(--color-muted)]">
       <a class="hover:text-[var(--color-text)]" href={homeUrl}>{t('nav.home')}</a>
       {alternateLocales.map((alternateLocale) => (
         <a
@@ -27,6 +27,7 @@ const alternateLocales = getAlternateLocales(locale);
           {localeLabels[alternateLocale]}
         </a>
       ))}
+      <button class="settings-trigger" type="button" data-open-settings>Ajustes</button>
     </nav>
   </Container>
 </header>
