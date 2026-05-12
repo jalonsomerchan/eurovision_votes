@@ -1,18 +1,10 @@
 ---
 import Container from './Container.astro';
-import { siteConfig, type Locale } from '../config/site';
-import { useTranslations } from '../i18n/ui';
 
-interface Props {
-  locale: Locale;
-}
-
-const { locale } = Astro.props;
-const t = useTranslations(locale);
 ---
 
 <footer class="border-t border-[var(--color-border)]">
   <Container class="py-6 text-sm text-[var(--color-muted)]">
-    <p>© {new Date().getFullYear()} {siteConfig.name}. {t('footer.createdWith')}</p>
+    <p>Eurovision Votes 2026 por AlonSoftware. Más en <a class="font-bold text-[var(--color-primary)]" href="https://proyectos.alon.one">proyectos.alon.one</a></p>
   </Container>
 </footer>
