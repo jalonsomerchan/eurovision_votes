@@ -1,0 +1,618 @@
+---
+type EurovisionSong = {
+  runningOrder?: string;
+  country: string;
+  flag: string;
+  artist: string;
+  song: string;
+  directFinalist?: boolean;
+};
+
+type EurovisionContest = {
+  id: string;
+  name: string;
+  description: string;
+  songs: EurovisionSong[];
+};
+
+const contests: EurovisionContest[] = [
+  {
+    id: 'semi-1',
+    name: 'Semifinal 1',
+    description: 'Orden de actuación publicado para la primera semifinal, incluyendo los finalistas directos que actúan fuera de concurso.',
+    songs: [
+      { runningOrder: '01', country: 'Moldavia', flag: 'MD', artist: 'Satoshi', song: 'Viva, Moldova!' },
+      { runningOrder: '02', country: 'Suecia', flag: 'SE', artist: 'FELICIA', song: 'My System' },
+      { runningOrder: '03', country: 'Croacia', flag: 'HR', artist: 'LELEK', song: 'Andromeda' },
+      { runningOrder: '04', country: 'Grecia', flag: 'GR', artist: 'Akylas', song: 'Ferto' },
+      { runningOrder: '05', country: 'Portugal', flag: 'PT', artist: 'Bandidos do Cante', song: 'Rosa' },
+      { runningOrder: '06', country: 'Georgia', flag: 'GE', artist: 'Bzikebi', song: 'On Replay' },
+      { country: 'Italia', flag: 'IT', artist: 'Sal Da Vinci', song: 'Per Sempre Sì', directFinalist: true },
+      { runningOrder: '07', country: 'Finlandia', flag: 'FI', artist: 'Linda Lampenius & Pete Parkkonen', song: 'Liekinheitin' },
+      { runningOrder: '08', country: 'Montenegro', flag: 'ME', artist: 'Tamara Živković', song: 'Nova Zora' },
+      { runningOrder: '09', country: 'Estonia', flag: 'EE', artist: 'Vanilla Ninja', song: 'Too Epic To Be True' },
+      { runningOrder: '10', country: 'Israel', flag: 'IL', artist: 'Noam Bettan', song: 'Michelle' },
+      { country: 'Alemania', flag: 'DE', artist: 'Sarah Engels', song: 'Fire', directFinalist: true },
+      { runningOrder: '11', country: 'Bélgica', flag: 'BE', artist: 'ESSYLA', song: 'Dancing On The Ice' },
+      { runningOrder: '12', country: 'Lituania', flag: 'LT', artist: 'Lion Ceccah', song: 'Sólo Quiero Más' },
+      { runningOrder: '13', country: 'San Marino', flag: 'SM', artist: 'SENHIT feat. Boy George', song: 'Superstar' },
+      { runningOrder: '14', country: 'Polonia', flag: 'PL', artist: 'ALICJA', song: 'Pray' },
+      { runningOrder: '15', country: 'Serbia', flag: 'RS', artist: 'LAVINA', song: 'Kraj Mene' },
+    ],
+  },
+  {
+    id: 'semi-2',
+    name: 'Semifinal 2',
+    description: 'Pendiente de completar cuando se conozca el orden de actuación.',
+    songs: [],
+  },
+  {
+    id: 'final',
+    name: 'Final',
+    description: 'Pendiente de completar cuando se conozcan los finalistas y el orden de actuación.',
+    songs: [],
+  },
+];
+---
+
+<section class="eurovision-vote-app" aria-labelledby="vote-title">
+  <script type="application/json" id="eurovision-contests" set:html={JSON.stringify(contests)}></script>
+
+  <div class="hero-card">
+    <div>
+      <p class="eyebrow">Eurovision 2026</p>
+      <h1 id="vote-title">Vota tus canciones favoritas</h1>
+      <p class="hero-copy">
+        Puntúa cada país del 0 al 10. Tus votos se guardan automáticamente en este dispositivo y puedes exportarlos o importarlos en JSON.
+      </p>
+    </div>
+    <div class="hero-actions" aria-label="Acciones de votos">
+      <button class="action-button action-button--primary" type="button" data-export>Exportar JSON</button>
+      <label class="action-button" for="vote-import">Importar JSON</label>
+      <input id="vote-import" class="visually-hidden" type="file" accept="application/json,.json" data-import />
+      <button class="action-button action-button--danger" type="button" data-reset>Resetear votos</button>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Galas de Eurovision 2026" data-tabs></div>
+
+  <div class="status-card" aria-live="polite">
+    <div>
+      <span class="status-label">Gala activa</span>
+      <strong data-active-name>Semifinal 1</strong>
+    </div>
+    <div>
+      <span class="status-label">Votadas</span>
+      <strong data-voted-count>0/0</strong>
+    </div>
+    <div>
+      <span class="status-label">Media</span>
+      <strong data-average-score>—</strong>
+    </div>
+  </div>
+
+  <p class="feedback" role="status" aria-live="polite" data-feedback></p>
+
+  <div class="song-list" data-song-list></div>
+</section>
+
+<script>
+  const storageKey = 'eurovision-2026-votes-v1';
+  const contests = JSON.parse(document.getElementById('eurovision-contests')?.textContent ?? '[]');
+  const tabs = document.querySelector('[data-tabs]');
+  const songList = document.querySelector('[data-song-list]');
+  const activeName = document.querySelector('[data-active-name]');
+  const votedCount = document.querySelector('[data-voted-count]');
+  const averageScore = document.querySelector('[data-average-score]');
+  const feedback = document.querySelector('[data-feedback]');
+  const importInput = document.querySelector('[data-import]');
+  let activeContestId = contests[0]?.id ?? 'semi-1';
+  let votes = loadVotes();
+
+  function loadVotes() {
+    try {
+      const storedVotes = localStorage.getItem(storageKey);
+      return storedVotes ? JSON.parse(storedVotes) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveVotes() {
+    localStorage.setItem(storageKey, JSON.stringify(votes));
+  }
+
+  function getContest(contestId) {
+    return contests.find((contest) => contest.id === contestId) ?? contests[0];
+  }
+
+  function getSongKey(song) {
+    return `${song.flag}-${song.country}`.toLowerCase();
+  }
+
+  function showFeedback(message) {
+    if (!feedback) return;
+    feedback.textContent = message;
+    window.clearTimeout(showFeedback.timeoutId);
+    showFeedback.timeoutId = window.setTimeout(() => {
+      feedback.textContent = '';
+    }, 3200);
+  }
+
+  function renderTabs() {
+    if (!tabs) return;
+    tabs.innerHTML = contests
+      .map((contest) => {
+        const selected = contest.id === activeContestId;
+        const disabled = contest.songs.length === 0;
+        const totalVotes = Object.keys(votes[contest.id] ?? {}).length;
+        return `
+          <button class="tab ${selected ? 'is-active' : ''}" type="button" role="tab" aria-selected="${selected}" data-contest-id="${contest.id}">
+            <span>${contest.name}</span>
+            <small>${disabled ? 'Pendiente' : `${totalVotes}/${contest.songs.length}`}</small>
+          </button>
+        `;
+      })
+      .join('');
+  }
+
+  function renderSummary(contest) {
+    const contestVotes = votes[contest.id] ?? {};
+    const scores = Object.values(contestVotes).filter((score) => Number.isFinite(score));
+    const average = scores.length ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(1) : '—';
+
+    if (activeName) activeName.textContent = contest.name;
+    if (votedCount) votedCount.textContent = `${scores.length}/${contest.songs.length}`;
+    if (averageScore) averageScore.textContent = average;
+  }
+
+  function renderSongs() {
+    const contest = getContest(activeContestId);
+    const contestVotes = votes[contest.id] ?? {};
+    renderTabs();
+    renderSummary(contest);
+
+    if (!songList) return;
+
+    if (contest.songs.length === 0) {
+      songList.innerHTML = `
+        <article class="empty-state">
+          <span aria-hidden="true">🎤</span>
+          <h2>${contest.name} pendiente</h2>
+          <p>${contest.description}</p>
+          <p>Cuando tengas los países, se pueden añadir al array de datos del componente sin cambiar la lógica de votos.</p>
+        </article>
+      `;
+      return;
+    }
+
+    songList.innerHTML = contest.songs
+      .map((song) => {
+        const songKey = getSongKey(song);
+        const currentScore = contestVotes[songKey];
+        const scoreButtons = Array.from({ length: 11 }, (_, score) => {
+          const selected = currentScore === score;
+          return `<button class="score-button ${selected ? 'is-selected' : ''}" type="button" aria-pressed="${selected}" data-score="${score}" data-song-key="${songKey}">${score}</button>`;
+        }).join('');
+
+        return `
+          <article class="song-card">
+            <div class="song-main">
+              <img class="flag" width="64" height="48" loading="lazy" alt="Bandera de ${song.country}" src="https://flagsapi.com/${song.flag}/flat/64.png" />
+              <div class="song-info">
+                <div class="song-meta">
+                  <span class="running-order">${song.runningOrder ?? 'FD'}</span>
+                  ${song.directFinalist ? '<span class="direct-badge">Finalista directo</span>' : ''}
+                </div>
+                <h2>${song.country}</h2>
+                <p><strong>${song.artist}</strong> — «${song.song}»</p>
+              </div>
+              <div class="selected-score" aria-label="Puntuación actual">${currentScore ?? '—'}</div>
+            </div>
+            <div class="score-grid" aria-label="Puntuar ${song.country} del 0 al 10">${scoreButtons}</div>
+          </article>
+        `;
+      })
+      .join('');
+  }
+
+  tabs?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-contest-id]');
+    if (!button) return;
+    activeContestId = button.dataset.contestId;
+    renderSongs();
+  });
+
+  songList?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-score]');
+    if (!button) return;
+    const contestVotes = votes[activeContestId] ?? {};
+    contestVotes[button.dataset.songKey] = Number(button.dataset.score);
+    votes = { ...votes, [activeContestId]: contestVotes };
+    saveVotes();
+    renderSongs();
+  });
+
+  document.querySelector('[data-export]')?.addEventListener('click', () => {
+    const payload = {
+      app: 'eurovision-votes',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      votes,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'eurovision-2026-votos.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    showFeedback('Votos exportados en JSON.');
+  });
+
+  importInput?.addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const imported = JSON.parse(await file.text());
+      const importedVotes = imported.votes ?? imported;
+      if (!importedVotes || typeof importedVotes !== 'object' || Array.isArray(importedVotes)) {
+        throw new Error('Formato no válido');
+      }
+      votes = importedVotes;
+      saveVotes();
+      renderSongs();
+      showFeedback('Votos importados correctamente.');
+    } catch {
+      showFeedback('No se pudo importar el JSON. Revisa el formato del archivo.');
+    } finally {
+      event.target.value = '';
+    }
+  });
+
+  document.querySelector('[data-reset]')?.addEventListener('click', () => {
+    const shouldReset = window.confirm('¿Seguro que quieres borrar todos los votos guardados?');
+    if (!shouldReset) return;
+    votes = {};
+    localStorage.removeItem(storageKey);
+    renderSongs();
+    showFeedback('Votos reseteados.');
+  });
+
+  renderSongs();
+</script>
+
+<style>
+  .eurovision-vote-app {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  .hero-card,
+  .status-card,
+  .song-card,
+  .empty-state {
+    border: 1px solid color-mix(in srgb, var(--color-border), transparent 15%);
+    background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%);
+    box-shadow: 0 20px 55px rgb(15 23 42 / 0.08);
+  }
+
+  .hero-card {
+    display: grid;
+    gap: 1.25rem;
+    overflow: hidden;
+    border-radius: 2rem;
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+    position: relative;
+  }
+
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    inset: auto -5rem -7rem auto;
+    width: 14rem;
+    height: 14rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-primary), transparent 72%);
+    pointer-events: none;
+  }
+
+  .eyebrow {
+    margin: 0 0 0.5rem;
+    color: var(--color-primary);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .hero-card h1 {
+    margin: 0;
+    max-width: 12ch;
+    font-size: clamp(2.4rem, 11vw, 5.8rem);
+    line-height: 0.92;
+    letter-spacing: -0.08em;
+  }
+
+  .hero-copy {
+    margin: 1rem 0 0;
+    max-width: 42rem;
+    color: var(--color-muted);
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+  }
+
+  .hero-actions {
+    display: grid;
+    gap: 0.6rem;
+    z-index: 1;
+  }
+
+  .action-button,
+  .tab,
+  .score-button {
+    min-height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    text-align: center;
+    transition:
+      transform 160ms ease,
+      border-color 160ms ease,
+      background 160ms ease;
+  }
+
+  .action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 1rem;
+    text-decoration: none;
+  }
+
+  .action-button:hover,
+  .tab:hover,
+  .score-button:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--color-primary), var(--color-border) 30%);
+  }
+
+  .action-button--primary,
+  .tab.is-active,
+  .score-button.is-selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  .action-button--danger {
+    color: #b91c1c;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+  }
+
+  .tab {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 6.8rem;
+    padding: 0.65rem 0.7rem;
+  }
+
+  .tab small {
+    opacity: 0.78;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .status-card {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+    border-radius: 1.5rem;
+    padding: 1rem;
+  }
+
+  .status-card div {
+    min-width: 0;
+  }
+
+  .status-label {
+    display: block;
+    color: var(--color-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .status-card strong {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.05rem;
+  }
+
+  .feedback {
+    min-height: 1.5rem;
+    margin: 0;
+    color: var(--color-primary);
+    font-weight: 800;
+  }
+
+  .song-list {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .song-card {
+    border-radius: 1.5rem;
+    padding: 0.85rem;
+  }
+
+  .song-main {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.85rem;
+    align-items: center;
+  }
+
+  .flag {
+    width: 3.15rem;
+    height: 2.35rem;
+    border-radius: 0.65rem;
+    object-fit: cover;
+    box-shadow: 0 8px 18px rgb(15 23 42 / 0.12);
+  }
+
+  .song-info {
+    min-width: 0;
+  }
+
+  .song-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .running-order,
+  .direct-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.16rem 0.48rem;
+    background: color-mix(in srgb, var(--color-primary), transparent 86%);
+    color: var(--color-primary);
+    font-size: 0.72rem;
+    font-weight: 900;
+  }
+
+  .direct-badge {
+    background: color-mix(in srgb, #f59e0b, transparent 82%);
+    color: #92400e;
+  }
+
+  .song-info h2 {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.18rem;
+    line-height: 1.05;
+  }
+
+  .song-info p {
+    margin: 0.2rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.92rem;
+  }
+
+  .selected-score {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--color-primary), transparent 88%);
+    color: var(--color-primary);
+    font-size: 1.25rem;
+    font-weight: 950;
+  }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.35rem;
+    margin-top: 0.85rem;
+  }
+
+  .score-button {
+    min-height: 2.55rem;
+    padding: 0;
+  }
+
+  .empty-state {
+    display: grid;
+    justify-items: center;
+    gap: 0.5rem;
+    border-radius: 1.5rem;
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+
+  .empty-state span {
+    font-size: 2.5rem;
+  }
+
+  .empty-state h2,
+  .empty-state p {
+    margin: 0;
+  }
+
+  .empty-state p {
+    max-width: 34rem;
+    color: var(--color-muted);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  @media (min-width: 720px) {
+    .eurovision-vote-app {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+
+    .hero-card {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+    }
+
+    .hero-actions {
+      min-width: 13rem;
+    }
+
+    .song-card {
+      padding: 1rem;
+    }
+
+    .score-grid {
+      grid-template-columns: repeat(11, minmax(0, 1fr));
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .hero-card,
+    .status-card,
+    .song-card,
+    .empty-state {
+      box-shadow: 0 20px 55px rgb(0 0 0 / 0.28);
+    }
+
+    .direct-badge {
+      color: #fbbf24;
+    }
+
+    .action-button--danger {
+      color: #fca5a5;
+    }
+  }
+</style>
