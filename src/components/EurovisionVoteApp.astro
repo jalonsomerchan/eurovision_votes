@@ -106,6 +106,7 @@ const contests: EurovisionContest[] = [
   const averageScore = document.querySelector('[data-average-score]');
   const feedback = document.querySelector('[data-feedback]');
   const importInput = document.querySelector('[data-import]');
+  let feedbackTimeoutId;
   let activeContestId = contests[0]?.id ?? 'semi-1';
   let votes = loadVotes();
 
@@ -133,8 +134,8 @@ const contests: EurovisionContest[] = [
   function showFeedback(message) {
     if (!feedback) return;
     feedback.textContent = message;
-    window.clearTimeout(showFeedback.timeoutId);
-    showFeedback.timeoutId = window.setTimeout(() => {
+    window.clearTimeout(feedbackTimeoutId);
+    feedbackTimeoutId = window.setTimeout(() => {
       feedback.textContent = '';
     }, 3200);
   }
@@ -283,7 +284,7 @@ const contests: EurovisionContest[] = [
   renderSongs();
 </script>
 
-<style>
+<style is:global>
   .eurovision-vote-app {
     display: grid;
     gap: 1rem;
