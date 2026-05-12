@@ -62,9 +62,7 @@ const contests: EurovisionContest[] = [
     <div>
       <p class="eyebrow">Eurovision 2026</p>
       <h1 id="vote-title">Vota tus canciones favoritas</h1>
-      <p class="hero-copy">
-        Puntúa cada país del 0 al 10. Tus votos se guardan en este dispositivo y, si Firebase está configurado, también en la nube con tu nombre.
-      </p>
+      <p class="hero-copy">Puntúa cada país del 0 al 10. Tus votos se guardan en este dispositivo y, si Firebase está configurado, también en la nube con tu nombre.</p>
     </div>
     <div class="user-card">
       <span class="status-label">Votante</span>
@@ -76,18 +74,9 @@ const contests: EurovisionContest[] = [
   <div class="tabs" role="tablist" aria-label="Galas de Eurovision 2026" data-tabs></div>
 
   <div class="status-card" aria-live="polite">
-    <div>
-      <span class="status-label">Gala activa</span>
-      <strong data-active-name>Semifinal 1</strong>
-    </div>
-    <div>
-      <span class="status-label">Votadas</span>
-      <strong data-voted-count>0/0</strong>
-    </div>
-    <div>
-      <span class="status-label">Firebase</span>
-      <strong data-cloud-status>Sin configurar</strong>
-    </div>
+    <div><span class="status-label">Gala activa</span><strong data-active-name>Semifinal 1</strong></div>
+    <div><span class="status-label">Votadas</span><strong data-voted-count>0/0</strong></div>
+    <div><span class="status-label">Firebase</span><strong data-cloud-status>Sin configurar</strong></div>
   </div>
 
   <p class="feedback" role="status" aria-live="polite" data-feedback></p>
@@ -101,9 +90,7 @@ const contests: EurovisionContest[] = [
     <form data-name-form>
       <label class="field-label" for="voter-name-input">Nombre</label>
       <input id="voter-name-input" class="text-input" name="name" autocomplete="name" maxlength="60" required />
-      <div class="modal-actions">
-        <button class="action-button action-button--primary" type="submit">Guardar nombre</button>
-      </div>
+      <div class="modal-actions"><button class="action-button action-button--primary" type="submit">Guardar nombre</button></div>
     </form>
   </div>
 </div>
@@ -111,10 +98,7 @@ const contests: EurovisionContest[] = [
 <div class="app-modal" data-settings-modal hidden>
   <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
     <div class="modal-header-row">
-      <div>
-        <p class="eyebrow">Ajustes</p>
-        <h2 id="settings-modal-title">Gestionar votos</h2>
-      </div>
+      <div><p class="eyebrow">Ajustes</p><h2 id="settings-modal-title">Gestionar votos</h2></div>
       <button class="modal-close" type="button" data-close-settings aria-label="Cerrar ajustes">×</button>
     </div>
     <div class="settings-grid">
@@ -128,26 +112,27 @@ const contests: EurovisionContest[] = [
 
 <script type="module" is:inline>
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-  import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+  import { initializeFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
   const storageKey = 'eurovision-2026-votes-v1';
   const voterKey = 'eurovision-2026-voter-v1';
   const deviceKey = 'eurovision-2026-device-id-v1';
   const contests = JSON.parse(document.getElementById('eurovision-contests')?.textContent ?? '[]');
   const firebaseConfig = JSON.parse(document.getElementById('firebase-config')?.textContent ?? '{}');
+  const $ = (selector) => document.querySelector(selector);
 
-  const tabs = document.querySelector('[data-tabs]');
-  const songList = document.querySelector('[data-song-list]');
-  const activeName = document.querySelector('[data-active-name]');
-  const votedCount = document.querySelector('[data-voted-count]');
-  const cloudStatus = document.querySelector('[data-cloud-status]');
-  const feedback = document.querySelector('[data-feedback]');
-  const importInput = document.querySelector('[data-import]');
-  const voterNameNode = document.querySelector('[data-voter-name]');
-  const nameModal = document.querySelector('[data-name-modal]');
-  const settingsModal = document.querySelector('[data-settings-modal]');
-  const nameForm = document.querySelector('[data-name-form]');
-  const nameInput = document.querySelector('#voter-name-input');
+  const tabs = $('[data-tabs]');
+  const songList = $('[data-song-list]');
+  const activeName = $('[data-active-name]');
+  const votedCount = $('[data-voted-count]');
+  const cloudStatus = $('[data-cloud-status]');
+  const feedback = $('[data-feedback]');
+  const importInput = $('[data-import]');
+  const voterNameNode = $('[data-voter-name]');
+  const nameModal = $('[data-name-modal]');
+  const settingsModal = $('[data-settings-modal]');
+  const nameForm = $('[data-name-form]');
+  const nameInput = $('#voter-name-input');
 
   let feedbackTimeoutId;
   let saveTimeoutId;
@@ -164,11 +149,15 @@ const contests: EurovisionContest[] = [
 
   try {
     if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId) {
-      db = getFirestore(initializeApp(firebaseConfig));
+      const app = initializeApp(firebaseConfig);
+      db = initializeFirestore(app, {
+        experimentalForceLongPolling: true,
+        useFetchStreams: false,
+      });
       setCloudStatus('Preparado');
     }
   } catch (error) {
-    console.error(error);
+    console.error('Firebase init error:', error);
     setCloudStatus('Error');
   }
 
@@ -183,6 +172,33 @@ const contests: EurovisionContest[] = [
 
   function setCloudStatus(text) {
     if (cloudStatus) cloudStatus.textContent = text;
+  }
+
+  function showFeedback(message) {
+    if (!feedback) return;
+    feedback.textContent = message;
+    window.clearTimeout(feedbackTimeoutId);
+    feedbackTimeoutId = window.setTimeout(() => feedback.textContent = '', 5000);
+  }
+
+  function withTimeout(promise, ms) {
+    let timeoutId;
+    const timeout = new Promise((_, reject) => {
+      timeoutId = window.setTimeout(() => reject(new Error('timeout')), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timeoutId));
+  }
+
+  function openModal(modal) {
+    if (!modal) return;
+    modal.hidden = false;
+    document.documentElement.classList.add('has-modal');
+  }
+
+  function closeModal(modal) {
+    if (!modal) return;
+    modal.hidden = true;
+    if (nameModal?.hidden && settingsModal?.hidden) document.documentElement.classList.remove('has-modal');
   }
 
   function saveLocalVotes() {
@@ -208,45 +224,18 @@ const contests: EurovisionContest[] = [
     return `${song.flag}-${song.country}`.toLowerCase();
   }
 
-  function showFeedback(message) {
-    if (!feedback) return;
-    feedback.textContent = message;
-    window.clearTimeout(feedbackTimeoutId);
-    feedbackTimeoutId = window.setTimeout(() => {
-      feedback.textContent = '';
-    }, 3200);
-  }
-
-  function openModal(modal) {
-    modal.hidden = false;
-    document.documentElement.classList.add('has-modal');
-  }
-
-  function closeModal(modal) {
-    modal.hidden = true;
-    if (nameModal.hidden && settingsModal.hidden) document.documentElement.classList.remove('has-modal');
-  }
-
   function renderTabs() {
     if (!tabs) return;
-    tabs.innerHTML = contests
-      .map((contest) => {
-        const selected = contest.id === activeContestId;
-        const disabled = contest.songs.length === 0;
-        const totalVotes = Object.keys(votes[contest.id] ?? {}).length;
-        return `
-          <button class="tab ${selected ? 'is-active' : ''}" type="button" role="tab" aria-selected="${selected}" data-contest-id="${contest.id}">
-            <span>${contest.name}</span>
-            <small>${disabled ? 'Pendiente' : `${totalVotes}/${contest.songs.length}`}</small>
-          </button>
-        `;
-      })
-      .join('');
+    tabs.innerHTML = contests.map((contest) => {
+      const selected = contest.id === activeContestId;
+      const disabled = contest.songs.length === 0;
+      const totalVotes = Object.keys(votes[contest.id] ?? {}).length;
+      return `<button class="tab ${selected ? 'is-active' : ''}" type="button" role="tab" aria-selected="${selected}" data-contest-id="${contest.id}"><span>${contest.name}</span><small>${disabled ? 'Pendiente' : `${totalVotes}/${contest.songs.length}`}</small></button>`;
+    }).join('');
   }
 
   function renderSummary(contest) {
-    const contestVotes = votes[contest.id] ?? {};
-    const scores = Object.values(contestVotes).filter((score) => Number.isFinite(score));
+    const scores = Object.values(votes[contest.id] ?? {}).filter((score) => Number.isFinite(score));
     if (activeName) activeName.textContent = contest.name;
     if (votedCount) votedCount.textContent = `${scores.length}/${contest.songs.length}`;
   }
@@ -258,47 +247,17 @@ const contests: EurovisionContest[] = [
     renderSummary(contest);
 
     if (!songList) return;
-
     if (contest.songs.length === 0) {
-      songList.innerHTML = `
-        <article class="empty-state">
-          <span aria-hidden="true">🎤</span>
-          <h2>${contest.name} pendiente</h2>
-          <p>${contest.description}</p>
-          <p>Cuando tengas los países, se pueden añadir al array de datos del componente sin cambiar la lógica de votos.</p>
-        </article>
-      `;
+      songList.innerHTML = `<article class="empty-state"><span aria-hidden="true">🎤</span><h2>${contest.name} pendiente</h2><p>${contest.description}</p><p>Cuando tengas los países, se pueden añadir al array de datos del componente sin cambiar la lógica de votos.</p></article>`;
       return;
     }
 
-    songList.innerHTML = contest.songs
-      .map((song) => {
-        const songKey = getSongKey(song);
-        const currentScore = contestVotes[songKey];
-        const scoreButtons = Array.from({ length: 11 }, (_, score) => {
-          const selected = currentScore === score;
-          return `<button class="score-button ${selected ? 'is-selected' : ''}" type="button" aria-pressed="${selected}" data-score="${score}" data-song-key="${songKey}">${score}</button>`;
-        }).join('');
-
-        return `
-          <article class="song-card">
-            <div class="song-main">
-              <img class="flag" width="64" height="48" loading="lazy" alt="Bandera de ${song.country}" src="https://flagsapi.com/${song.flag}/flat/64.png" />
-              <div class="song-info">
-                <div class="song-meta">
-                  <span class="running-order">${song.runningOrder ?? 'FD'}</span>
-                  ${song.directFinalist ? '<span class="direct-badge">Finalista directo</span>' : ''}
-                </div>
-                <h2>${song.country}</h2>
-                <p><strong>${song.artist}</strong> — «${song.song}»</p>
-              </div>
-              <div class="selected-score" aria-label="Puntuación actual">${currentScore ?? '—'}</div>
-            </div>
-            <div class="score-grid" aria-label="Puntuar ${song.country} del 0 al 10">${scoreButtons}</div>
-          </article>
-        `;
-      })
-      .join('');
+    songList.innerHTML = contest.songs.map((song) => {
+      const songKey = getSongKey(song);
+      const currentScore = contestVotes[songKey];
+      const scoreButtons = Array.from({ length: 11 }, (_, score) => `<button class="score-button ${currentScore === score ? 'is-selected' : ''}" type="button" aria-pressed="${currentScore === score}" data-score="${score}" data-song-key="${songKey}">${score}</button>`).join('');
+      return `<article class="song-card"><div class="song-main"><img class="flag" width="64" height="48" loading="lazy" alt="Bandera de ${song.country}" src="https://flagsapi.com/${song.flag}/flat/64.png" /><div class="song-info"><div class="song-meta"><span class="running-order">${song.runningOrder ?? 'FD'}</span>${song.directFinalist ? '<span class="direct-badge">Finalista directo</span>' : ''}</div><h2>${song.country}</h2><p><strong>${song.artist}</strong> — «${song.song}»</p></div><div class="selected-score" aria-label="Puntuación actual">${currentScore ?? '—'}</div></div><div class="score-grid" aria-label="Puntuar ${song.country} del 0 al 10">${scoreButtons}</div></article>`;
+    }).join('');
   }
 
   function queueCloudSave() {
@@ -317,17 +276,17 @@ const contests: EurovisionContest[] = [
 
     try {
       setCloudStatus('Guardando...');
-      await setDoc(doc(db, 'eurovision2026Votes', deviceId), {
+      await withTimeout(setDoc(doc(db, 'eurovision2026Votes', deviceId), {
         voterName: voter.name,
         deviceId,
         votes,
         updatedAt: serverTimestamp(),
-      }, { merge: true });
+      }, { merge: true }), 12000);
       setCloudStatus('Guardado');
     } catch (error) {
-      console.error(error);
+      console.error('Firestore save error:', error);
       setCloudStatus('Error');
-      showFeedback('No se pudieron guardar los votos en Firebase. Se mantienen en este dispositivo.');
+      showFeedback(`No se pudieron guardar los votos en Firebase (${error?.message ?? 'error'}). Se mantienen en este dispositivo.`);
     }
   }
 
@@ -349,9 +308,9 @@ const contests: EurovisionContest[] = [
     queueCloudSave();
   });
 
-  document.querySelector('[data-open-settings]')?.addEventListener('click', () => openModal(settingsModal));
-  document.querySelector('[data-close-settings]')?.addEventListener('click', () => closeModal(settingsModal));
-  document.querySelector('[data-open-name]')?.addEventListener('click', () => {
+  $('[data-open-settings]')?.addEventListener('click', () => openModal(settingsModal));
+  $('[data-close-settings]')?.addEventListener('click', () => closeModal(settingsModal));
+  $('[data-open-name]')?.addEventListener('click', () => {
     if (nameInput && voter?.name) nameInput.value = voter.name;
     openModal(nameModal);
     nameInput?.focus();
@@ -374,14 +333,8 @@ const contests: EurovisionContest[] = [
     showFeedback('Nombre guardado.');
   });
 
-  document.querySelector('[data-export]')?.addEventListener('click', () => {
-    const payload = {
-      app: 'eurovision-votes',
-      version: 2,
-      exportedAt: new Date().toISOString(),
-      voter,
-      votes,
-    };
+  $('[data-export]')?.addEventListener('click', () => {
+    const payload = { app: 'eurovision-votes', version: 2, exportedAt: new Date().toISOString(), voter, votes };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -395,7 +348,6 @@ const contests: EurovisionContest[] = [
   importInput?.addEventListener('change', async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     try {
       const imported = JSON.parse(await file.text());
       const importedVotes = imported.votes ?? imported;
@@ -414,9 +366,8 @@ const contests: EurovisionContest[] = [
     }
   });
 
-  document.querySelector('[data-reset]')?.addEventListener('click', () => {
-    const shouldReset = window.confirm('¿Seguro que quieres borrar todos los votos guardados?');
-    if (!shouldReset) return;
+  $('[data-reset]')?.addEventListener('click', () => {
+    if (!window.confirm('¿Seguro que quieres borrar todos los votos guardados?')) return;
     votes = {};
     localStorage.removeItem(storageKey);
     renderSongs();
