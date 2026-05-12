@@ -15,6 +15,15 @@ type EurovisionContest = {
   songs: EurovisionSong[];
 };
 
+const firebaseConfig = {
+  apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY ?? '',
+  authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
+  projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID ?? '',
+  storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET ?? '',
+  messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
+  appId: import.meta.env.PUBLIC_FIREBASE_APP_ID ?? '',
+};
+
 const contests: EurovisionContest[] = [
   {
     id: 'semi-1',
@@ -47,20 +56,20 @@ const contests: EurovisionContest[] = [
 
 <section class="eurovision-vote-app" aria-labelledby="vote-title">
   <script type="application/json" id="eurovision-contests" set:html={JSON.stringify(contests)}></script>
+  <script type="application/json" id="firebase-config" set:html={JSON.stringify(firebaseConfig)}></script>
 
   <div class="hero-card">
     <div>
       <p class="eyebrow">Eurovision 2026</p>
       <h1 id="vote-title">Vota tus canciones favoritas</h1>
       <p class="hero-copy">
-        Puntúa cada país del 0 al 10. Tus votos se guardan automáticamente en este dispositivo y puedes exportarlos o importarlos en JSON.
+        Puntúa cada país del 0 al 10. Tus votos se guardan en este dispositivo y, si Firebase está configurado, también en la nube con tu nombre.
       </p>
     </div>
-    <div class="hero-actions" aria-label="Acciones de votos">
-      <button class="action-button action-button--primary" type="button" data-export>Exportar JSON</button>
-      <label class="action-button" for="vote-import">Importar JSON</label>
-      <input id="vote-import" class="visually-hidden" type="file" accept="application/json,.json" data-import />
-      <button class="action-button action-button--danger" type="button" data-reset>Resetear votos</button>
+    <div class="user-card">
+      <span class="status-label">Votante</span>
+      <strong data-voter-name>Sin nombre</strong>
+      <button class="mini-button" type="button" data-open-name>Cambiar nombre</button>
     </div>
   </div>
 
@@ -76,8 +85,8 @@ const contests: EurovisionContest[] = [
       <strong data-voted-count>0/0</strong>
     </div>
     <div>
-      <span class="status-label">Media</span>
-      <strong data-average-score>—</strong>
+      <span class="status-label">Firebase</span>
+      <strong data-cloud-status>Sin configurar</strong>
     </div>
   </div>
 
@@ -85,31 +94,110 @@ const contests: EurovisionContest[] = [
   <div class="song-list" data-song-list></div>
 </section>
 
-<script is:inline>
+<div class="app-modal" data-name-modal hidden>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
+    <h2 id="name-modal-title">¿Cómo te llamas?</h2>
+    <p>Tu nombre se usará para guardar tus votos en Firebase.</p>
+    <form data-name-form>
+      <label class="field-label" for="voter-name-input">Nombre</label>
+      <input id="voter-name-input" class="text-input" name="name" autocomplete="name" maxlength="60" required />
+      <div class="modal-actions">
+        <button class="action-button action-button--primary" type="submit">Guardar nombre</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="app-modal" data-settings-modal hidden>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+    <div class="modal-header-row">
+      <div>
+        <p class="eyebrow">Ajustes</p>
+        <h2 id="settings-modal-title">Gestionar votos</h2>
+      </div>
+      <button class="modal-close" type="button" data-close-settings aria-label="Cerrar ajustes">×</button>
+    </div>
+    <div class="settings-grid">
+      <button class="action-button action-button--primary" type="button" data-export>Exportar JSON</button>
+      <label class="action-button" for="vote-import">Importar JSON</label>
+      <input id="vote-import" class="visually-hidden" type="file" accept="application/json,.json" data-import />
+      <button class="action-button action-button--danger" type="button" data-reset>Resetear votos</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" is:inline>
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+  import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
   const storageKey = 'eurovision-2026-votes-v1';
+  const voterKey = 'eurovision-2026-voter-v1';
+  const deviceKey = 'eurovision-2026-device-id-v1';
   const contests = JSON.parse(document.getElementById('eurovision-contests')?.textContent ?? '[]');
+  const firebaseConfig = JSON.parse(document.getElementById('firebase-config')?.textContent ?? '{}');
+
   const tabs = document.querySelector('[data-tabs]');
   const songList = document.querySelector('[data-song-list]');
   const activeName = document.querySelector('[data-active-name]');
   const votedCount = document.querySelector('[data-voted-count]');
-  const averageScore = document.querySelector('[data-average-score]');
+  const cloudStatus = document.querySelector('[data-cloud-status]');
   const feedback = document.querySelector('[data-feedback]');
   const importInput = document.querySelector('[data-import]');
-  let feedbackTimeoutId;
-  let activeContestId = contests[0]?.id ?? 'semi-1';
-  let votes = loadVotes();
+  const voterNameNode = document.querySelector('[data-voter-name]');
+  const nameModal = document.querySelector('[data-name-modal]');
+  const settingsModal = document.querySelector('[data-settings-modal]');
+  const nameForm = document.querySelector('[data-name-form]');
+  const nameInput = document.querySelector('#voter-name-input');
 
-  function loadVotes() {
+  let feedbackTimeoutId;
+  let saveTimeoutId;
+  let db = null;
+  let activeContestId = contests[0]?.id ?? 'semi-1';
+  let votes = loadJson(storageKey, {});
+  let voter = loadJson(voterKey, null);
+  let deviceId = localStorage.getItem(deviceKey);
+
+  if (!deviceId) {
+    deviceId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+    localStorage.setItem(deviceKey, deviceId);
+  }
+
+  try {
+    if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId) {
+      db = getFirestore(initializeApp(firebaseConfig));
+      setCloudStatus('Preparado');
+    }
+  } catch (error) {
+    console.error(error);
+    setCloudStatus('Error');
+  }
+
+  function loadJson(key, fallback) {
     try {
-      const storedVotes = localStorage.getItem(storageKey);
-      return storedVotes ? JSON.parse(storedVotes) : {};
+      const value = localStorage.getItem(key);
+      return value ? JSON.parse(value) : fallback;
     } catch {
-      return {};
+      return fallback;
     }
   }
 
-  function saveVotes() {
+  function setCloudStatus(text) {
+    if (cloudStatus) cloudStatus.textContent = text;
+  }
+
+  function saveLocalVotes() {
     localStorage.setItem(storageKey, JSON.stringify(votes));
+  }
+
+  function saveVoter(name) {
+    voter = { name: name.trim(), deviceId };
+    localStorage.setItem(voterKey, JSON.stringify(voter));
+    renderVoter();
+    queueCloudSave();
+  }
+
+  function renderVoter() {
+    if (voterNameNode) voterNameNode.textContent = voter?.name || 'Sin nombre';
   }
 
   function getContest(contestId) {
@@ -127,6 +215,16 @@ const contests: EurovisionContest[] = [
     feedbackTimeoutId = window.setTimeout(() => {
       feedback.textContent = '';
     }, 3200);
+  }
+
+  function openModal(modal) {
+    modal.hidden = false;
+    document.documentElement.classList.add('has-modal');
+  }
+
+  function closeModal(modal) {
+    modal.hidden = true;
+    if (nameModal.hidden && settingsModal.hidden) document.documentElement.classList.remove('has-modal');
   }
 
   function renderTabs() {
@@ -149,11 +247,8 @@ const contests: EurovisionContest[] = [
   function renderSummary(contest) {
     const contestVotes = votes[contest.id] ?? {};
     const scores = Object.values(contestVotes).filter((score) => Number.isFinite(score));
-    const average = scores.length ? (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(1) : '—';
-
     if (activeName) activeName.textContent = contest.name;
     if (votedCount) votedCount.textContent = `${scores.length}/${contest.songs.length}`;
-    if (averageScore) averageScore.textContent = average;
   }
 
   function renderSongs() {
@@ -206,6 +301,36 @@ const contests: EurovisionContest[] = [
       .join('');
   }
 
+  function queueCloudSave() {
+    window.clearTimeout(saveTimeoutId);
+    saveTimeoutId = window.setTimeout(saveCloudVotes, 500);
+  }
+
+  async function saveCloudVotes() {
+    if (!db) return;
+    if (!voter?.name) {
+      setCloudStatus('Falta nombre');
+      openModal(nameModal);
+      nameInput?.focus();
+      return;
+    }
+
+    try {
+      setCloudStatus('Guardando...');
+      await setDoc(doc(db, 'eurovision2026Votes', deviceId), {
+        voterName: voter.name,
+        deviceId,
+        votes,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      setCloudStatus('Guardado');
+    } catch (error) {
+      console.error(error);
+      setCloudStatus('Error');
+      showFeedback('No se pudieron guardar los votos en Firebase. Se mantienen en este dispositivo.');
+    }
+  }
+
   tabs?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-contest-id]');
     if (!button) return;
@@ -219,15 +344,42 @@ const contests: EurovisionContest[] = [
     const contestVotes = votes[activeContestId] ?? {};
     contestVotes[button.dataset.songKey] = Number(button.dataset.score);
     votes = { ...votes, [activeContestId]: contestVotes };
-    saveVotes();
+    saveLocalVotes();
     renderSongs();
+    queueCloudSave();
+  });
+
+  document.querySelector('[data-open-settings]')?.addEventListener('click', () => openModal(settingsModal));
+  document.querySelector('[data-close-settings]')?.addEventListener('click', () => closeModal(settingsModal));
+  document.querySelector('[data-open-name]')?.addEventListener('click', () => {
+    if (nameInput && voter?.name) nameInput.value = voter.name;
+    openModal(nameModal);
+    nameInput?.focus();
+  });
+
+  settingsModal?.addEventListener('click', (event) => {
+    if (event.target === settingsModal) closeModal(settingsModal);
+  });
+
+  nameModal?.addEventListener('click', (event) => {
+    if (event.target === nameModal && voter?.name) closeModal(nameModal);
+  });
+
+  nameForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const name = new FormData(nameForm).get('name')?.toString().trim();
+    if (!name) return;
+    saveVoter(name);
+    closeModal(nameModal);
+    showFeedback('Nombre guardado.');
   });
 
   document.querySelector('[data-export]')?.addEventListener('click', () => {
     const payload = {
       app: 'eurovision-votes',
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
+      voter,
       votes,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -247,12 +399,13 @@ const contests: EurovisionContest[] = [
     try {
       const imported = JSON.parse(await file.text());
       const importedVotes = imported.votes ?? imported;
-      if (!importedVotes || typeof importedVotes !== 'object' || Array.isArray(importedVotes)) {
-        throw new Error('Formato no válido');
-      }
+      if (!importedVotes || typeof importedVotes !== 'object' || Array.isArray(importedVotes)) throw new Error('Formato no válido');
       votes = importedVotes;
-      saveVotes();
+      if (imported.voter?.name) saveVoter(imported.voter.name);
+      saveLocalVotes();
       renderSongs();
+      queueCloudSave();
+      closeModal(settingsModal);
       showFeedback('Votos importados correctamente.');
     } catch {
       showFeedback('No se pudo importar el JSON. Revisa el formato del archivo.');
@@ -267,8 +420,13 @@ const contests: EurovisionContest[] = [
     votes = {};
     localStorage.removeItem(storageKey);
     renderSongs();
+    queueCloudSave();
+    closeModal(settingsModal);
     showFeedback('Votos reseteados.');
   });
 
+  renderVoter();
   renderSongs();
+  if (!voter?.name) openModal(nameModal);
+  queueCloudSave();
 </script>
