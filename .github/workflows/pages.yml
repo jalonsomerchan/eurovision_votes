@@ -56,13 +56,13 @@ jobs:
         shell: bash
         run: |
           if [ -n "$FIREBASE" ]; then
-            echo "$FIREBASE" | while IFS= read -r line; do
+            printf '%s\n' "$FIREBASE" | tr -d '\r' | while IFS= read -r line; do
               [ -z "$line" ] && continue
               case "$line" in \#*) continue ;; esac
               name="${line%%=*}"
               value="${line#*=}"
-              name="$(echo "$name" | xargs)"
-              value="$(echo "$value" | xargs)"
+              name="$(printf '%s' "$name" | tr -d '\r' | xargs)"
+              value="$(printf '%s' "$value" | tr -d '\r' | sed -e 's/^\"//' -e 's/\"$//' | xargs)"
 
               case "$name" in
                 PUBLIC_FIREBASE_API_KEY|PUBLIC_FIREBASE_AUTH_DOMAIN|PUBLIC_FIREBASE_PROJECT_ID|PUBLIC_FIREBASE_STORAGE_BUCKET|PUBLIC_FIREBASE_MESSAGING_SENDER_ID|PUBLIC_FIREBASE_APP_ID)
@@ -71,6 +71,15 @@ jobs:
               esac
             done
           fi
+
+      - name: Sanitize Firebase env values
+        shell: bash
+        run: |
+          for name in PUBLIC_FIREBASE_API_KEY PUBLIC_FIREBASE_AUTH_DOMAIN PUBLIC_FIREBASE_PROJECT_ID PUBLIC_FIREBASE_STORAGE_BUCKET PUBLIC_FIREBASE_MESSAGING_SENDER_ID PUBLIC_FIREBASE_APP_ID; do
+            value="${!name}"
+            value="$(printf '%s' "$value" | tr -d '\r' | sed -e 's/^\"//' -e 's/\"$//' | xargs)"
+            printf '%s=%s\n' "$name" "$value" >> "$GITHUB_ENV"
+          done
 
       - name: Check Firebase config
         shell: bash
