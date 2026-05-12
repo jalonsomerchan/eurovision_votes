@@ -1,12 +1,22 @@
 import { defaultLocale, locales, type Locale } from '../config/site';
+import ca from './translations/ca.json';
 import en from './translations/en.json';
 import es from './translations/es.json';
+import eu from './translations/eu.json';
+import fr from './translations/fr.json';
+import gl from './translations/gl.json';
+import pt from './translations/pt.json';
 
 export type TranslationKey = keyof typeof es;
 
 const translations: Record<Locale, typeof es> = {
   es,
   en,
+  fr,
+  pt,
+  ca,
+  eu,
+  gl,
 };
 
 function joinPaths(...parts: string[]) {
