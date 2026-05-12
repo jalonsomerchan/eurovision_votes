@@ -18,6 +18,7 @@ const alternateLocales = getAlternateLocales(locale);
     <a class="font-bold tracking-tight" href={homeUrl}>{siteConfig.name}</a>
     <nav aria-label="Navegación principal" class="flex items-center gap-2 text-sm text-[var(--color-muted)]">
       <a class="hover:text-[var(--color-text)]" href={homeUrl}>{t('nav.home')}</a>
+      <a class="hover:text-[var(--color-text)]" href="/stats/">Estadísticas</a>
       {alternateLocales.map((alternateLocale) => (
         <a
           class="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs hover:text-[var(--color-text)]"
