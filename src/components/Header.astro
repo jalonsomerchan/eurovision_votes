@@ -13,9 +13,12 @@ const homeUrl = getLocalizedPath('/', locale);
 const alternateLocales = getAlternateLocales(locale);
 ---
 
-<header class="site-header">
+<header class="site-header app-header">
   <Container class="header-inner">
-    <a class="site-brand" href={homeUrl} aria-label="Eurovision Votes 2026">{siteConfig.name}</a>
+    <a class="site-brand" href={homeUrl} aria-label="Eurovision Votes 2026">
+      <span class="site-brand__mark">EV</span>
+      <span class="site-brand__text">{siteConfig.name}</span>
+    </a>
 
     <nav aria-label="Navegación principal" class="main-nav main-nav--desktop">
       <a href={homeUrl}>{t('nav.home')}</a>
@@ -31,23 +34,54 @@ const alternateLocales = getAlternateLocales(locale);
       <button class="settings-trigger" type="button" data-open-settings>Ajustes</button>
     </nav>
 
-    <details class="mobile-menu">
-      <summary aria-label="Abrir menú">
+    <details class="mobile-menu" data-mobile-menu>
+      <summary aria-label="Abrir menú" aria-controls="mobile-menu-panel">
         <span></span>
         <span></span>
         <span></span>
       </summary>
-      <nav aria-label="Menú móvil" class="mobile-menu__panel">
-        <a href={homeUrl}>{t('nav.home')}</a>
-        <a href="/stats/">Estadísticas</a>
-        <button type="button" data-open-settings>Ajustes</button>
+      <div id="mobile-menu-panel" class="mobile-menu__panel">
+        <div class="mobile-menu__head">
+          <strong>Menú</strong>
+          <small>{localeLabels[locale]}</small>
+        </div>
+        <nav aria-label="Menú móvil" class="mobile-menu__nav">
+          <a href={homeUrl}>{t('nav.home')}</a>
+          <a href="/stats/">Estadísticas</a>
+          <button type="button" data-open-settings>Ajustes</button>
+        </nav>
         <div class="mobile-menu__languages" aria-label="Cambiar idioma">
           <strong>Idioma</strong>
-          {alternateLocales.map((alternateLocale) => (
-            <a href={getLocalizedPath('/', alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
-          ))}
+          <div>
+            {alternateLocales.map((alternateLocale) => (
+              <a href={getLocalizedPath('/', alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
+            ))}
+          </div>
         </div>
-      </nav>
+      </div>
     </details>
   </Container>
 </header>
+
+<script is:inline>
+  document.addEventListener('click', (event) => {
+    const mobileMenu = document.querySelector('[data-mobile-menu]');
+    if (!mobileMenu?.open) return;
+
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const clickedInside = mobileMenu.contains(target);
+    const clickedAction = target.closest('[data-open-settings], .mobile-menu__panel a');
+
+    if (!clickedInside || clickedAction) {
+      mobileMenu.open = false;
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const mobileMenu = document.querySelector('[data-mobile-menu]');
+    if (mobileMenu) mobileMenu.open = false;
+  });
+</script>
