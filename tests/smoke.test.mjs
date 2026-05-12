@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 const root = process.cwd();
+const supportedLocales = ['es', 'en', 'fr', 'pt', 'ca', 'eu', 'gl'];
 
 function readJson(path) {
   return JSON.parse(readFileSync(join(root, path), 'utf8'));
@@ -68,33 +69,40 @@ describe('project smoke checks', () => {
 
     assert.match(astroConfig, /i18n/);
     assert.match(astroConfig, /defaultLocale: 'es'/);
-    assert.match(astroConfig, /locales: \['es', 'en'\]/);
+    supportedLocales.forEach((locale) => {
+      assert.match(astroConfig, new RegExp(`'${locale}'`));
+      assert.match(i18nHelper, new RegExp(`translations/${locale}\\.json|${locale} from`));
+    });
     assert.match(i18nHelper, /useTranslations/);
     assert.match(i18nHelper, /getLocalizedPath/);
   });
 
   it('keeps translation files aligned', () => {
     const es = readJson('src/i18n/translations/es.json');
-    const en = readJson('src/i18n/translations/en.json');
 
-    assert.deepEqual(Object.keys(en).sort(), Object.keys(es).sort());
-    assert.ok(es['home.title']);
-    assert.ok(en['home.title']);
+    supportedLocales.forEach((locale) => {
+      const translations = readJson(`src/i18n/translations/${locale}.json`);
+      assert.deepEqual(Object.keys(translations).sort(), Object.keys(es).sort(), `${locale} keys should match es`);
+      assert.ok(translations['home.title'], `${locale} should include home.title`);
+    });
   });
 
   it('includes the Eurovision voting app', () => {
     const home = readText('src/pages/index.astro');
     const app = readText('src/components/EurovisionVoteApp.astro');
+    const voteScript = readText('public/vote.js');
+    const contestConfig = readText('src/config/eurovision2026.ts');
 
     assert.match(home, /EurovisionVoteApp/);
-    assert.match(app, /localStorage/);
+    assert.match(app, /vote\.js/);
+    assert.match(voteScript, /localStorage/);
     assert.match(app, /Exportar JSON/);
     assert.match(app, /Importar JSON/);
     assert.match(app, /Resetear votos/);
-    assert.match(app, /flagsapi\.com/);
-    assert.match(app, /Semifinal 1/);
-    assert.match(app, /Semifinal 2/);
-    assert.match(app, /Final/);
+    assert.match(voteScript, /flagsapi\.com/);
+    assert.match(contestConfig, /Semifinal 1/);
+    assert.match(contestConfig, /Semifinal 2/);
+    assert.match(contestConfig, /Final/);
   });
 
   it('includes GitHub workflows for CI and Pages', () => {
