@@ -99,7 +99,13 @@ function isSemi(contestId) {
 }
 
 function getSemiState(contestId) {
-  return control?.semifinals?.[contestId] || { qualifiers: [], closed: false };
+  return control?.semifinals?.[contestId] || { qualifiers: [], status: 'pending', closed: false };
+}
+
+function getSemiStatus(contestId) {
+  const state = getSemiState(contestId);
+  if (state.status) return state.status;
+  return state.closed ? 'closed' : 'open';
 }
 
 function getFinalPositions() {
@@ -150,8 +156,8 @@ function renderTabs() {
     const selected = contest.id === activeContestId;
     const disabled = songs.length === 0;
     const totalVotes = Object.keys(votes[contest.id] || {}).length;
-    const semiState = isSemi(contest.id) ? getSemiState(contest.id) : null;
-    const label = disabled ? 'Pendiente' : semiState?.closed ? 'Cerrada' : `${totalVotes}/${songs.length}`;
+    const status = isSemi(contest.id) ? getSemiStatus(contest.id) : 'open';
+    const label = disabled ? 'Pendiente' : status === 'closed' ? 'Cerrada' : status === 'pending' ? 'Pendiente' : `${totalVotes}/${songs.length}`;
     return `<button class="tab ${selected ? 'is-active' : ''}" type="button" role="tab" aria-selected="${selected}" data-contest-id="${contest.id}"><span>${escapeHtml(contest.name)}</span><small>${label}</small></button>`;
   }).join('');
 }
@@ -168,9 +174,11 @@ function renderSongs() {
   const songs = getSongsForContest(contest);
   const contestVotes = votes[contest.id] || {};
   const semiState = getSemiState(contest.id);
+  const semiStatus = getSemiStatus(contest.id);
   const qualifiers = new Set(semiState.qualifiers || []);
   const positions = getFinalPositions();
-  const votingClosed = isSemi(contest.id) && semiState.closed;
+  const votingClosed = isSemi(contest.id) && semiStatus === 'closed';
+  const votingPending = isSemi(contest.id) && semiStatus === 'pending';
 
   renderTabs();
   renderSummary(contest);
@@ -187,10 +195,11 @@ function renderSongs() {
     const average = getAverage(contest.id, songKey);
     const badges = [];
     badges.push(`<span class="result-badge result-badge--average">Media ${formatAverage(average)}</span>`);
-    if (isSemi(contest.id) && semiState.closed) badges.push(qualifiers.has(songKey) ? '<span class="result-badge result-badge--qualified">Pasa a la final</span>' : '<span class="result-badge">No clasificado</span>');
+    if (isSemi(contest.id) && semiStatus === 'closed') badges.push(qualifiers.has(songKey) ? '<span class="result-badge result-badge--qualified">Pasa a la final</span>' : '<span class="result-badge">No clasificado</span>');
     if (contest.id === 'final' && positions[songKey]) badges.push(`<span class="result-badge result-badge--qualified">Puesto ${positions[songKey]}</span>`);
-    const scoreButtons = Array.from({ length: 11 }, (_, score) => `<button class="score-button ${currentScore === score ? 'is-selected' : ''}" type="button" aria-pressed="${currentScore === score}" data-score="${score}" data-song-key="${songKey}" ${votingClosed ? 'disabled' : ''}>${score}</button>`).join('');
-    return `<article class="song-card ${votingClosed ? 'is-closed' : ''}"><div class="song-main"><img class="flag" width="64" height="48" loading="lazy" alt="Bandera de ${escapeHtml(song.country)}" src="https://flagsapi.com/${song.flag}/flat/64.png" /><div class="song-info"><div class="song-meta"><span class="running-order">${song.runningOrder || 'FD'}</span>${song.directFinalist ? '<span class="direct-badge">Finalista directo</span>' : ''}${badges.join('')}</div><h2>${escapeHtml(song.country)}</h2><p><strong>${escapeHtml(song.artist)}</strong> — «${escapeHtml(song.song)}»</p></div><div class="selected-score" aria-label="Puntuación actual">${currentScore ?? '—'}</div></div>${votingClosed ? '<p class="closed-note">Votación cerrada para esta semifinal.</p>' : `<div class="score-grid" aria-label="Puntuar ${escapeHtml(song.country)} del 0 al 10">${scoreButtons}</div>`}</article>`;
+    const scoreButtons = Array.from({ length: 11 }, (_, score) => `<button class="score-button ${currentScore === score ? 'is-selected' : ''}" type="button" aria-pressed="${currentScore === score}" data-score="${score}" data-song-key="${songKey}" ${votingClosed || votingPending ? 'disabled' : ''}>${score}</button>`).join('');
+    const message = votingClosed ? 'Votación cerrada para esta semifinal.' : votingPending ? 'Votación pendiente de inicio.' : '';
+    return `<article class="song-card ${votingClosed || votingPending ? 'is-closed' : ''}"><div class="song-main"><img class="flag" width="64" height="48" loading="lazy" alt="Bandera de ${escapeHtml(song.country)}" src="https://flagsapi.com/${song.flag}/flat/64.png" /><div class="song-info"><div class="song-meta"><span class="running-order">${song.runningOrder || 'FD'}</span>${song.directFinalist ? '<span class="direct-badge">Finalista directo</span>' : ''}${badges.join('')}</div><h2>${escapeHtml(song.country)}</h2><p><strong>${escapeHtml(song.artist)}</strong> — «${escapeHtml(song.song)}»</p></div><div class="selected-score" aria-label="Puntuación actual">${currentScore ?? '—'}</div></div>${message ? `<p class="closed-note">${message}</p>` : `<div class="score-grid" aria-label="Puntuar ${escapeHtml(song.country)} del 0 al 10">${scoreButtons}</div>`}</article>`;
   }).join('');
 }
 
@@ -230,9 +239,9 @@ async function saveCloudVotes() {
     nameInput?.focus();
     return;
   }
-  if (isSemi(activeContestId) && getSemiState(activeContestId).closed) {
-    setCloudStatus('Cerrada');
-    showFeedback('La votación de esta semifinal está cerrada.');
+  if (isSemi(activeContestId) && getSemiStatus(activeContestId) !== 'open') {
+    setCloudStatus(getSemiStatus(activeContestId) === 'closed' ? 'Cerrada' : 'Pendiente');
+    showFeedback(getSemiStatus(activeContestId) === 'closed' ? 'La votación de esta semifinal está cerrada.' : 'La votación de esta semifinal todavía no ha empezado.');
     return;
   }
 
@@ -263,7 +272,7 @@ tabs?.addEventListener('click', (event) => {
 songList?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-score]');
   if (!button || button.disabled) return;
-  if (isSemi(activeContestId) && getSemiState(activeContestId).closed) return;
+  if (isSemi(activeContestId) && getSemiStatus(activeContestId) !== 'open') return;
   const contestVotes = votes[activeContestId] || {};
   contestVotes[button.dataset.songKey] = Number(button.dataset.score);
   votes = { ...votes, [activeContestId]: contestVotes };
