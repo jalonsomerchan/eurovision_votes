@@ -10,6 +10,8 @@ interface Props {
 const { locale } = Astro.props;
 const t = useTranslations(locale);
 const homeUrl = getLocalizedPath('/', locale);
+const historyUrl = getLocalizedPath('/historico/', locale);
+const statsUrl = getLocalizedPath('/stats/', locale);
 const alternateLocales = getAlternateLocales(locale);
 ---
 
@@ -22,13 +24,13 @@ const alternateLocales = getAlternateLocales(locale);
 
     <nav aria-label="Navegación principal" class="main-nav main-nav--desktop">
       <a href={homeUrl}>{t('nav.home')}</a>
-      <a href="/historico/">Histórico</a>
-      <a href="/stats/">Estadísticas</a>
+      <a href={historyUrl}>Histórico</a>
+      <a href={statsUrl}>Estadísticas</a>
       <details class="locale-menu">
         <summary>{localeLabels[locale]}</summary>
         <div class="locale-menu__list">
           {alternateLocales.map((alternateLocale) => (
-            <a href={getLocalizedPath('/', alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
+            <a href={getLocalizedPath('/historico/', alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
           ))}
         </div>
       </details>
@@ -48,15 +50,15 @@ const alternateLocales = getAlternateLocales(locale);
         </div>
         <nav aria-label="Menú móvil" class="mobile-menu__nav">
           <a href={homeUrl}>{t('nav.home')}</a>
-          <a href="/historico/">Histórico</a>
-          <a href="/stats/">Estadísticas</a>
+          <a href={historyUrl}>Histórico</a>
+          <a href={statsUrl}>Estadísticas</a>
           <button type="button" data-open-settings>Ajustes</button>
         </nav>
         <div class="mobile-menu__languages" aria-label="Cambiar idioma">
           <strong>Idioma</strong>
           <div>
             {alternateLocales.map((alternateLocale) => (
-              <a href={getLocalizedPath('/', alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
+              <a href={getLocalizedPath('/historico/', alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
             ))}
           </div>
         </div>
