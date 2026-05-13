@@ -6,15 +6,20 @@ import type { EurovisionEdition } from '../lib/eurovisionEditions';
 interface Props {
   edition: EurovisionEdition;
   locale?: Locale;
+  availableYears?: number[];
 }
 
-const { edition, locale = defaultLocale } = Astro.props;
+const { edition, locale = defaultLocale, availableYears = [] } = Astro.props;
 const t = useTranslations(locale);
 const historyUrl = getLocalizedPath('/historico/', locale);
 const finalIndex = Math.max(0, edition.rounds.findIndex((round) => round.label === 'Final'));
 const editionPath = (year: number) => getLocalizedPath(`/ediciones/${year}/`, locale);
 const countryPath = (countryCode?: string) => countryCode ? getLocalizedPath(`/paises/${countryCode.toLowerCase()}/`, locale) : '';
 const roundHasResults = edition.rounds.some((round) => round.entries.some((entry) => entry.place !== null || entry.points !== null));
+const sortedYears = [...availableYears].sort((a, b) => a - b);
+const currentYearIndex = sortedYears.indexOf(edition.year);
+const previousYear = currentYearIndex > 0 ? sortedYears[currentYearIndex - 1] : undefined;
+const nextYear = currentYearIndex >= 0 && currentYearIndex < sortedYears.length - 1 ? sortedYears[currentYearIndex + 1] : undefined;
 ---
 
 <section class="edition-app" aria-labelledby="edition-title">
@@ -26,8 +31,8 @@ const roundHasResults = edition.rounds.some((round) => round.entries.some((entry
     </div>
     <div class="history-actions">
       <a class="action-button" href={historyUrl}>{t('edition.historyLink')}</a>
-      {edition.year > 1956 && <a class="action-button" href={editionPath(edition.year - 1)}>{edition.year - 1}</a>}
-      {edition.year < 2026 && <a class="action-button" href={editionPath(edition.year + 1)}>{edition.year + 1}</a>}
+      {previousYear && <a class="action-button" href={editionPath(previousYear)}>{previousYear}</a>}
+      {nextYear && <a class="action-button" href={editionPath(nextYear)}>{nextYear}</a>}
     </div>
   </div>
 
