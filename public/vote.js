@@ -1,424 +1,151 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import { initializeFirestore, collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { createVoteActions } from './vote/actions.js';
+import { createCloudApi, initCloud } from './vote/cloud.js';
+import { isSemi, getSemiStatus } from './vote/contest.js';
+import { deviceKey, readInitialData, storageKey, voterKey } from './vote/config.js';
+import { $, createUi, getVoteNodes } from './vote/dom.js';
+import { createRenderer } from './vote/render.js';
+import { getOrCreateDeviceId, loadJson, saveJson } from './vote/storage.js';
 
-const storageKey = 'eurovision-2026-votes-v1';
-const voterKey = 'eurovision-2026-voter-v1';
-const deviceKey = 'eurovision-2026-device-id-v1';
-const votesCollection = 'eurovision2026Votes';
-const controlCollection = 'eurovision2026Control';
-const controlDocument = 'results';
-const contests = JSON.parse(document.getElementById('eurovision-contests')?.textContent || '[]');
-const firebaseConfig = JSON.parse(document.getElementById('firebase-config')?.textContent || '{}');
-const labels = JSON.parse(document.getElementById('vote-labels')?.textContent || '{}');
-const $ = (selector) => document.querySelector(selector);
+const { contests, firebaseConfig, t } = readInitialData();
+const nodes = getVoteNodes();
+const ui = createUi(nodes);
+const deviceId = getOrCreateDeviceId(deviceKey);
 
-const tabs = $('[data-tabs]');
-const songList = $('[data-song-list]');
-const activeName = $('[data-active-name]');
-const votedCount = $('[data-voted-count]');
-const cloudStatus = $('[data-cloud-status]');
-const feedback = $('[data-feedback]');
-const importInput = $('[data-import]');
-const voterNameNode = $('[data-voter-name]');
-const nameModal = $('[data-name-modal]');
-const settingsModal = $('[data-settings-modal]');
-const nameForm = $('[data-name-form]');
-const nameInput = $('#voter-name-input');
-
-let db = null;
-let feedbackTimeoutId;
-let saveTimeoutId;
 let activeContestId = contests[0]?.id || 'semi-1';
-let votes = loadJson(storageKey, {});
-let voter = loadJson(voterKey, null);
-let deviceId = localStorage.getItem(deviceKey);
 let allVoters = [];
 let control = { semifinals: {}, final: { positions: {} } };
-let realtimeReady = false;
+let saveTimeoutId;
+let voter = loadJson(voterKey, null);
+let votes = loadJson(storageKey, {});
 
-function t(key, fallback, replacements = {}) {
-  const template = labels[key] || fallback || key;
-  return Object.entries(replacements).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), template);
+function getState() {
+  return {
+    activeContestId,
+    allVoters,
+    control,
+    isVotingAllowed,
+    openNameModal,
+    setAllVoters: (nextVoters) => {
+      allVoters = nextVoters;
+    },
+    setControl: (nextControl) => {
+      control = nextControl;
+    },
+    setVotes: (nextVotes) => {
+      votes = nextVotes;
+    },
+    voter,
+    votes,
+  };
 }
 
-if (!deviceId) {
-  deviceId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
-  localStorage.setItem(deviceKey, deviceId);
-}
+const renderer = createRenderer({ contests, getState, nodes, t });
+const db = initCloud(firebaseConfig, { setCloudStatus: ui.setCloudStatus, t });
+const cloud = createCloudApi({
+  db,
+  deviceId,
+  getState,
+  renderSongs: renderer.renderSongs,
+  setCloudStatus: ui.setCloudStatus,
+  showFeedback: ui.showFeedback,
+  t,
+});
 
-try {
-  if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId) {
-    const app = initializeApp(firebaseConfig);
-    db = initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
-    setCloudStatus(t('onlineSaved', 'Guardado online'));
-  }
-} catch (error) {
-  console.error('Firebase init error:', error);
-  setCloudStatus(t('localSaved', 'Guardado local'));
-}
-
-function loadJson(key, fallback) {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char]);
-}
-
-function countryProfileUrl(flag) {
-  return `/paises/${String(flag || '').toLowerCase()}/`;
-}
-
-function countryLink(song) {
-  return `<a class="country-link" href="${countryProfileUrl(song.flag)}">${escapeHtml(song.country)}</a>`;
-}
-
-function setCloudStatus(text) {
-  if (cloudStatus) cloudStatus.textContent = text;
-}
-
-function showFeedback(message) {
-  if (!feedback) return;
-  feedback.textContent = message;
-  window.clearTimeout(feedbackTimeoutId);
-  feedbackTimeoutId = window.setTimeout(() => feedback.textContent = '', 5000);
-}
-
-function openModal(modal) {
-  if (!modal) return;
-  modal.hidden = false;
-  document.documentElement.classList.add('has-modal');
-}
-
-function closeModal(modal) {
-  if (!modal) return;
-  modal.hidden = true;
-  if (nameModal?.hidden && settingsModal?.hidden) document.documentElement.classList.remove('has-modal');
-}
-
-function getSongKey(song) {
-  return `${song.flag}-${song.country}`.toLowerCase();
-}
-
-function getContest(contestId) {
-  return contests.find((contest) => contest.id === contestId) || contests[0];
-}
-
-function isSemi(contestId) {
-  return contestId === 'semi-1' || contestId === 'semi-2';
-}
-
-function getSemiState(contestId) {
-  return control?.semifinals?.[contestId] || { qualifiers: [], status: 'pending', closed: false };
-}
-
-function getSemiStatus(contestId) {
-  const state = getSemiState(contestId);
-  if (state.status) return state.status;
-  return state.closed ? 'closed' : 'open';
-}
-
-function getFinalPositions() {
-  return control?.final?.positions || {};
-}
-
-function getSongsForContest(contest) {
-  if (contest.id !== 'final' || contest.songs.length) return contest.songs;
-  const qualified = [];
-  contests.filter((item) => isSemi(item.id)).forEach((semi) => {
-    const qualifiers = new Set(getSemiState(semi.id).qualifiers || []);
-    semi.songs.forEach((song) => {
-      if (qualifiers.has(getSongKey(song))) qualified.push({ ...song, qualifiedFrom: semi.name });
-    });
-  });
-  return qualified;
-}
-
-function getAverage(contestId, songKey) {
-  const scores = allVoters.map((item) => item.votes?.[contestId]?.[songKey]).filter(Number.isFinite);
-  if (!scores.length) return null;
-  return scores.reduce((sum, score) => sum + score, 0) / scores.length;
-}
-
-function formatAverage(value) {
-  return Number.isFinite(value) ? value.toFixed(2).replace('.', ',') : '—';
-}
+const actions = createVoteActions({
+  closeModal: ui.closeModal,
+  deviceId,
+  getState,
+  importInput: nodes.importInput,
+  renderSongs: renderer.renderSongs,
+  saveLocalVotes,
+  saveVoter,
+  settingsModal: nodes.settingsModal,
+  showFeedback: ui.showFeedback,
+  t,
+});
 
 function saveLocalVotes() {
-  localStorage.setItem(storageKey, JSON.stringify(votes));
+  saveJson(storageKey, votes);
 }
 
 function saveVoter(name) {
   voter = { name: name.trim(), deviceId };
-  localStorage.setItem(voterKey, JSON.stringify(voter));
-  renderVoter();
+  saveJson(voterKey, voter);
+  renderer.renderVoter();
   queueCloudSave();
 }
 
-function renderVoter() {
-  if (voterNameNode) voterNameNode.textContent = voter?.name || t('guest', 'Votante invitado');
+function openNameModal() {
+  ui.openModal(nodes.nameModal);
+  nodes.nameInput?.focus();
 }
 
-function renderTabs() {
-  if (!tabs) return;
-  tabs.innerHTML = contests.map((contest) => {
-    const songs = getSongsForContest(contest);
-    const selected = contest.id === activeContestId;
-    const disabled = songs.length === 0;
-    const totalVotes = Object.keys(votes[contest.id] || {}).length;
-    const status = isSemi(contest.id) ? getSemiStatus(contest.id) : 'open';
-    const label = disabled ? t('pending', 'Pendiente') : status === 'closed' ? t('closed', 'Votación cerrada') : status === 'pending' ? t('comingSoon', 'Próximamente') : `${totalVotes}/${songs.length}`;
-    return `<button class="tab ${selected ? 'is-active' : ''}" type="button" role="tab" aria-selected="${selected}" data-contest-id="${contest.id}"><span>${escapeHtml(contest.name)}</span><small>${escapeHtml(label)}</small></button>`;
-  }).join('');
-}
+function isVotingAllowed() {
+  if (!isSemi(activeContestId) || getSemiStatus(control, activeContestId) === 'open') return true;
 
-function renderSummary(contest) {
-  const songs = getSongsForContest(contest);
-  const scores = Object.values(votes[contest.id] || {}).filter(Number.isFinite);
-  if (activeName) activeName.textContent = contest.name;
-  if (votedCount) votedCount.textContent = `${scores.length}/${songs.length}`;
-}
-
-function renderSongs() {
-  const contest = getContest(activeContestId);
-  const songs = getSongsForContest(contest);
-  const contestVotes = votes[contest.id] || {};
-  const semiState = getSemiState(contest.id);
-  const semiStatus = getSemiStatus(contest.id);
-  const qualifiers = new Set(semiState.qualifiers || []);
-  const positions = getFinalPositions();
-  const votingClosed = isSemi(contest.id) && semiStatus === 'closed';
-  const votingPending = isSemi(contest.id) && semiStatus === 'pending';
-
-  renderTabs();
-  renderSummary(contest);
-
-  if (!songList) return;
-  if (!songs.length) {
-    songList.innerHTML = `<article class="empty-state"><span aria-hidden="true">🎤</span><h2>${escapeHtml(contest.name)}</h2><p>${escapeHtml(t('noSongs', 'Las canciones de esta gala se mostrarán cuando estén disponibles.'))}</p></article>`;
-    return;
-  }
-
-  songList.innerHTML = songs.map((song) => {
-    const songKey = getSongKey(song);
-    const currentScore = contestVotes[songKey];
-    const average = getAverage(contest.id, songKey);
-    const badges = [];
-    badges.push(`<span class="result-badge result-badge--average">${escapeHtml(t('average', 'Media'))} ${formatAverage(average)}</span>`);
-    if (isSemi(contest.id) && semiStatus === 'closed') badges.push(qualifiers.has(songKey) ? `<span class="result-badge result-badge--qualified">${escapeHtml(t('qualified', 'Clasificado para la final'))}</span>` : `<span class="result-badge">${escapeHtml(t('notQualified', 'No clasificado'))}</span>`);
-    if (contest.id === 'final' && positions[songKey]) badges.push(`<span class="result-badge result-badge--qualified">${escapeHtml(t('place', 'Puesto'))} ${positions[songKey]}</span>`);
-    const scoreButtons = Array.from({ length: 11 }, (_, score) => `<button class="score-button ${currentScore === score ? 'is-selected' : ''}" type="button" aria-pressed="${currentScore === score}" data-score="${score}" data-song-key="${songKey}" ${votingClosed || votingPending ? 'disabled' : ''}>${score}</button>`).join('');
-    const message = votingClosed ? t('semiClosed', 'La votación de esta semifinal ya está cerrada.') : votingPending ? t('semiComingSoon', 'La votación de esta semifinal se abrirá próximamente.') : '';
-    const viewCountry = t('viewCountry', 'Ver ficha de {country}', { country: song.country });
-    const flagAlt = t('flagAlt', 'Bandera de {country}', { country: song.country });
-    const rateCountry = t('rateCountry', 'Puntuar {country} del 0 al 10', { country: song.country });
-    return `<article class="song-card ${votingClosed || votingPending ? 'is-closed' : ''}"><div class="song-main"><a href="${countryProfileUrl(song.flag)}" aria-label="${escapeHtml(viewCountry)}"><img class="flag" width="64" height="48" loading="lazy" alt="${escapeHtml(flagAlt)}" src="https://flagsapi.com/${song.flag}/flat/64.png" /></a><div class="song-info"><div class="song-meta"><span class="running-order">${song.runningOrder || 'FD'}</span>${song.directFinalist ? `<span class="direct-badge">${escapeHtml(t('finalist', 'Finalista directo'))}</span>` : ''}${badges.join('')}</div><h2>${countryLink(song)}</h2><p><strong>${escapeHtml(song.artist)}</strong> — «${escapeHtml(song.song)}»</p></div><div class="selected-score" aria-label="${escapeHtml(t('currentScore', 'Puntuación actual'))}">${currentScore ?? '—'}</div></div>${message ? `<p class="closed-note">${escapeHtml(message)}</p>` : `<div class="score-grid" aria-label="${escapeHtml(rateCountry)}">${scoreButtons}</div>`}</article>`;
-  }).join('');
+  const status = getSemiStatus(control, activeContestId);
+  ui.setCloudStatus(status === 'closed' ? t('closed', 'Votación cerrada') : t('comingSoon', 'Próximamente'));
+  ui.showFeedback(status === 'closed'
+    ? t('semiClosed', 'La votación de esta semifinal está cerrada.')
+    : t('semiComingSoon', 'La votación de esta semifinal todavía no ha empezado.'));
+  return false;
 }
 
 function queueCloudSave() {
   window.clearTimeout(saveTimeoutId);
-  saveTimeoutId = window.setTimeout(saveCloudVotes, 500);
+  saveTimeoutId = window.setTimeout(cloud.saveCloudVotes, 500);
 }
 
-async function withTimeout(promise, ms) {
-  let timeoutId;
-  const timeout = new Promise((_, reject) => {
-    timeoutId = window.setTimeout(() => reject(new Error('timeout')), ms);
-  });
-  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timeoutId));
-}
-
-async function loadCloudData() {
-  if (!db) return;
-  try {
-    const [votesSnapshot, controlSnapshot] = await Promise.all([
-      getDocs(collection(db, votesCollection)),
-      getDoc(doc(db, controlCollection, controlDocument)),
-    ]);
-    allVoters = votesSnapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-    control = controlSnapshot.exists() ? { ...control, ...controlSnapshot.data() } : control;
-    renderSongs();
-  } catch (error) {
-    console.error('Cloud data load error:', error);
-  }
-}
-
-function startRealtimeListeners() {
-  if (!db || realtimeReady) return;
-  realtimeReady = true;
-
-  onSnapshot(doc(db, controlCollection, controlDocument), (snapshot) => {
-    control = snapshot.exists() ? { semifinals: {}, final: { positions: {} }, ...snapshot.data() } : { semifinals: {}, final: { positions: {} } };
-    renderSongs();
-  }, (error) => {
-    console.error('Control realtime error:', error);
-    loadCloudData();
-  });
-
-  onSnapshot(collection(db, votesCollection), (snapshot) => {
-    allVoters = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-    renderSongs();
-  }, (error) => {
-    console.error('Votes realtime error:', error);
-  });
-}
-
-async function saveCloudVotes() {
-  if (!db) return;
-  if (!voter?.name) {
-    setCloudStatus(t('missingName', 'Falta nombre'));
-    openModal(nameModal);
-    nameInput?.focus();
-    return;
-  }
-  if (isSemi(activeContestId) && getSemiStatus(activeContestId) !== 'open') {
-    setCloudStatus(getSemiStatus(activeContestId) === 'closed' ? t('closed', 'Votación cerrada') : t('comingSoon', 'Próximamente'));
-    showFeedback(getSemiStatus(activeContestId) === 'closed' ? t('semiClosed', 'La votación de esta semifinal está cerrada.') : t('semiComingSoon', 'La votación de esta semifinal todavía no ha empezado.'));
-    return;
-  }
-
-  try {
-    setCloudStatus(t('saving', 'Guardando...'));
-    await withTimeout(setDoc(doc(db, votesCollection, deviceId), {
-      voterName: voter.name,
-      deviceId,
-      votes,
-      updatedAt: serverTimestamp(),
-    }, { merge: true }), 12000);
-    setCloudStatus(t('onlineSaved', 'Guardado online'));
-  } catch (error) {
-    console.error('Firestore save error:', error);
-    setCloudStatus(t('localSaved', 'Guardado local'));
-    showFeedback(t('saveOnlineError', 'No se pudieron guardar los votos online. Se mantienen guardados en este dispositivo.'));
-  }
-}
-
-function getShareUrl() {
-  const url = new URL('/votos/', window.location.origin);
-  url.searchParams.set('u', deviceId);
-  if (voter?.name) url.searchParams.set('nombre', voter.name);
-  return url.toString();
-}
-
-async function shareVotes() {
-  if (!voter?.name) {
-    openModal(nameModal);
-    nameInput?.focus();
-    showFeedback(t('saveNameFirst', 'Guarda tu nombre antes de compartir tus votaciones.'));
-    return;
-  }
-
-  await saveCloudVotes();
-  const shareUrl = getShareUrl();
-  const title = t('shareTitle', 'Votaciones de {name} en Eurovision 2026', { name: voter.name });
-  const text = t('shareText', 'Consulta mis votaciones de Eurovision 2026.');
-
-  try {
-    if (navigator.share) {
-      await navigator.share({ title, text, url: shareUrl });
-      showFeedback(t('shareReady', 'Enlace preparado para compartir.'));
-      return;
-    }
-  } catch (error) {
-    if (error?.name === 'AbortError') return;
-    console.error('Share error:', error);
-  }
-
-  try {
-    await navigator.clipboard.writeText(shareUrl);
-    showFeedback(t('linkCopied', 'Enlace copiado al portapapeles.'));
-  } catch {
-    window.prompt(t('promptCopy', 'Copia este enlace para compartir tus votaciones:'), shareUrl);
-  }
-}
-
-tabs?.addEventListener('click', (event) => {
+nodes.tabs?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-contest-id]');
   if (!button) return;
   activeContestId = button.dataset.contestId;
-  renderSongs();
+  renderer.renderSongs();
 });
 
-songList?.addEventListener('click', (event) => {
+nodes.songList?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-score]');
-  if (!button || button.disabled) return;
-  if (isSemi(activeContestId) && getSemiStatus(activeContestId) !== 'open') return;
+  if (!button || button.disabled || !isVotingAllowed()) return;
   const contestVotes = votes[activeContestId] || {};
   contestVotes[button.dataset.songKey] = Number(button.dataset.score);
   votes = { ...votes, [activeContestId]: contestVotes };
   saveLocalVotes();
-  renderSongs();
+  renderer.renderSongs();
   queueCloudSave();
 });
 
-$('[data-open-settings]')?.addEventListener('click', () => openModal(settingsModal));
-$('[data-close-settings]')?.addEventListener('click', () => closeModal(settingsModal));
-$('[data-share-votes]')?.addEventListener('click', shareVotes);
+$('[data-open-settings]')?.addEventListener('click', () => ui.openModal(nodes.settingsModal));
+$('[data-close-settings]')?.addEventListener('click', () => ui.closeModal(nodes.settingsModal));
+$('[data-share-votes]')?.addEventListener('click', () => actions.shareVotes(cloud.saveCloudVotes));
 $('[data-open-name]')?.addEventListener('click', () => {
-  if (nameInput && voter?.name) nameInput.value = voter.name;
-  openModal(nameModal);
-  nameInput?.focus();
+  if (nodes.nameInput && voter?.name) nodes.nameInput.value = voter.name;
+  openNameModal();
 });
-settingsModal?.addEventListener('click', (event) => { if (event.target === settingsModal) closeModal(settingsModal); });
-nameModal?.addEventListener('click', (event) => { if (event.target === nameModal && voter?.name) closeModal(nameModal); });
-nameForm?.addEventListener('submit', (event) => {
+
+nodes.settingsModal?.addEventListener('click', (event) => {
+  if (event.target === nodes.settingsModal) ui.closeModal(nodes.settingsModal);
+});
+
+nodes.nameModal?.addEventListener('click', (event) => {
+  if (event.target === nodes.nameModal && voter?.name) ui.closeModal(nodes.nameModal);
+});
+
+nodes.nameForm?.addEventListener('submit', (event) => {
   event.preventDefault();
-  const name = new FormData(nameForm).get('name')?.toString().trim();
+  const name = new FormData(nodes.nameForm).get('name')?.toString().trim();
   if (!name) return;
   saveVoter(name);
-  closeModal(nameModal);
-  showFeedback(t('nameSaved', 'Nombre guardado.'));
-});
-$('[data-export]')?.addEventListener('click', () => {
-  const payload = { app: 'eurovision-2026', version: 3, exportedAt: new Date().toISOString(), voter, votes };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'eurovision-2026-votos.json';
-  link.click();
-  URL.revokeObjectURL(url);
-  showFeedback(t('exported', 'Archivo de votos exportado correctamente.'));
-});
-importInput?.addEventListener('change', async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  try {
-    const imported = JSON.parse(await file.text());
-    const importedVotes = imported.votes || imported;
-    if (!importedVotes || typeof importedVotes !== 'object' || Array.isArray(importedVotes)) throw new Error('Formato no válido');
-    votes = importedVotes;
-    if (imported.voter?.name) saveVoter(imported.voter.name);
-    saveLocalVotes();
-    renderSongs();
-    queueCloudSave();
-    closeModal(settingsModal);
-    showFeedback(t('imported', 'Votos importados correctamente.'));
-  } catch {
-    showFeedback(t('importError', 'No se pudo importar el archivo de votos. Revisa el formato e inténtalo de nuevo.'));
-  } finally {
-    event.target.value = '';
-  }
-});
-$('[data-reset]')?.addEventListener('click', () => {
-  if (!window.confirm(t('resetConfirm', '¿Seguro que quieres borrar todos los votos guardados?'))) return;
-  votes = {};
-  localStorage.removeItem(storageKey);
-  renderSongs();
-  queueCloudSave();
-  closeModal(settingsModal);
-  showFeedback(t('resetDone', 'Votos borrados correctamente.'));
+  ui.closeModal(nodes.nameModal);
+  ui.showFeedback(t('nameSaved', 'Nombre guardado.'));
 });
 
-renderVoter();
-renderSongs();
-startRealtimeListeners();
-loadCloudData();
-if (!voter?.name) openModal(nameModal);
+$('[data-export]')?.addEventListener('click', actions.exportVotes);
+nodes.importInput?.addEventListener('change', (event) => actions.importVotes(event, queueCloudSave));
+$('[data-reset]')?.addEventListener('click', () => actions.resetVotes(queueCloudSave));
+
+renderer.renderVoter();
+renderer.renderSongs();
+cloud.startRealtimeListeners();
+cloud.loadCloudData();
+if (!voter?.name) ui.openModal(nodes.nameModal);
 queueCloudSave();
