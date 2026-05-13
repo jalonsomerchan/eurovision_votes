@@ -12,7 +12,8 @@ interface Props {
 const { edition, locale = defaultLocale, availableYears = [] } = Astro.props;
 const t = useTranslations(locale);
 const historyUrl = getLocalizedPath('/historico/', locale);
-const finalIndex = Math.max(0, edition.rounds.findIndex((round) => round.label === 'Final'));
+const finalIndex = Math.max(0, edition.rounds.findIndex((round) => round.id === 'final'));
+const activeRoundId = edition.rounds[finalIndex]?.id ?? edition.rounds[0]?.id;
 const editionPath = (year: number) => getLocalizedPath(`/ediciones/${year}/`, locale);
 const countryPath = (countryCode?: string) => countryCode ? getLocalizedPath(`/paises/${countryCode.toLowerCase()}/`, locale) : '';
 const roundHasResults = edition.rounds.some((round) => round.entries.some((entry) => entry.place !== null || entry.points !== null));
@@ -57,18 +58,33 @@ const nextYear = currentYearIndex >= 0 && currentYearIndex < sortedYears.length 
     </dl>
   </section>
 
-  <section class="edition-tabs" aria-label={t('edition.roundTabs')}>
-    {edition.rounds.map((round, index) => (
-      <input class="visually-hidden edition-tab-input" type="radio" name="edition-round" id={`round-${round.id}`} checked={index === finalIndex} />
-    ))}
+  <section class="edition-tabs" aria-label={t('edition.roundTabs')} data-edition-tabs>
     <div class="edition-tab-list" role="tablist" aria-label={t('edition.roundTabs')}>
       {edition.rounds.map((round) => (
-        <label class="edition-tab-label" for={`round-${round.id}`} role="tab">{round.label}</label>
+        <button
+          class="edition-tab-label"
+          type="button"
+          role="tab"
+          id={`tab-${round.id}`}
+          aria-controls={`panel-${round.id}`}
+          aria-selected={round.id === activeRoundId ? 'true' : 'false'}
+          tabindex={round.id === activeRoundId ? '0' : '-1'}
+          data-edition-tab={round.id}
+        >
+          {round.label}
+        </button>
       ))}
     </div>
 
     {edition.rounds.map((round) => (
-      <article class="stats-card edition-round-panel" data-round={round.id}>
+      <article
+        class="stats-card edition-round-panel"
+        id={`panel-${round.id}`}
+        role="tabpanel"
+        aria-labelledby={`tab-${round.id}`}
+        data-edition-panel={round.id}
+        hidden={round.id !== activeRoundId}
+      >
         <header>
           <p class="eyebrow">{t('edition.results')}</p>
           <h2>{round.label}</h2>
@@ -112,6 +128,43 @@ const nextYear = currentYearIndex >= 0 && currentYearIndex < sortedYears.length 
     ))}
   </section>
 </section>
+
+<script is:inline>
+  document.querySelectorAll('[data-edition-tabs]').forEach((tabsRoot) => {
+    const tabs = [...tabsRoot.querySelectorAll('[data-edition-tab]')];
+    const panels = [...tabsRoot.querySelectorAll('[data-edition-panel]')];
+
+    const activate = (roundId, focusTab = false) => {
+      tabs.forEach((tab) => {
+        const isActive = tab.dataset.editionTab === roundId;
+        tab.setAttribute('aria-selected', String(isActive));
+        tab.tabIndex = isActive ? 0 : -1;
+        if (isActive && focusTab) tab.focus();
+      });
+
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.editionPanel !== roundId;
+      });
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => activate(tab.dataset.editionTab));
+      tab.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+
+        const direction = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+        const nextIndex = event.key === 'Home'
+          ? 0
+          : event.key === 'End'
+            ? tabs.length - 1
+            : (index + direction + tabs.length) % tabs.length;
+
+        activate(tabs[nextIndex].dataset.editionTab, true);
+      });
+    });
+  });
+</script>
 
 <style>
   :global(.edition-app) {
@@ -197,26 +250,23 @@ const nextYear = currentYearIndex >= 0 && currentYearIndex < sortedYears.length 
     background: var(--color-bg);
     color: var(--color-text);
     cursor: pointer;
+    font: inherit;
     font-weight: 900;
     text-align: center;
   }
 
-  :global(.edition-round-panel) {
-    display: none;
-  }
-
-  :global(.edition-tabs:has(#round-semi-1:checked) [data-round="semi-1"]),
-  :global(.edition-tabs:has(#round-semi-2:checked) [data-round="semi-2"]),
-  :global(.edition-tabs:has(#round-final:checked) [data-round="final"]) {
-    display: grid;
-  }
-
-  :global(.edition-tabs:has(#round-semi-1:checked) label[for="round-semi-1"]),
-  :global(.edition-tabs:has(#round-semi-2:checked) label[for="round-semi-2"]),
-  :global(.edition-tabs:has(#round-final:checked) label[for="round-final"]) {
+  :global(.edition-tab-label[aria-selected='true']) {
     border-color: var(--color-primary);
     background: var(--color-primary);
     color: #fff;
+  }
+
+  :global(.edition-round-panel[hidden]) {
+    display: none !important;
+  }
+
+  :global(.edition-round-panel:not([hidden])) {
+    display: grid;
   }
 
   :global(.edition-direct) {
