@@ -21,6 +21,8 @@ const html = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&'
 const average = (values) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
 const formatAverage = (value) => Number.isFinite(value) ? value.toFixed(2).replace('.', ',') : '-';
 const keyFor = (song) => `${song.flag}-${song.country}`.toLowerCase();
+const countryProfileUrl = (flag) => `/paises/${String(flag || '').toLowerCase()}/`;
+const countryAnchor = (song, label = song.country) => `<a class="country-link" href="${countryProfileUrl(song.flag)}">${html(label)}</a>`;
 const setStatus = (text, error = false) => {
   if (!statusNode) return;
   statusNode.textContent = text;
@@ -104,7 +106,7 @@ function renderRanking() {
     rankingNode.innerHTML = '<p class="stats-empty">No hay canciones en esta gala.</p>';
     return;
   }
-  rankingNode.innerHTML = `<table class="stats-table"><thead><tr><th>#</th><th>Pais</th><th>Gala</th><th>Votos</th><th>Media</th><th>Total</th><th>Min.</th><th>Max.</th></tr></thead><tbody>${rows.map((row, index) => `<tr><td>${index + 1}</td><td><span class="stats-country"><img src="https://flagsapi.com/${row.flag}/flat/64.png" alt="" loading="lazy"><strong>${html(row.country)}</strong><small>${html(row.artist)} - ${html(row.song)}</small></span></td><td>${html(row.contestName)}</td><td>${row.count}</td><td><strong>${formatAverage(row.mean)}</strong></td><td>${row.total}</td><td>${row.min ?? '-'}</td><td>${row.max ?? '-'}</td></tr>`).join('')}</tbody></table>`;
+  rankingNode.innerHTML = `<table class="stats-table"><thead><tr><th>#</th><th>Pais</th><th>Gala</th><th>Votos</th><th>Media</th><th>Total</th><th>Min.</th><th>Max.</th></tr></thead><tbody>${rows.map((row, index) => `<tr><td>${index + 1}</td><td><span class="stats-country"><a href="${countryProfileUrl(row.flag)}"><img src="https://flagsapi.com/${row.flag}/flat/64.png" alt="" loading="lazy"></a><strong>${countryAnchor(row)}</strong><small>${html(row.artist)} - ${html(row.song)}</small></span></td><td>${html(row.contestName)}</td><td>${row.count}</td><td><strong>${formatAverage(row.mean)}</strong></td><td>${row.total}</td><td>${row.min ?? '-'}</td><td>${row.max ?? '-'}</td></tr>`).join('')}</tbody></table>`;
 }
 
 function renderDistribution() {
@@ -116,7 +118,7 @@ function renderDistribution() {
   distributionNode.innerHTML = rows.map((row) => {
     const max = Math.max(...row.distribution, 1);
     const bars = row.distribution.map((count, score) => `<div class="score-bar"><span>${score}</span><div style="--bar-size:${(count / max) * 100}%"></div><strong>${count}</strong></div>`).join('');
-    return `<section class="distribution-card"><header><strong>${html(row.country)}</strong><span>${row.count} votos - media ${formatAverage(row.mean)}</span></header><div class="score-bars">${bars}</div></section>`;
+    return `<section class="distribution-card"><header><strong>${countryAnchor(row)}</strong><span>${row.count} votos - media ${formatAverage(row.mean)}</span></header><div class="score-bars">${bars}</div></section>`;
   }).join('');
 }
 
@@ -126,7 +128,7 @@ function renderUsers() {
     userSummaryNode.innerHTML = '<p class="stats-empty">Todavia no hay votantes.</p>';
     return;
   }
-  userSummaryNode.innerHTML = `<table class="stats-table"><thead><tr><th>Usuario</th><th>Votos</th><th>Media</th><th>Total</th><th>Mayor puntuacion</th><th>Actualizado</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${html(row.name)}</strong></td><td>${row.count}</td><td><strong>${formatAverage(row.mean)}</strong></td><td>${row.total}</td><td>${row.top ? `${row.top.score} a ${html(row.top.song.country)}` : '-'}</td><td>${html(row.updated)}</td></tr>`).join('')}</tbody></table>`;
+  userSummaryNode.innerHTML = `<table class="stats-table"><thead><tr><th>Usuario</th><th>Votos</th><th>Media</th><th>Total</th><th>Mayor puntuacion</th><th>Actualizado</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${html(row.name)}</strong></td><td>${row.count}</td><td><strong>${formatAverage(row.mean)}</strong></td><td>${row.total}</td><td>${row.top ? `${row.top.score} a ${countryAnchor(row.top.song)}` : '-'}</td><td>${html(row.updated)}</td></tr>`).join('')}</tbody></table>`;
 }
 
 function renderMatrix() {
@@ -136,7 +138,7 @@ function renderMatrix() {
     userVotesNode.innerHTML = '<p class="stats-empty">No hay datos suficientes para mostrar el detalle.</p>';
     return;
   }
-  userVotesNode.innerHTML = `<table class="stats-table stats-table--matrix"><thead><tr><th>Usuario</th>${songs.map((song) => `<th>${html(song.country)}</th>`).join('')}<th>Media</th></tr></thead><tbody>${users.map((user) => `<tr><td><strong>${html(user.name)}</strong></td>${songs.map((song) => `<td>${scoreOf(user, song) ?? '-'}</td>`).join('')}<td><strong>${formatAverage(user.mean)}</strong></td></tr>`).join('')}</tbody></table>`;
+  userVotesNode.innerHTML = `<table class="stats-table stats-table--matrix"><thead><tr><th>Usuario</th>${songs.map((song) => `<th>${countryAnchor(song)}</th>`).join('')}<th>Media</th></tr></thead><tbody>${users.map((user) => `<tr><td><strong>${html(user.name)}</strong></td>${songs.map((song) => `<td>${scoreOf(user, song) ?? '-'}</td>`).join('')}<td><strong>${formatAverage(user.mean)}</strong></td></tr>`).join('')}</tbody></table>`;
 }
 
 function render() {
