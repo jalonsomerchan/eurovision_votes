@@ -1,0 +1,35 @@
+---
+import EurovisionCountryProfileApp from '../../components/EurovisionCountryProfileApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { formatCountryProfileLabel, getCountryProfileSeoLabels } from '../../i18n/countryProfileSeoLabels';
+import { getEurovisionCountryProfile, listEurovisionCountryCodes, listEurovisionCountryProfiles } from '../../lib/eurovisionCountryProfiles';
+
+export async function getStaticPaths() {
+  const codes = await listEurovisionCountryCodes(defaultLocale);
+  return codes.map((countryCode) => ({ params: { countryCode: countryCode.toLowerCase() } }));
+}
+
+const countryCode = String(Astro.params.countryCode ?? '').toUpperCase();
+const profile = await getEurovisionCountryProfile(countryCode, defaultLocale);
+
+if (!profile) {
+  return Astro.redirect('/404/');
+}
+
+const labels = getCountryProfileSeoLabels(defaultLocale);
+const countries = await listEurovisionCountryProfiles(defaultLocale);
+const relatedCountries = countries
+  .filter((country) => country.countryCode !== profile.countryCode)
+  .sort((a, b) => b.participations - a.participations || a.country.localeCompare(b.country))
+  .slice(0, 4);
+const title = formatCountryProfileLabel(labels.title, profile.country);
+const description = formatCountryProfileLabel(labels.description, profile.country);
+---
+
+<BaseLayout title={title} description={description} locale={defaultLocale}>
+  <Container>
+    <EurovisionCountryProfileApp profile={profile} relatedCountries={relatedCountries} locale={defaultLocale} />
+  </Container>
+</BaseLayout>

@@ -1,0 +1,62 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import { getCountryProfileSeoLabels } from '../i18n/countryProfileSeoLabels';
+import type { CountryProfileSummary } from '../lib/eurovisionCountryProfiles';
+
+interface Props {
+  countries: CountryProfileSummary[];
+  locale?: Locale;
+}
+
+const { countries, locale = defaultLocale } = Astro.props;
+const t = useTranslations(locale);
+const labels = getCountryProfileSeoLabels(locale);
+---
+
+<section class="stats-card country-profile-related" aria-labelledby="country-profile-related-title">
+  <p class="eyebrow">{labels.relatedTitle}</p>
+  <h2 id="country-profile-related-title">{labels.relatedTitle}</h2>
+  <div class="country-profile-related-actions">
+    <a class="action-button" href={getLocalizedPath('/historico/', locale)}>{t('countryProfile.historyLink')}</a>
+    <a class="action-button" href={getLocalizedPath('/puntos-por-pais/', locale)}>{t('countryProfile.pointsLink')}</a>
+    <a class="action-button" href={getLocalizedPath('/comparador-paises/', locale)}>{labels.compareCountries}</a>
+  </div>
+  {countries.length > 0 && (
+    <div>
+      <h3>{labels.relatedCountriesTitle}</h3>
+      <div class="country-profile-related-grid">
+        {countries.map((country) => (
+          <a class="country-index-card" href={getLocalizedPath(`/paises/${country.countryCode.toLowerCase()}/`, locale)}>
+            {country.flag && <img class="history-flag" src={country.flag} alt="" loading="lazy" decoding="async" width="64" height="64" />}
+            <strong>{country.country}</strong>
+            <span>{country.participations} · {country.wins}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+</section>
+
+<style>
+  :global(.country-profile-related) {
+    gap: 1.2rem;
+  }
+
+  :global(.country-profile-related h3) {
+    margin: 0 0 0.75rem;
+    font-size: 1.1rem;
+  }
+
+  :global(.country-profile-related-actions) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  :global(.country-profile-related-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 0.75rem;
+  }
+</style>

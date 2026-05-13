@@ -1,48 +1,44 @@
 ---
+import CountryProfileChart from './CountryProfileChart.astro';
+import CountryProfileFaq from './CountryProfileFaq.astro';
+import CountryProfileHistoryTable from './CountryProfileHistoryTable.astro';
+import CountryProfileRelatedLinks from './CountryProfileRelatedLinks.astro';
 import { getLocalizedPath, useTranslations } from '../i18n/ui';
 import { defaultLocale, type Locale } from '../config/site';
-import type { CountryProfile } from '../lib/eurovisionCountryProfiles';
+import { getCountryProfileSeoLabels } from '../i18n/countryProfileSeoLabels';
+import type { CountryProfile, CountryProfileSummary } from '../lib/eurovisionCountryProfiles';
 
 interface Props {
   profile: CountryProfile;
+  relatedCountries?: CountryProfileSummary[];
   locale?: Locale;
 }
 
-const { profile, locale = defaultLocale } = Astro.props;
+const { profile, relatedCountries = [], locale = defaultLocale } = Astro.props;
 const t = useTranslations(locale);
-const historyUrl = getLocalizedPath('/historico/', locale);
-const pointsUrl = getLocalizedPath('/puntos-por-pais/', locale);
+const seo = getCountryProfileSeoLabels(locale);
+const countriesUrl = getLocalizedPath('/paises/', locale);
+const comparatorUrl = getLocalizedPath('/comparador-paises/', locale);
 const editionUrl = (year: number) => getLocalizedPath(`/ediciones/${year}/`, locale);
-const chartEntries = profile.history
-  .filter((entry) => typeof entry.place === 'number')
-  .sort((a, b) => a.year - b.year)
-  .slice(-18);
-const chartWidth = 720;
-const chartHeight = 220;
-const maxPlace = Math.max(26, ...chartEntries.map((entry) => entry.place ?? 0));
-const points = chartEntries.map((entry, index) => {
-  const x = chartEntries.length <= 1 ? chartWidth / 2 : (index / (chartEntries.length - 1)) * chartWidth;
-  const y = ((entry.place ?? maxPlace) - 1) / Math.max(1, maxPlace - 1) * (chartHeight - 28) + 14;
-  return { x, y, entry };
-});
-const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
+const missingValue = seo.dataEmptyTitle;
+const formatValue = (value: number | string | null | undefined) => value ?? missingValue;
 ---
 
-<section class="country-profile-app" aria-labelledby="country-profile-title">
-  <div class="hero-card country-profile-hero">
+<article class="country-profile-app" aria-labelledby="country-profile-title">
+  <header class="hero-card country-profile-hero">
     <div>
       <p class="eyebrow">{t('countryProfile.eyebrow')}</p>
       <h1 id="country-profile-title">
         {profile.flag && <img class="country-profile-flag" src={profile.flag} alt="" width="64" height="64" loading="eager" decoding="async" />}
-        <span>{profile.country}</span>
+        <span>{profile.country}: {t('countryProfile.titleSuffix')}</span>
       </h1>
       <p class="hero-copy">{t('countryProfile.description')}</p>
     </div>
-    <div class="history-actions">
-      <a class="action-button" href={historyUrl}>{t('countryProfile.historyLink')}</a>
-      <a class="action-button" href={pointsUrl}>{t('countryProfile.pointsLink')}</a>
-    </div>
-  </div>
+    <nav class="history-actions" aria-label={seo.relatedTitle}>
+      <a class="action-button action-button--primary" href={countriesUrl}>{seo.backToCountries}</a>
+      <a class="action-button" href={comparatorUrl}>{seo.compareCountries}</a>
+    </nav>
+  </header>
 
   <section class="stats-card country-current-card" aria-labelledby="current-title">
     <p class="eyebrow"><a class="country-link edition-link" href={editionUrl(2026)}>Eurovision 2026</a></p>
@@ -59,79 +55,29 @@ const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(
         ))}
       </div>
     ) : (
-      <p class="stats-empty">{t('countryProfile.notCurrentParticipant')}</p>
+      <div class="empty-state country-profile-empty">
+        <span aria-hidden="true">🎤</span>
+        <h3>{seo.currentEmptyTitle}</h3>
+        <p>{seo.currentEmptyDescription}</p>
+      </div>
     )}
   </section>
 
-  <div class="stats-summary history-summary" aria-label={t('countryProfile.statsTitle')}>
+  <section class="stats-summary history-summary" aria-labelledby="country-stats-title">
+    <h2 id="country-stats-title" class="visually-hidden">{t('countryProfile.statsTitle')}</h2>
     <div class="stats-kpi"><span>{t('countryProfile.participations')}</span><strong>{profile.participations}</strong></div>
     <div class="stats-kpi"><span>{t('countryProfile.wins')}</span><strong>{profile.wins}</strong></div>
-    <div class="stats-kpi"><span>{t('countryProfile.averagePlace')}</span><strong>{profile.averagePlace ?? '-'}</strong></div>
-    <div class="stats-kpi"><span>{t('countryProfile.bestPlace')}</span><strong>{profile.bestPlace ?? '-'}</strong></div>
-    <div class="stats-kpi"><span>{t('countryProfile.averagePoints')}</span><strong>{profile.averagePoints ?? '-'}</strong></div>
+    <div class="stats-kpi"><span>{t('countryProfile.averagePlace')}</span><strong>{formatValue(profile.averagePlace)}</strong></div>
+    <div class="stats-kpi"><span>{t('countryProfile.bestPlace')}</span><strong>{formatValue(profile.bestPlace)}</strong></div>
+    <div class="stats-kpi"><span>{t('countryProfile.averagePoints')}</span><strong>{formatValue(profile.averagePoints)}</strong></div>
     <div class="stats-kpi"><span>{t('countryProfile.totalPoints')}</span><strong>{profile.totalPoints.toLocaleString(locale)}</strong></div>
-  </div>
-
-  <section class="stats-card" aria-labelledby="chart-title">
-    <p class="eyebrow">{t('countryProfile.chartEyebrow')}</p>
-    <h2 id="chart-title">{t('countryProfile.chartTitle')}</h2>
-    {points.length > 1 ? (
-      <div class="country-chart-wrap" role="img" aria-label={t('countryProfile.chartTitle')}>
-        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} class="country-chart" aria-hidden="true">
-          <line x1="0" y1="14" x2={chartWidth} y2="14" class="country-chart-grid" />
-          <line x1="0" y1={chartHeight - 14} x2={chartWidth} y2={chartHeight - 14} class="country-chart-grid" />
-          <polyline points={polyline} class="country-chart-line" />
-          {points.map((point) => (
-            <g>
-              <circle cx={point.x} cy={point.y} r="5" class="country-chart-dot" />
-              <title>{point.entry.year}: #{point.entry.place}</title>
-            </g>
-          ))}
-        </svg>
-        <div class="country-chart-years">
-          {points.map((point) => <a class="country-link edition-link" href={editionUrl(point.entry.year)}>{point.entry.year}</a>)}
-        </div>
-      </div>
-    ) : (
-      <p class="stats-empty">{t('countryProfile.noChartData')}</p>
-    )}
   </section>
 
-  <section class="stats-card" aria-labelledby="history-table-title">
-    <p class="eyebrow">{t('countryProfile.historyEyebrow')}</p>
-    <h2 id="history-table-title">{t('countryProfile.historyTitle')}</h2>
-    {profile.history.length ? (
-      <div class="stats-table-wrap country-history-table-wrap">
-        <table class="stats-table country-history-table">
-          <thead>
-            <tr>
-              <th>{t('countryProfile.year')}</th>
-              <th>{t('countryProfile.song')}</th>
-              <th>{t('countryProfile.artist')}</th>
-              <th>{t('countryProfile.place')}</th>
-              <th>{t('countryProfile.points')}</th>
-              <th>{t('countryProfile.runningOrderShort')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {profile.history.map((entry) => (
-              <tr>
-                <td data-label={t('countryProfile.year')}><a class="country-link edition-link" href={editionUrl(entry.year)}>{entry.year}</a></td>
-                <td data-label={t('countryProfile.song')}><strong>{entry.song || '-'}</strong></td>
-                <td data-label={t('countryProfile.artist')}>{entry.artist || '-'}</td>
-                <td data-label={t('countryProfile.place')}>{entry.place ?? '-'}</td>
-                <td data-label={t('countryProfile.points')}>{entry.points ?? '-'}</td>
-                <td data-label={t('countryProfile.runningOrderShort')}>{entry.runningOrder ?? '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ) : (
-      <p class="stats-empty">{t('countryProfile.noHistory')}</p>
-    )}
-  </section>
-</section>
+  <CountryProfileChart entries={profile.history} locale={locale} />
+  <CountryProfileHistoryTable entries={profile.history} locale={locale} />
+  <CountryProfileRelatedLinks countries={relatedCountries} locale={locale} />
+  <CountryProfileFaq country={profile.country} locale={locale} />
+</article>
 
 <style>
   :global(.country-profile-app) {
@@ -144,7 +90,7 @@ const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    max-width: 14ch;
+    max-width: 16ch;
   }
 
   :global(.country-profile-flag) {
@@ -179,47 +125,9 @@ const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(
     font-weight: 800;
   }
 
-  :global(.country-chart-wrap) {
-    overflow-x: auto;
-    padding-bottom: 0.25rem;
-  }
-
-  :global(.country-chart) {
-    min-width: 42rem;
-    width: 100%;
-    height: auto;
-  }
-
-  :global(.country-chart-grid) {
-    stroke: var(--color-border);
-    stroke-width: 2;
-  }
-
-  :global(.country-chart-line) {
-    fill: none;
-    stroke: var(--color-primary);
-    stroke-width: 4;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  :global(.country-chart-dot) {
-    fill: var(--color-bg);
-    stroke: var(--color-primary);
-    stroke-width: 4;
-  }
-
-  :global(.country-chart-years) {
-    display: flex;
-    justify-content: space-between;
-    min-width: 42rem;
-    color: var(--color-muted);
-    font-size: 0.75rem;
-    font-weight: 900;
-  }
-
-  :global(.country-history-table) {
-    min-width: 44rem;
+  :global(.country-profile-empty) {
+    justify-items: start;
+    text-align: left;
   }
 
   @media (min-width: 720px) {
@@ -230,67 +138,6 @@ const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(
 
     :global(.country-current-grid) {
       grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    }
-  }
-
-  @media (max-width: 719px) {
-    :global(.country-history-table-wrap) {
-      border: 0;
-      overflow: visible;
-    }
-
-    :global(.country-history-table) {
-      min-width: 0;
-      border-collapse: separate;
-      border-spacing: 0;
-    }
-
-    :global(.country-history-table thead) {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-    }
-
-    :global(.country-history-table),
-    :global(.country-history-table tbody),
-    :global(.country-history-table tr),
-    :global(.country-history-table td) {
-      display: block;
-      width: 100%;
-    }
-
-    :global(.country-history-table tr) {
-      margin-bottom: 0.75rem;
-      border: 1px solid var(--color-border);
-      border-radius: 1rem;
-      background: var(--color-bg);
-      overflow: hidden;
-    }
-
-    :global(.country-history-table td) {
-      display: grid;
-      grid-template-columns: minmax(7rem, 0.42fr) minmax(0, 1fr);
-      gap: 0.75rem;
-      align-items: center;
-      border-bottom: 1px solid var(--color-border);
-      padding: 0.75rem;
-      text-align: left;
-    }
-
-    :global(.country-history-table td:last-child) {
-      border-bottom: 0;
-    }
-
-    :global(.country-history-table td::before) {
-      content: attr(data-label);
-      color: var(--color-muted);
-      font-size: 0.72rem;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
     }
   }
 </style>
