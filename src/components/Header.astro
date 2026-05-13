@@ -22,6 +22,7 @@ const alternateLocales = getAlternateLocales(locale);
 
     <nav aria-label="Navegación principal" class="main-nav main-nav--desktop">
       <a href={homeUrl}>{t('nav.home')}</a>
+      <a href="/historico/">Histórico</a>
       <a href="/stats/">Estadísticas</a>
       <details class="locale-menu">
         <summary>{localeLabels[locale]}</summary>
@@ -47,6 +48,7 @@ const alternateLocales = getAlternateLocales(locale);
         </div>
         <nav aria-label="Menú móvil" class="mobile-menu__nav">
           <a href={homeUrl}>{t('nav.home')}</a>
+          <a href="/historico/">Histórico</a>
           <a href="/stats/">Estadísticas</a>
           <button type="button" data-open-settings>Ajustes</button>
         </nav>
