@@ -17,6 +17,8 @@ const countries = new Set(contests.flatMap((contest) => contest.entries.map((ent
 const latestContests = contests.slice(0, 8);
 const homeUrl = getLocalizedPath('/', locale);
 const statsUrl = getLocalizedPath('/stats/', locale);
+const editionUrl = (year: number) => getLocalizedPath(`/ediciones/${year}/`, locale);
+const countryUrl = (countryCode?: string) => countryCode ? getLocalizedPath(`/paises/${countryCode.toLowerCase()}/`, locale) : '';
 ---
 
 <section class="history-app" aria-labelledby="history-title">
@@ -85,10 +87,10 @@ const statsUrl = getLocalizedPath('/stats/', locale);
         <div class="history-winner-grid">
           {latestContests.map((contest) => (
             <article class="history-winner-card">
-              <span>{contest.year}</span>
+              <a class="country-link edition-link" href={editionUrl(contest.year)}>{contest.year}</a>
               <strong class="history-country-line">
                 {contest.winnerFlag && <img class="history-flag" src={contest.winnerFlag} alt="" loading="lazy" decoding="async" width="64" height="64" />}
-                <span>{contest.winner || 'Sin ganador'}</span>
+                {contest.winnerCode ? <a class="country-link" href={countryUrl(contest.winnerCode)}>{contest.winner || 'Sin ganador'}</a> : <span>{contest.winner || 'Sin ganador'}</span>}
               </strong>
               <p>{[contest.winnerArtist, contest.winnerSong].filter(Boolean).join(' - ') || 'Cancion pendiente'}</p>
             </article>
