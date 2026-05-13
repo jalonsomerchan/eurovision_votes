@@ -64,6 +64,14 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char]);
 }
 
+function countryProfileUrl(flag) {
+  return `/paises/${String(flag || '').toLowerCase()}/`;
+}
+
+function countryLink(song) {
+  return `<a class="country-link" href="${countryProfileUrl(song.flag)}">${escapeHtml(song.country)}</a>`;
+}
+
 function setCloudStatus(text) {
   if (cloudStatus) cloudStatus.textContent = text;
 }
@@ -200,7 +208,7 @@ function renderSongs() {
     if (contest.id === 'final' && positions[songKey]) badges.push(`<span class="result-badge result-badge--qualified">Puesto ${positions[songKey]}</span>`);
     const scoreButtons = Array.from({ length: 11 }, (_, score) => `<button class="score-button ${currentScore === score ? 'is-selected' : ''}" type="button" aria-pressed="${currentScore === score}" data-score="${score}" data-song-key="${songKey}" ${votingClosed || votingPending ? 'disabled' : ''}>${score}</button>`).join('');
     const message = votingClosed ? 'Votación cerrada para esta semifinal.' : votingPending ? 'Votación pendiente de inicio.' : '';
-    return `<article class="song-card ${votingClosed || votingPending ? 'is-closed' : ''}"><div class="song-main"><img class="flag" width="64" height="48" loading="lazy" alt="Bandera de ${escapeHtml(song.country)}" src="https://flagsapi.com/${song.flag}/flat/64.png" /><div class="song-info"><div class="song-meta"><span class="running-order">${song.runningOrder || 'FD'}</span>${song.directFinalist ? '<span class="direct-badge">Finalista directo</span>' : ''}${badges.join('')}</div><h2>${escapeHtml(song.country)}</h2><p><strong>${escapeHtml(song.artist)}</strong> — «${escapeHtml(song.song)}»</p></div><div class="selected-score" aria-label="Puntuación actual">${currentScore ?? '—'}</div></div>${message ? `<p class="closed-note">${message}</p>` : `<div class="score-grid" aria-label="Puntuar ${escapeHtml(song.country)} del 0 al 10">${scoreButtons}</div>`}</article>`;
+    return `<article class="song-card ${votingClosed || votingPending ? 'is-closed' : ''}"><div class="song-main"><a href="${countryProfileUrl(song.flag)}" aria-label="Ver ficha de ${escapeHtml(song.country)}"><img class="flag" width="64" height="48" loading="lazy" alt="Bandera de ${escapeHtml(song.country)}" src="https://flagsapi.com/${song.flag}/flat/64.png" /></a><div class="song-info"><div class="song-meta"><span class="running-order">${song.runningOrder || 'FD'}</span>${song.directFinalist ? '<span class="direct-badge">Finalista directo</span>' : ''}${badges.join('')}</div><h2>${countryLink(song)}</h2><p><strong>${escapeHtml(song.artist)}</strong> — «${escapeHtml(song.song)}»</p></div><div class="selected-score" aria-label="Puntuación actual">${currentScore ?? '—'}</div></div>${message ? `<p class="closed-note">${message}</p>` : `<div class="score-grid" aria-label="Puntuar ${escapeHtml(song.country)} del 0 al 10">${scoreButtons}</div>`}</article>`;
   }).join('');
 }
 
