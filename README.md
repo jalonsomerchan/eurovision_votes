@@ -48,10 +48,13 @@ npm ci
 
 El proyecto incluye páginas estáticas y compatibles con GitHub Pages para explorar datos de Eurovision.
 
+- `/paises/`: índice de fichas por país.
+- `/paises/{codigo}/`: ficha SEO indexable de cada país, generada desde el dataset disponible. Incluye title/meta description únicos, h1, estadísticas, participación actual cuando exista, gráfica, tabla histórica, enlaces internos, FAQ visible y estados claros para datos ausentes.
+- `/{locale}/paises/{codigo}/`: versión localizada de cada ficha para los idiomas secundarios configurados.
 - `/comparador-paises/`: comparador de países. Permite seleccionar dos o más países y compara participaciones, victorias, mejor posición, puntos medios, resultados por décadas y última participación.
 - `/{locale}/comparador-paises/`: versión localizada para los idiomas secundarios configurados.
 
-El comparador usa `src/lib/countryComparison.ts` para centralizar los cálculos, `src/components/EurovisionCountryComparatorApp.astro` para la interfaz, `public/country-comparator.js` para la interacción ligera en cliente y `src/i18n/countryComparisonLabels.ts` para los textos traducidos.
+Las fichas por país usan `src/lib/eurovisionCountryProfiles.ts` para centralizar datos y cálculos, `src/components/EurovisionCountryProfileApp.astro` como orquestador, componentes pequeños para gráfica, tabla, enlaces y FAQ, y `src/i18n/countryProfileSeoLabels.ts` para textos SEO/FAQ traducidos. El comparador usa `src/lib/countryComparison.ts`, `src/components/EurovisionCountryComparatorApp.astro`, `public/country-comparator.js` y `src/i18n/countryComparisonLabels.ts`.
 
 ## Estructura recomendada
 
