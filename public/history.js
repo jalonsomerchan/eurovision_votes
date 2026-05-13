@@ -1,0 +1,104 @@
+const dataNode = document.getElementById('history-data');
+const historyData = JSON.parse(dataNode?.textContent || '{"contests":[]}');
+const originalContests = Array.isArray(historyData.contests) ? historyData.contests : [];
+
+const $ = (selector) => document.querySelector(selector);
+const listNode = $('[data-history-list]');
+const statusNode = $('[data-history-status]');
+const searchNode = $('[data-history-search]');
+const fromNode = $('[data-history-from]');
+const toNode = $('[data-history-to]');
+const sortNode = $('[data-history-sort]');
+
+const html = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char]);
+const formatNumber = (value) => Number.isFinite(value) ? new Intl.NumberFormat('es-ES').format(value) : '-';
+const formatValue = (value) => value === undefined || value === null || value === '' ? '-' : html(value);
+const normalize = (value) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+function entryText(entry) {
+  return [entry.country, entry.artist, entry.song, entry.points, entry.place, entry.runningOrder].join(' ');
+}
+
+function contestText(contest) {
+  return [
+    contest.year,
+    contest.hostCity,
+    contest.hostCountry,
+    contest.venue,
+    contest.slogan,
+    contest.winner,
+    contest.winnerArtist,
+    contest.winnerSong,
+    ...(contest.entries || []).map(entryText),
+  ].join(' ');
+}
+
+function filteredContests() {
+  const query = normalize(searchNode?.value || '');
+  const from = Number(fromNode?.value || 0);
+  const to = Number(toNode?.value || 9999);
+  const sort = sortNode?.value === 'asc' ? 'asc' : 'desc';
+
+  return originalContests
+    .filter((contest) => contest.year >= from && contest.year <= to)
+    .filter((contest) => !query || normalize(contestText(contest)).includes(query))
+    .sort((a, b) => sort === 'asc' ? a.year - b.year : b.year - a.year);
+}
+
+function renderEntries(entries = []) {
+  if (!entries.length) return '<p class="stats-empty">No hay participaciones detalladas para esta edicion.</p>';
+  const topEntries = [...entries]
+    .sort((a, b) => (a.place ?? 999) - (b.place ?? 999) || (b.points ?? -1) - (a.points ?? -1) || a.country.localeCompare(b.country))
+    .slice(0, 12);
+
+  return `<div class="stats-table-wrap"><table class="stats-table history-entry-table"><thead><tr><th>#</th><th>Pais</th><th>Artista</th><th>Cancion</th><th>Puntos</th></tr></thead><tbody>${topEntries.map((entry) => `<tr><td>${formatValue(entry.place)}</td><td><strong>${formatValue(entry.country)}</strong></td><td>${formatValue(entry.artist)}</td><td>${formatValue(entry.song)}</td><td>${formatValue(entry.points)}</td></tr>`).join('')}</tbody></table></div>${entries.length > topEntries.length ? `<p class="history-more">Mostrando ${topEntries.length} de ${entries.length} participaciones.</p>` : ''}`;
+}
+
+function renderContest(contest) {
+  const host = [contest.hostCity, contest.hostCountry].filter(Boolean).join(', ');
+  const winnerLine = [contest.winnerArtist, contest.winnerSong].filter(Boolean).join(' - ');
+  const meta = [
+    ['Sede', host || contest.venue],
+    ['Recinto', contest.venue],
+    ['Participantes', contest.participants ? formatNumber(contest.participants) : '-'],
+    ['Fecha', contest.date],
+  ];
+
+  return `<article class="history-contest-card">
+    <header>
+      <div>
+        <p class="eyebrow">Festival ${html(contest.year)}</p>
+        <h2>${html(contest.year)}${host ? ` · ${html(host)}` : ''}</h2>
+      </div>
+      <div class="history-winner-pill"><span>Ganador</span><strong>${formatValue(contest.winner)}</strong></div>
+    </header>
+    <div class="history-contest-grid">
+      <section class="history-contest-main">
+        <h3>${formatValue(contest.winner || 'Sin ganador registrado')}</h3>
+        <p>${winnerLine ? html(winnerLine) : 'Datos de la cancion no disponibles.'}</p>
+        ${contest.winnerPoints ? `<strong>${formatNumber(contest.winnerPoints)} puntos</strong>` : ''}
+      </section>
+      <dl class="history-meta-list">${meta.map(([label, value]) => `<div><dt>${html(label)}</dt><dd>${formatValue(value)}</dd></div>`).join('')}</dl>
+    </div>
+    <details class="history-details">
+      <summary>Ver participaciones</summary>
+      ${renderEntries(contest.entries)}
+    </details>
+  </article>`;
+}
+
+function render() {
+  if (!listNode) return;
+  const contests = filteredContests();
+  if (statusNode) statusNode.textContent = `${contests.length} festivales encontrados.`;
+
+  if (!contests.length) {
+    listNode.innerHTML = '<article class="empty-state"><span>🔎</span><h2>No hay resultados</h2><p>Prueba con otro pais, artista, ciudad o rango de años.</p></article>';
+    return;
+  }
+
+  listNode.innerHTML = contests.map(renderContest).join('');
+}
+
+[searchNode, fromNode, toNode, sortNode].forEach((node) => node?.addEventListener('input', render));
+render();
