@@ -1,0 +1,175 @@
+---
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import { defaultLocale, type Locale } from '../config/site';
+import type { CountryPointsData } from '../lib/eurovisionCountryPoints';
+
+interface Props {
+  data: CountryPointsData;
+  locale?: Locale;
+}
+
+const { data, locale = defaultLocale } = Astro.props;
+const t = useTranslations(locale);
+const totalSources = data.sources.length;
+const totalRelations = data.sources.reduce((sum, source) => sum + source.targets.length, 0);
+const totalPoints = data.sources.reduce((sum, source) => sum + source.totalGiven, 0);
+const historyUrl = getLocalizedPath('/historico/', locale);
+---
+
+<section class="country-points-app" aria-labelledby="country-points-title">
+  <script type="application/json" id="country-points-data" set:html={JSON.stringify(data)}></script>
+
+  <div class="hero-card history-hero">
+    <div>
+      <p class="eyebrow">{t('countryPoints.eyebrow')}</p>
+      <h1 id="country-points-title">{t('countryPoints.title')}</h1>
+      <p class="hero-copy">{t('countryPoints.description')}</p>
+    </div>
+    <div class="history-actions">
+      <a class="action-button" href={historyUrl}>{t('countryPoints.historyLink')}</a>
+    </div>
+  </div>
+
+  {!data.datasetFound ? (
+    <article class="empty-state">
+      <span>📁</span>
+      <h2>{t('countryPoints.noDatasetTitle')}</h2>
+      <p>{t('countryPoints.noDatasetDescription')}</p>
+    </article>
+  ) : (
+    <>
+      <div class="stats-summary history-summary" aria-label={t('countryPoints.summaryLabel')}>
+        <div class="stats-kpi"><span>{t('countryPoints.kpiCountries')}</span><strong>{totalSources}</strong></div>
+        <div class="stats-kpi"><span>{t('countryPoints.kpiRelations')}</span><strong>{totalRelations}</strong></div>
+        <div class="stats-kpi"><span>{t('countryPoints.kpiPoints')}</span><strong>{totalPoints.toLocaleString(locale)}</strong></div>
+      </div>
+
+      <section class="history-controls country-points-controls" aria-label={t('countryPoints.controlsLabel')}>
+        <label>
+          <span>{t('countryPoints.selectLabel')}</span>
+          <select class="text-input" data-country-points-select>
+            {data.sources.map((source) => (
+              <option value={source.countryCode}>{source.country}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>{t('countryPoints.searchLabel')}</span>
+          <input class="text-input" type="search" placeholder={t('countryPoints.searchPlaceholder')} data-country-points-search />
+        </label>
+      </section>
+
+      <section class="country-points-result" data-country-points-result aria-live="polite"></section>
+    </>
+  )}
+</section>
+<script type="module" src="/country-points.js"></script>
+
+<style>
+  :global(.country-points-app) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  :global(.country-points-controls) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.country-points-result) {
+    display: grid;
+    gap: 1rem;
+  }
+
+  :global(.country-points-source) {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+  }
+
+  :global(.country-points-source strong) {
+    font-size: clamp(1.5rem, 5vw, 2.4rem);
+    line-height: 1.05;
+    letter-spacing: -0.05em;
+  }
+
+  :global(.country-points-table-wrap) {
+    overflow-x: auto;
+  }
+
+  :global(.country-points-table) {
+    min-width: 44rem;
+  }
+
+  @media (min-width: 720px) {
+    :global(.country-points-app) {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+
+    :global(.country-points-controls) {
+      grid-template-columns: minmax(14rem, 0.55fr) minmax(16rem, 1fr);
+    }
+  }
+
+  @media (max-width: 719px) {
+    :global(.country-points-table-wrap) {
+      border: 0;
+      overflow: visible;
+    }
+
+    :global(.country-points-table) {
+      min-width: 0;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    :global(.country-points-table thead) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    :global(.country-points-table),
+    :global(.country-points-table tbody),
+    :global(.country-points-table tr),
+    :global(.country-points-table td) {
+      display: block;
+      width: 100%;
+    }
+
+    :global(.country-points-table tr) {
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: 1rem;
+      background: var(--color-bg);
+      overflow: hidden;
+    }
+
+    :global(.country-points-table td) {
+      display: grid;
+      grid-template-columns: minmax(7rem, 0.42fr) minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.75rem;
+      text-align: left;
+    }
+
+    :global(.country-points-table td:last-child) {
+      border-bottom: 0;
+    }
+
+    :global(.country-points-table td::before) {
+      content: attr(data-label);
+      color: var(--color-muted);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+  }
+</style>
