@@ -46,7 +46,9 @@ npm ci
 
 ## Módulos de Eurovision
 
-El proyecto incluye páginas estáticas y compatibles con GitHub Pages para explorar datos de Eurovision.
+El proyecto incluye páginas estáticas y compatibles con GitHub Pages para explorar datos de Eurovision Senior, es decir, el festival adulto normal. No se deben mezclar datos de Eurovision Junior en histórico, fichas, estadísticas, rankings ni comparadores.
+
+El dataset histórico se lee desde `public/dataset/data/senior`. Los helpers que recorren el dataset deben mantener ese alcance y no procesar carpetas junior u otros concursos.
 
 - `/noticias/`: noticias de Eurovision desde el feed RSS público de ESCplus España. La carga se hace durante el build mediante `src/lib/newsFeed.mjs`; si el feed falla, la página muestra un estado de error en vez de romper el build. Solo se muestran título, resumen del feed, fecha, autoría, categorías y enlace externo a ESCplus España.
 - `/{locale}/noticias/`: versión localizada de la página de noticias para los idiomas secundarios configurados.
