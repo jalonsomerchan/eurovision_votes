@@ -1,6 +1,7 @@
 const dataNode = document.getElementById('history-data');
 const historyData = JSON.parse(dataNode?.textContent || '{"contests":[]}');
 const originalContests = Array.isArray(historyData.contests) ? historyData.contests : [];
+const pageLocale = historyData.locale || document.documentElement.lang || 'es';
 
 const $ = (selector) => document.querySelector(selector);
 const listNode = $('[data-history-list]');
@@ -11,12 +12,14 @@ const toNode = $('[data-history-to]');
 const sortNode = $('[data-history-sort]');
 
 const html = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char]);
-const formatNumber = (value) => Number.isFinite(value) ? new Intl.NumberFormat('es-ES').format(value) : '-';
+const formatNumber = (value) => Number.isFinite(value) ? new Intl.NumberFormat(pageLocale).format(value) : '-';
 const formatValue = (value) => value === undefined || value === null || value === '' ? '-' : html(value);
 const normalize = (value) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const flag = (value) => value ? `<span class="history-flag" aria-hidden="true">${html(value)}</span>` : '';
+const countryLine = (name, flagValue) => `<span class="history-country-line">${flag(flagValue)}<span>${formatValue(name)}</span></span>`;
 
 function entryText(entry) {
-  return [entry.country, entry.artist, entry.song, entry.points, entry.place, entry.runningOrder].join(' ');
+  return [entry.country, entry.countryCode, entry.artist, entry.song, entry.points, entry.place, entry.runningOrder].join(' ');
 }
 
 function contestText(contest) {
@@ -24,9 +27,11 @@ function contestText(contest) {
     contest.year,
     contest.hostCity,
     contest.hostCountry,
+    contest.hostCountryCode,
     contest.venue,
     contest.slogan,
     contest.winner,
+    contest.winnerCode,
     contest.winnerArtist,
     contest.winnerSong,
     ...(contest.entries || []).map(entryText),
@@ -51,14 +56,14 @@ function renderEntries(entries = []) {
     .sort((a, b) => (a.place ?? 999) - (b.place ?? 999) || (b.points ?? -1) - (a.points ?? -1) || a.country.localeCompare(b.country))
     .slice(0, 12);
 
-  return `<div class="stats-table-wrap"><table class="stats-table history-entry-table"><thead><tr><th>#</th><th>Pais</th><th>Artista</th><th>Cancion</th><th>Puntos</th></tr></thead><tbody>${topEntries.map((entry) => `<tr><td>${formatValue(entry.place)}</td><td><strong>${formatValue(entry.country)}</strong></td><td>${formatValue(entry.artist)}</td><td>${formatValue(entry.song)}</td><td>${formatValue(entry.points)}</td></tr>`).join('')}</tbody></table></div>${entries.length > topEntries.length ? `<p class="history-more">Mostrando ${topEntries.length} de ${entries.length} participaciones.</p>` : ''}`;
+  return `<div class="stats-table-wrap"><table class="stats-table history-entry-table"><thead><tr><th>#</th><th>Pais</th><th>Artista</th><th>Cancion</th><th>Puntos</th></tr></thead><tbody>${topEntries.map((entry) => `<tr><td>${formatValue(entry.place)}</td><td><strong>${countryLine(entry.country, entry.flag)}</strong></td><td>${formatValue(entry.artist)}</td><td>${formatValue(entry.song)}</td><td>${formatValue(entry.points)}</td></tr>`).join('')}</tbody></table></div>${entries.length > topEntries.length ? `<p class="history-more">Mostrando ${topEntries.length} de ${entries.length} participaciones.</p>` : ''}`;
 }
 
 function renderContest(contest) {
   const host = [contest.hostCity, contest.hostCountry].filter(Boolean).join(', ');
   const winnerLine = [contest.winnerArtist, contest.winnerSong].filter(Boolean).join(' - ');
   const meta = [
-    ['Sede', host || contest.venue],
+    ['Sede', host ? `${contest.hostFlag || ''} ${host}`.trim() : contest.venue],
     ['Recinto', contest.venue],
     ['Participantes', contest.participants ? formatNumber(contest.participants) : '-'],
     ['Fecha', contest.date],
@@ -68,13 +73,13 @@ function renderContest(contest) {
     <header>
       <div>
         <p class="eyebrow">Festival ${html(contest.year)}</p>
-        <h2>${html(contest.year)}${host ? ` · ${html(host)}` : ''}</h2>
+        <h2>${html(contest.year)}${host ? ` · ${flag(contest.hostFlag)}${html(host)}` : ''}</h2>
       </div>
-      <div class="history-winner-pill"><span>Ganador</span><strong>${formatValue(contest.winner)}</strong></div>
+      <div class="history-winner-pill"><span>Ganador</span><strong>${countryLine(contest.winner, contest.winnerFlag)}</strong></div>
     </header>
     <div class="history-contest-grid">
       <section class="history-contest-main">
-        <h3>${formatValue(contest.winner || 'Sin ganador registrado')}</h3>
+        <h3>${countryLine(contest.winner || 'Sin ganador registrado', contest.winnerFlag)}</h3>
         <p>${winnerLine ? html(winnerLine) : 'Datos de la cancion no disponibles.'}</p>
         ${contest.winnerPoints ? `<strong>${formatNumber(contest.winnerPoints)} puntos</strong>` : ''}
       </section>
