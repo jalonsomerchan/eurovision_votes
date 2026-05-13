@@ -1,0 +1,31 @@
+---
+import EurovisionEditionApp from '../../../components/EurovisionEditionApp.astro';
+import Container from '../../../components/Container.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { defaultLocale, locales, type Locale } from '../../../config/site';
+import { isLocale, useTranslations } from '../../../i18n/ui';
+import { getEurovisionEdition, listEurovisionEditionYears } from '../../../lib/eurovisionEditions';
+
+export async function getStaticPaths() {
+  const years = await listEurovisionEditionYears(defaultLocale);
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .flatMap((locale) => years.map((year) => ({ params: { locale, year: String(year) } })));
+}
+
+const localeParam = Astro.params.locale;
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const year = Number(Astro.params.year);
+const t = useTranslations(locale);
+const edition = await getEurovisionEdition(year, locale);
+
+if (!edition) {
+  return Astro.redirect('/404/');
+}
+---
+
+<BaseLayout title={`Eurovision ${edition.year}`} description={t('edition.description')} locale={locale}>
+  <Container>
+    <EurovisionEditionApp edition={edition} locale={locale} />
+  </Container>
+</BaseLayout>
