@@ -1,6 +1,7 @@
 ---
 import { getLocalizedPath } from '../i18n/ui';
 import { defaultLocale, type Locale } from '../config/site';
+import { getHistoryLabels } from '../i18n/featureLabels';
 import type { EurovisionHistoryData } from '../lib/eurovisionHistory';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 const { history, locale = defaultLocale } = Astro.props;
+const labels = getHistoryLabels(locale);
 const contests = history.contests;
 const firstYear = contests.at(-1)?.year;
 const lastYear = contests[0]?.year;
@@ -24,77 +26,78 @@ const countryUrl = (countryCode?: string) => countryCode ? getLocalizedPath(`/pa
 
 <section class="history-app" aria-labelledby="history-title">
   <script type="application/json" id="history-data" set:html={JSON.stringify(history)}></script>
+  <script type="application/json" id="history-labels" set:html={JSON.stringify(labels)}></script>
 
   <div class="hero-card history-hero">
     <div>
-      <p class="eyebrow">Resultados, ganadores y países</p>
-      <h1 id="history-title">Histórico de Eurovision</h1>
-      <p class="hero-copy">Consulta todas las ediciones de Eurovision con sus ganadores, sedes, canciones, artistas, países participantes, posiciones y puntos. Un recorrido completo por la historia del festival año a año.</p>
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h1 id="history-title">{labels.title}</h1>
+      <p class="hero-copy">{labels.copy}</p>
     </div>
     <div class="history-actions">
-      <a class="action-button action-button--primary" href={voteUrl}>Votar Eurovision 2026</a>
-      <a class="action-button" href={statsUrl}>Ver estadísticas</a>
-      <a class="action-button" href={homeUrl}>Ir al inicio</a>
+      <a class="action-button action-button--primary" href={voteUrl}>{labels.voteCta}</a>
+      <a class="action-button" href={statsUrl}>{labels.statsCta}</a>
+      <a class="action-button" href={homeUrl}>{labels.homeCta}</a>
     </div>
   </div>
 
   {!history.datasetFound ? (
     <article class="empty-state">
       <span>🎤</span>
-      <h2>Histórico no disponible</h2>
-      <p>Ahora mismo no se pueden mostrar los resultados históricos de Eurovision. Vuelve a intentarlo más tarde.</p>
+      <h2>{labels.unavailableTitle}</h2>
+      <p>{labels.unavailableCopy}</p>
     </article>
   ) : (
     <>
-      <div class="stats-summary history-summary" aria-label="Resumen del histórico de Eurovision">
-        <div class="stats-kpi"><span>Ediciones</span><strong>{contests.length}</strong></div>
-        <div class="stats-kpi"><span>Periodo</span><strong>{firstYear && lastYear ? `${firstYear}-${lastYear}` : '-'}</strong></div>
-        <div class="stats-kpi"><span>Participaciones</span><strong>{totalEntries}</strong></div>
-        <div class="stats-kpi"><span>Países</span><strong>{countries.size}</strong></div>
+      <div class="stats-summary history-summary" aria-label={labels.summaryLabel}>
+        <div class="stats-kpi"><span>{labels.editions}</span><strong>{contests.length}</strong></div>
+        <div class="stats-kpi"><span>{labels.period}</span><strong>{firstYear && lastYear ? `${firstYear}-${lastYear}` : '-'}</strong></div>
+        <div class="stats-kpi"><span>{labels.participations}</span><strong>{totalEntries}</strong></div>
+        <div class="stats-kpi"><span>{labels.countries}</span><strong>{countries.size}</strong></div>
       </div>
 
-      <section class="history-controls" aria-label="Filtros del histórico de Eurovision">
+      <section class="history-controls" aria-label={labels.filtersLabel}>
         <label>
-          <span>Buscar</span>
-          <input class="text-input" type="search" placeholder="País, artista, canción, ciudad..." data-history-search />
+          <span>{labels.search}</span>
+          <input class="text-input" type="search" placeholder={labels.searchPlaceholder} data-history-search />
         </label>
         <label>
-          <span>Desde</span>
+          <span>{labels.from}</span>
           <select class="text-input" data-history-from>
-            <option value="">Primer año</option>
+            <option value="">{labels.firstYear}</option>
             {contests.map((contest) => <option value={contest.year}>{contest.year}</option>)}
           </select>
         </label>
         <label>
-          <span>Hasta</span>
+          <span>{labels.to}</span>
           <select class="text-input" data-history-to>
-            <option value="">Último año</option>
+            <option value="">{labels.lastYear}</option>
             {contests.map((contest) => <option value={contest.year}>{contest.year}</option>)}
           </select>
         </label>
         <label>
-          <span>Orden</span>
+          <span>{labels.order}</span>
           <select class="text-input" data-history-sort>
-            <option value="desc">Más recientes primero</option>
-            <option value="asc">Más antiguos primero</option>
+            <option value="desc">{labels.newest}</option>
+            <option value="asc">{labels.oldest}</option>
           </select>
         </label>
       </section>
 
-      <p class="feedback" data-history-status>{contests.length} ediciones cargadas.</p>
+      <p class="feedback" data-history-status>{contests.length} {labels.loaded}</p>
 
       <section class="stats-card" aria-labelledby="latest-winners-title">
-        <p class="eyebrow">Ganadores de Eurovision</p>
-        <h2 id="latest-winners-title">Últimos festivales</h2>
+        <p class="eyebrow">{labels.winnersEyebrow}</p>
+        <h2 id="latest-winners-title">{labels.latestFestivals}</h2>
         <div class="history-winner-grid">
           {latestContests.map((contest) => (
             <article class="history-winner-card">
               <a class="country-link edition-link" href={editionUrl(contest.year)}>{contest.year}</a>
               <strong class="history-country-line">
                 {contest.winnerFlag && <img class="history-flag" src={contest.winnerFlag} alt="" loading="lazy" decoding="async" width="64" height="64" />}
-                {contest.winnerCode ? <a class="country-link" href={countryUrl(contest.winnerCode)}>{contest.winner || 'Sin ganador'}</a> : <span>{contest.winner || 'Sin ganador'}</span>}
+                {contest.winnerCode ? <a class="country-link" href={countryUrl(contest.winnerCode)}>{contest.winner || labels.noWinner}</a> : <span>{contest.winner || labels.noWinner}</span>}
               </strong>
-              <p>{[contest.winnerArtist, contest.winnerSong].filter(Boolean).join(' - ') || 'Resultado pendiente'}</p>
+              <p>{[contest.winnerArtist, contest.winnerSong].filter(Boolean).join(' - ') || labels.pendingResult}</p>
             </article>
           ))}
         </div>
