@@ -86,7 +86,10 @@ const statsUrl = getLocalizedPath('/stats/', locale);
           {latestContests.map((contest) => (
             <article class="history-winner-card">
               <span>{contest.year}</span>
-              <strong class="history-country-line"><span class="history-flag" aria-hidden="true">{contest.winnerFlag || '🏳️'}</span>{contest.winner || 'Sin ganador'}</strong>
+              <strong class="history-country-line">
+                {contest.winnerFlag && <img class="history-flag" src={contest.winnerFlag} alt="" loading="lazy" decoding="async" width="64" height="64" />}
+                <span>{contest.winner || 'Sin ganador'}</span>
+              </strong>
               <p>{[contest.winnerArtist, contest.winnerSong].filter(Boolean).join(' - ') || 'Cancion pendiente'}</p>
             </article>
           ))}
@@ -100,7 +103,8 @@ const statsUrl = getLocalizedPath('/stats/', locale);
 <script type="module" src="/history.js"></script>
 
 <style>
-  :global(.history-country-line) {
+  :global(.history-country-line),
+  :global(.history-host-title) {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
@@ -113,20 +117,18 @@ const statsUrl = getLocalizedPath('/stats/', locale);
   }
 
   :global(.history-flag) {
-    display: inline-grid;
-    place-items: center;
+    display: inline-block;
     flex: 0 0 auto;
     width: 1.85rem;
     height: 1.35rem;
     border-radius: 0.35rem;
+    object-fit: cover;
     background: color-mix(in srgb, var(--color-border), transparent 42%);
     box-shadow: 0 6px 14px rgb(15 23 42 / 0.1);
-    font-size: 1.15rem;
-    line-height: 1;
   }
 
   :global(.history-contest-card h2 .history-flag) {
-    margin-inline: 0.25rem 0.35rem;
+    margin-inline: 0.25rem 0.1rem;
     transform: translateY(0.08rem);
   }
 </style>
