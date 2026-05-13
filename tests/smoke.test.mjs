@@ -100,9 +100,9 @@ describe('project smoke checks', () => {
     assert.match(votePage, /EurovisionVoteApp/);
     assert.match(app, /vote\.js/);
     assert.match(voteScript, /localStorage/);
-    assert.match(app, /Exportar JSON/);
-    assert.match(app, /Importar JSON/);
-    assert.match(app, /Resetear votos/);
+    assert.match(app, /Exportar votos/);
+    assert.match(app, /Importar votos/);
+    assert.match(app, /Borrar votos/);
     assert.match(voteScript, /flagsapi\.com/);
     assert.match(contestConfig, /Semifinal 1/);
     assert.match(contestConfig, /Semifinal 2/);
