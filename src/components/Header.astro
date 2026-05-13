@@ -10,6 +10,7 @@ interface Props {
 const { locale } = Astro.props;
 const t = useTranslations(locale);
 const homeUrl = getLocalizedPath('/', locale);
+const voteUrl = getLocalizedPath('/vota/', locale);
 const historyUrl = getLocalizedPath('/historico/', locale);
 const countriesUrl = getLocalizedPath('/paises/', locale);
 const countryPointsUrl = getLocalizedPath('/puntos-por-pais/', locale);
@@ -18,17 +19,19 @@ const alternateLocales = getAlternateLocales(locale);
 const currentPath = Astro.url.pathname;
 const countryPathMatch = currentPath.match(/\/paises(?:\/([a-z0-9-]+))?\/?$/i);
 const editionPathMatch = currentPath.match(/\/ediciones(?:\/(\d{4}))?\/?$/i);
-const alternatePath = currentPath.includes('/puntos-por-pais')
-  ? '/puntos-por-pais/'
-  : editionPathMatch
-    ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
-    : countryPathMatch
-      ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
-      : currentPath.includes('/historico')
-        ? '/historico/'
-        : currentPath.includes('/stats')
-          ? '/stats/'
-          : '/';
+const alternatePath = currentPath.includes('/vota')
+  ? '/vota/'
+  : currentPath.includes('/puntos-por-pais')
+    ? '/puntos-por-pais/'
+    : editionPathMatch
+      ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
+      : countryPathMatch
+        ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
+        : currentPath.includes('/historico')
+          ? '/historico/'
+          : currentPath.includes('/stats')
+            ? '/stats/'
+            : '/';
 ---
 
 <header class="site-header app-header">
@@ -40,6 +43,7 @@ const alternatePath = currentPath.includes('/puntos-por-pais')
 
     <nav aria-label="Navegación principal" class="main-nav main-nav--desktop">
       <a href={homeUrl}>{t('nav.home')}</a>
+      <a href={voteUrl}>{t('nav.vote')}</a>
       <a href={historyUrl}>{t('nav.history')}</a>
       <a href={countriesUrl}>{t('nav.countries')}</a>
       <a href={countryPointsUrl}>{t('nav.pointsByCountry')}</a>
@@ -68,6 +72,7 @@ const alternatePath = currentPath.includes('/puntos-por-pais')
         </div>
         <nav aria-label="Menú móvil" class="mobile-menu__nav">
           <a href={homeUrl}>{t('nav.home')}</a>
+          <a href={voteUrl}>{t('nav.vote')}</a>
           <a href={historyUrl}>{t('nav.history')}</a>
           <a href={countriesUrl}>{t('nav.countries')}</a>
           <a href={countryPointsUrl}>{t('nav.pointsByCountry')}</a>
