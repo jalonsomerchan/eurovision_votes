@@ -3,6 +3,7 @@ import Container from './Container.astro';
 import { localeLabels, siteConfig, type Locale } from '../config/site';
 import { getAlternateLocales, getLocalizedPath, useTranslations } from '../i18n/ui';
 import { getNewsLabels } from '../i18n/newsLabels';
+import { getRankingLabels } from '../i18n/rankingLabels';
 
 interface Props {
   locale: Locale;
@@ -11,17 +12,20 @@ interface Props {
 const { locale } = Astro.props;
 const t = useTranslations(locale);
 const newsLabels = getNewsLabels(locale);
+const rankingLabels = getRankingLabels(locale);
 const homeUrl = getLocalizedPath('/', locale);
 const voteUrl = getLocalizedPath('/vota/', locale);
 const historyUrl = getLocalizedPath('/historico/', locale);
 const countriesUrl = getLocalizedPath('/paises/', locale);
 const newsUrl = getLocalizedPath('/noticias/', locale);
+const rankingsUrl = getLocalizedPath('/rankings/', locale);
 const countryPointsUrl = getLocalizedPath('/puntos-por-pais/', locale);
 const statsUrl = getLocalizedPath('/stats/', locale);
 const alternateLocales = getAlternateLocales(locale);
 const currentPath = Astro.url.pathname;
 const countryPathMatch = currentPath.match(/\/paises(?:\/([a-z0-9-]+))?\/?$/i);
 const editionPathMatch = currentPath.match(/\/ediciones(?:\/(\d{4}))?\/?$/i);
+const rankingPathMatch = currentPath.match(/\/rankings(?:\/([a-z0-9-]+))?\/?$/i);
 const comparatorPathMatch = currentPath.match(/\/comparador-paises\/?$/i);
 const alternatePath = currentPath.includes('/vota')
   ? '/vota/'
@@ -29,17 +33,19 @@ const alternatePath = currentPath.includes('/vota')
     ? '/puntos-por-pais/'
     : currentPath.includes('/noticias')
       ? '/noticias/'
-      : comparatorPathMatch
-        ? '/comparador-paises/'
-        : editionPathMatch
-          ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
-          : countryPathMatch
-            ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
-            : currentPath.includes('/historico')
-              ? '/historico/'
-              : currentPath.includes('/stats')
-                ? '/stats/'
-                : '/';
+      : rankingPathMatch
+        ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
+        : comparatorPathMatch
+          ? '/comparador-paises/'
+          : editionPathMatch
+            ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
+            : countryPathMatch
+              ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
+              : currentPath.includes('/historico')
+                ? '/historico/'
+                : currentPath.includes('/stats')
+                  ? '/stats/'
+                  : '/';
 ---
 
 <header class="site-header app-header">
@@ -55,6 +61,7 @@ const alternatePath = currentPath.includes('/vota')
       <a href={historyUrl}>{t('nav.history')}</a>
       <a href={countriesUrl}>{t('nav.countries')}</a>
       <a href={newsUrl}>{newsLabels.nav}</a>
+      <a href={rankingsUrl}>{rankingLabels.ranking}</a>
       <a href={countryPointsUrl}>{t('nav.pointsByCountry')}</a>
       <a href={statsUrl}>{t('nav.stats')}</a>
       <details class="locale-menu">
@@ -85,6 +92,7 @@ const alternatePath = currentPath.includes('/vota')
           <a href={historyUrl}>{t('nav.history')}</a>
           <a href={countriesUrl}>{t('nav.countries')}</a>
           <a href={newsUrl}>{newsLabels.nav}</a>
+          <a href={rankingsUrl}>{rankingLabels.ranking}</a>
           <a href={countryPointsUrl}>{t('nav.pointsByCountry')}</a>
           <a href={statsUrl}>{t('nav.stats')}</a>
           <button type="button" data-open-settings>{t('nav.settings')}</button>
