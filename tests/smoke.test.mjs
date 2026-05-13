@@ -139,11 +139,12 @@ describe('project smoke checks', () => {
     const editions = readText('src/lib/eurovisionEditions.ts');
 
     assert.match(history, /SENIOR_DATASET_DIR/);
-    assert.match(history, /data[/\\\\]senior/);
+    assert.match(history, /path\.join\(DATASET_DIR, 'data', 'senior'\)/);
+    assert.match(history, /data\[\/\\\\\]senior/);
     assert.match(history, /walkJsonFiles\(SENIOR_DATASET_DIR\)/);
     assert.match(history, /isSeniorDatasetPath/);
     assert.doesNotMatch(history, /walkJsonFiles\(DATASET_DIR\)/);
-    assert.match(editions, /data[/\\\\]senior/);
+    assert.match(editions, /data\[\/\\\\\]senior/);
     assert.match(editions, /CONTESTANT_PATH_RE/);
   });
 
