@@ -1,0 +1,26 @@
+---
+import EurovisionCountryComparatorApp from '../../../components/EurovisionCountryComparatorApp.astro';
+import Container from '../../../components/Container.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { defaultLocale, locales, type Locale } from '../../../config/site';
+import { isLocale } from '../../../i18n/ui';
+import { getCountryComparisonLabels } from '../../../i18n/countryComparisonLabels';
+import { listCountryComparisons } from '../../../lib/countryComparison';
+
+export function getStaticPaths() {
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .map((locale) => ({ params: { locale } }));
+}
+
+const localeParam = Astro.params.locale;
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const labels = getCountryComparisonLabels(locale);
+const countries = await listCountryComparisons(locale);
+---
+
+<BaseLayout title={labels.title} description={labels.description} locale={locale}>
+  <Container>
+    <EurovisionCountryComparatorApp countries={countries} locale={locale} />
+  </Container>
+</BaseLayout>
