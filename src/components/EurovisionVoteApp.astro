@@ -2,6 +2,8 @@
 import { defaultLocale, type Locale } from '../config/site';
 import { eurovision2026Contests as contests } from '../config/eurovision2026';
 import { getVoteLabels } from '../i18n/featureLabels';
+import { getLocalizedPath } from '../i18n/ui';
+import { getNavigationLabels } from '../i18n/navigationLabels';
 
 interface Props {
   locale?: Locale;
@@ -9,6 +11,8 @@ interface Props {
 
 const { locale = defaultLocale } = Astro.props;
 const labels = getVoteLabels(locale);
+const navLabels = getNavigationLabels(locale);
+const statsUrl = getLocalizedPath('/stats/', locale);
 const firebaseConfig = {
   apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY ?? '',
   authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
@@ -30,6 +34,7 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-2`;
       <p class="eyebrow">{labels.eyebrow}</p>
       <h1 id="vote-title">{labels.heading}</h1>
       <p class="hero-copy">{labels.copy}</p>
+      <a class="action-button action-button--primary vote-stats-link" href={statsUrl}>{navLabels.voteStatsCta}</a>
     </div>
     <div class="user-card">
       <span class="status-label">{labels.profile}</span>
