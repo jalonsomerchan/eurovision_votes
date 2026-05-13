@@ -61,20 +61,20 @@ function filteredContests() {
 }
 
 function renderEntries(entries = []) {
-  if (!entries.length) return '<p class="stats-empty">No hay participaciones detalladas para esta edicion.</p>';
+  if (!entries.length) return '<p class="stats-empty">No hay resultados detallados para esta edición de Eurovision.</p>';
   const topEntries = [...entries]
     .sort((a, b) => (a.place ?? 999) - (b.place ?? 999) || (b.points ?? -1) - (a.points ?? -1) || a.country.localeCompare(b.country))
     .slice(0, 12);
 
   const rows = topEntries.map((entry) => `<tr>
     <td data-label="#">${formatValue(entry.place)}</td>
-    <td data-label="Pais"><strong>${countryLine(entry.country, entry.flag, entry.countryCode)}</strong></td>
+    <td data-label="País"><strong>${countryLine(entry.country, entry.flag, entry.countryCode)}</strong></td>
     <td data-label="Artista">${formatValue(entry.artist)}</td>
-    <td data-label="Cancion">${formatValue(entry.song)}</td>
+    <td data-label="Canción">${formatValue(entry.song)}</td>
     <td data-label="Puntos"><strong>${formatValue(entry.points)}</strong></td>
   </tr>`).join('');
 
-  return `<div class="stats-table-wrap history-table-wrap"><table class="stats-table history-entry-table"><thead><tr><th>#</th><th>Pais</th><th>Artista</th><th>Cancion</th><th>Puntos</th></tr></thead><tbody>${rows}</tbody></table></div>${entries.length > topEntries.length ? `<p class="history-more">Mostrando ${topEntries.length} de ${entries.length} participaciones.</p>` : ''}`;
+  return `<div class="stats-table-wrap history-table-wrap"><table class="stats-table history-entry-table"><thead><tr><th>#</th><th>País</th><th>Artista</th><th>Canción</th><th>Puntos</th></tr></thead><tbody>${rows}</tbody></table></div>${entries.length > topEntries.length ? `<p class="history-more">Mostrando ${topEntries.length} de ${entries.length} países participantes.</p>` : ''}`;
 }
 
 function renderContest(contest) {
@@ -90,21 +90,21 @@ function renderContest(contest) {
   return `<article class="history-contest-card">
     <header>
       <div>
-        <p class="eyebrow">Festival ${editionLink(contest.year)}</p>
-        <h2>${editionLink(contest.year)}${host ? ` · <span class="history-host-title">${flag(contest.hostFlag)}${html(host)}</span>` : ''}</h2>
+        <p class="eyebrow">Edición ${editionLink(contest.year)}</p>
+        <h2>Eurovision ${editionLink(contest.year)}${host ? ` · <span class="history-host-title">${flag(contest.hostFlag)}${html(host)}</span>` : ''}</h2>
       </div>
       <div class="history-winner-pill"><span>Ganador</span><strong>${countryLine(contest.winner, contest.winnerFlag, contest.winnerCode)}</strong></div>
     </header>
     <div class="history-contest-grid">
       <section class="history-contest-main">
-        <h3>${countryLine(contest.winner || 'Sin ganador registrado', contest.winnerFlag, contest.winnerCode)}</h3>
-        <p>${winnerLine ? html(winnerLine) : 'Datos de la cancion no disponibles.'}</p>
+        <h3>${countryLine(contest.winner || 'Ganador no disponible', contest.winnerFlag, contest.winnerCode)}</h3>
+        <p>${winnerLine ? html(winnerLine) : 'Canción y artista pendientes de confirmar.'}</p>
         ${Number.isFinite(contest.winnerPoints) ? `<strong>${formatNumber(contest.winnerPoints)} puntos</strong>` : ''}
       </section>
       <dl class="history-meta-list">${meta.map(([label, value]) => `<div><dt>${html(label)}</dt><dd>${value.html}</dd></div>`).join('')}</dl>
     </div>
     <details class="history-details">
-      <summary>Ver participaciones</summary>
+      <summary>Ver resultados y participantes</summary>
       ${renderEntries(contest.entries)}
     </details>
   </article>`;
@@ -113,10 +113,10 @@ function renderContest(contest) {
 function render() {
   if (!listNode) return;
   const contests = filteredContests();
-  if (statusNode) statusNode.textContent = `${contests.length} festivales encontrados.`;
+  if (statusNode) statusNode.textContent = `${contests.length} ediciones de Eurovision encontradas.`;
 
   if (!contests.length) {
-    listNode.innerHTML = '<article class="empty-state"><span>🔎</span><h2>No hay resultados</h2><p>Prueba con otro pais, artista, ciudad o rango de años.</p></article>';
+    listNode.innerHTML = '<article class="empty-state"><span>🔎</span><h2>No hay resultados</h2><p>Prueba con otro país, artista, canción, ciudad o rango de años.</p></article>';
     return;
   }
 
