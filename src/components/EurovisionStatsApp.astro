@@ -1,0 +1,76 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { eurovision2026Contests } from '../config/eurovision2026';
+import { getLocalizedPath } from '../i18n/ui';
+import { getStatsLabels } from '../i18n/statsLabels';
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = defaultLocale } = Astro.props;
+const labels = getStatsLabels(locale);
+const voteUrl = getLocalizedPath('/vota/', locale);
+const statsScriptUrl = `${import.meta.env.BASE_URL}stats.js?v=20260513-1`;
+const firebaseConfig = {
+  apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY ?? '',
+  authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
+  projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID ?? '',
+  storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET ?? '',
+  messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
+  appId: import.meta.env.PUBLIC_FIREBASE_APP_ID ?? '',
+};
+---
+
+<section class="stats-app" aria-labelledby="stats-title">
+  <script type="application/json" id="stats-contests" set:html={JSON.stringify(eurovision2026Contests)}></script>
+  <script type="application/json" id="stats-firebase-config" set:html={JSON.stringify(firebaseConfig)}></script>
+  <script type="application/json" id="stats-labels" set:html={JSON.stringify(labels)}></script>
+
+  <div class="hero-card stats-hero">
+    <div>
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h1 id="stats-title">{labels.heading}</h1>
+      <p class="hero-copy">{labels.copy}</p>
+    </div>
+    <div class="stats-actions">
+      <button class="action-button action-button--primary" type="button" data-refresh-stats>{labels.refresh}</button>
+      <a class="action-button" href={voteUrl}>{labels.voteLink}</a>
+    </div>
+  </div>
+
+  <p class="feedback" data-stats-status>{labels.loading}</p>
+
+  <div class="stats-filter" aria-label={labels.show}>
+    <button class="tab is-active" type="button" data-stats-filter="all">{labels.all}</button>
+    {eurovision2026Contests.map((contest) => <button class="tab" type="button" data-stats-filter={contest.id}>{contest.name}</button>)}
+  </div>
+
+  <div class="stats-summary" data-stats-summary></div>
+
+  <article class="stats-card">
+    <p class="eyebrow">{labels.countriesEyebrow}</p>
+    <h2>{labels.rankingTitle}</h2>
+    <div class="stats-table-wrap" data-country-ranking></div>
+  </article>
+
+  <article class="stats-card">
+    <p class="eyebrow">{labels.scoresEyebrow}</p>
+    <h2>{labels.distributionTitle}</h2>
+    <div class="stats-grid-list" data-country-distribution></div>
+  </article>
+
+  <article class="stats-card">
+    <p class="eyebrow">{labels.usersEyebrow}</p>
+    <h2>{labels.usersTitle}</h2>
+    <div class="stats-table-wrap" data-user-summary></div>
+  </article>
+
+  <article class="stats-card">
+    <p class="eyebrow">{labels.detailEyebrow}</p>
+    <h2>{labels.detailTitle}</h2>
+    <div class="stats-table-wrap stats-table-wrap--wide" data-user-votes></div>
+  </article>
+</section>
+
+<script type="module" src={statsScriptUrl}></script>
