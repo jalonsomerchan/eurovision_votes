@@ -1,0 +1,304 @@
+---
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import { defaultLocale, type Locale } from '../config/site';
+import type { EurovisionEdition } from '../lib/eurovisionEditions';
+
+interface Props {
+  edition: EurovisionEdition;
+  locale?: Locale;
+}
+
+const { edition, locale = defaultLocale } = Astro.props;
+const t = useTranslations(locale);
+const historyUrl = getLocalizedPath('/historico/', locale);
+const finalIndex = Math.max(0, edition.rounds.findIndex((round) => round.label === 'Final'));
+const editionPath = (year: number) => getLocalizedPath(`/ediciones/${year}/`, locale);
+const countryPath = (countryCode?: string) => countryCode ? getLocalizedPath(`/paises/${countryCode.toLowerCase()}/`, locale) : '';
+const roundHasResults = edition.rounds.some((round) => round.entries.some((entry) => entry.place !== null || entry.points !== null));
+---
+
+<section class="edition-app" aria-labelledby="edition-title">
+  <div class="hero-card edition-hero">
+    <div>
+      <p class="eyebrow">{t('edition.eyebrow')}</p>
+      <h1 id="edition-title">Eurovision {edition.year}</h1>
+      <p class="hero-copy">{[edition.hostCity, edition.hostCountry].filter(Boolean).join(', ') || t('edition.noHostData')}</p>
+    </div>
+    <div class="history-actions">
+      <a class="action-button" href={historyUrl}>{t('edition.historyLink')}</a>
+      {edition.year > 1956 && <a class="action-button" href={editionPath(edition.year - 1)}>{edition.year - 1}</a>}
+      <a class="action-button" href={editionPath(edition.year + 1)}>{edition.year + 1}</a>
+    </div>
+  </div>
+
+  <section class="stats-card edition-overview" aria-labelledby="edition-overview-title">
+    <div class="edition-winner">
+      <p class="eyebrow">{t('edition.winner')}</p>
+      <h2 id="edition-overview-title">
+        {edition.winnerFlag && <img class="history-flag" src={edition.winnerFlag} alt="" width="64" height="64" loading="eager" decoding="async" />}
+        {edition.winnerCode ? <a class="country-link" href={countryPath(edition.winnerCode)}>{edition.winner}</a> : <span>{edition.winner || t('edition.noWinner')}</span>}
+      </h2>
+      <p>{[edition.winnerArtist, edition.winnerSong].filter(Boolean).join(' - ') || t('edition.pendingResults')}</p>
+      {edition.winnerPoints !== null && edition.winnerPoints !== undefined && <strong>{edition.winnerPoints.toLocaleString(locale)} {t('edition.points')}</strong>}
+    </div>
+
+    <dl class="edition-data-list">
+      <div><dt>{t('edition.participants')}</dt><dd>{edition.participants}</dd></div>
+      <div><dt>{t('edition.rounds')}</dt><dd>{edition.stats.rounds}</dd></div>
+      <div><dt>{t('edition.songs')}</dt><dd>{edition.stats.songs}</dd></div>
+      <div><dt>{t('edition.averagePoints')}</dt><dd>{edition.stats.averagePoints ?? '-'}</dd></div>
+      <div><dt>{t('edition.maxPoints')}</dt><dd>{edition.stats.maxPoints ?? '-'}</dd></div>
+      <div><dt>{t('edition.venue')}</dt><dd>{edition.venue || '-'}</dd></div>
+    </dl>
+  </section>
+
+  <section class="edition-tabs" aria-label={t('edition.roundTabs')}>
+    {edition.rounds.map((round, index) => (
+      <input class="visually-hidden edition-tab-input" type="radio" name="edition-round" id={`round-${round.id}`} checked={index === finalIndex} />
+    ))}
+    <div class="edition-tab-list" role="tablist" aria-label={t('edition.roundTabs')}>
+      {edition.rounds.map((round) => (
+        <label class="edition-tab-label" for={`round-${round.id}`} role="tab">{round.label}</label>
+      ))}
+    </div>
+
+    {edition.rounds.map((round) => (
+      <article class="stats-card edition-round-panel" data-round={round.id}>
+        <header>
+          <p class="eyebrow">{t('edition.results')}</p>
+          <h2>{round.label}</h2>
+        </header>
+        {round.entries.length ? (
+          <div class="stats-table-wrap edition-table-wrap">
+            <table class="stats-table edition-results-table">
+              <thead>
+                <tr>
+                  <th>{t('edition.place')}</th>
+                  <th>{t('edition.country')}</th>
+                  <th>{t('edition.artist')}</th>
+                  <th>{t('edition.song')}</th>
+                  <th>{t('edition.runningOrderShort')}</th>
+                  <th>{t('edition.points')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {round.entries.map((entry) => (
+                  <tr>
+                    <td data-label={t('edition.place')}>{entry.place ?? '-'}</td>
+                    <td data-label={t('edition.country')}>
+                      <strong class="history-country-line">
+                        {entry.flag && <img class="history-flag" src={entry.flag} alt="" width="64" height="64" loading="lazy" decoding="async" />}
+                        {entry.countryCode ? <a class="country-link" href={countryPath(entry.countryCode)}>{entry.country}</a> : <span>{entry.country}</span>}
+                      </strong>
+                    </td>
+                    <td data-label={t('edition.artist')}>{entry.artist || '-'}</td>
+                    <td data-label={t('edition.song')}><strong>{entry.song || '-'}</strong>{entry.directFinalist && <small class="edition-direct">{t('edition.directFinalist')}</small>}</td>
+                    <td data-label={t('edition.runningOrderShort')}>{entry.runningOrder ?? '-'}</td>
+                    <td data-label={t('edition.points')}><strong>{entry.points ?? '-'}</strong></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p class="stats-empty">{roundHasResults ? t('edition.noRoundData') : t('edition.pendingResults')}</p>
+        )}
+      </article>
+    ))}
+  </section>
+</section>
+
+<style>
+  :global(.edition-app) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  :global(.edition-overview) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.edition-winner h2) {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: clamp(1.7rem, 6vw, 3rem);
+    letter-spacing: -0.05em;
+  }
+
+  :global(.edition-winner p) {
+    margin: 0.45rem 0 0;
+    color: var(--color-muted);
+    font-weight: 800;
+  }
+
+  :global(.edition-winner strong) {
+    display: block;
+    margin-top: 0.65rem;
+    color: var(--color-primary);
+    font-size: 1.15rem;
+  }
+
+  :global(.edition-data-list) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin: 0;
+  }
+
+  :global(.edition-data-list div) {
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-bg);
+    padding: 0.75rem;
+  }
+
+  :global(.edition-data-list dt) {
+    color: var(--color-muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  :global(.edition-data-list dd) {
+    margin: 0.2rem 0 0;
+    font-size: 1.1rem;
+    font-weight: 900;
+  }
+
+  :global(.edition-tabs) {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  :global(.edition-tab-list) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    overflow-x: auto;
+  }
+
+  :global(.edition-tab-label) {
+    display: grid;
+    place-items: center;
+    min-width: 7rem;
+    min-height: 44px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    cursor: pointer;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  :global(.edition-round-panel) {
+    display: none;
+  }
+
+  :global(.edition-tabs:has(#round-semi-1:checked) [data-round="semi-1"]),
+  :global(.edition-tabs:has(#round-semi-2:checked) [data-round="semi-2"]),
+  :global(.edition-tabs:has(#round-final:checked) [data-round="final"]) {
+    display: grid;
+  }
+
+  :global(.edition-tabs:has(#round-semi-1:checked) label[for="round-semi-1"]),
+  :global(.edition-tabs:has(#round-semi-2:checked) label[for="round-semi-2"]),
+  :global(.edition-tabs:has(#round-final:checked) label[for="round-final"]) {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  :global(.edition-direct) {
+    display: block;
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 900;
+  }
+
+  :global(.edition-results-table) {
+    min-width: 48rem;
+  }
+
+  @media (min-width: 720px) {
+    :global(.edition-app) {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+
+    :global(.edition-overview) {
+      grid-template-columns: minmax(0, 0.9fr) minmax(20rem, 1.1fr);
+      align-items: start;
+    }
+
+    :global(.edition-data-list) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 719px) {
+    :global(.edition-table-wrap) {
+      border: 0;
+      overflow: visible;
+    }
+
+    :global(.edition-results-table) {
+      min-width: 0;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    :global(.edition-results-table thead) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    :global(.edition-results-table),
+    :global(.edition-results-table tbody),
+    :global(.edition-results-table tr),
+    :global(.edition-results-table td) {
+      display: block;
+      width: 100%;
+    }
+
+    :global(.edition-results-table tr) {
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: 1rem;
+      background: var(--color-bg);
+      overflow: hidden;
+    }
+
+    :global(.edition-results-table td) {
+      display: grid;
+      grid-template-columns: minmax(7rem, 0.42fr) minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.75rem;
+      text-align: left;
+    }
+
+    :global(.edition-results-table td:last-child) {
+      border-bottom: 0;
+    }
+
+    :global(.edition-results-table td::before) {
+      content: attr(data-label);
+      color: var(--color-muted);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+  }
+</style>
