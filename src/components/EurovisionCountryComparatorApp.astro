@@ -1,0 +1,170 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { getCountryComparisonLabels } from '../i18n/countryComparisonLabels';
+import type { CountryComparison } from '../lib/countryComparison';
+
+interface Props {
+  countries: CountryComparison[];
+  locale?: Locale;
+}
+
+const { countries, locale = defaultLocale } = Astro.props;
+const labels = getCountryComparisonLabels(locale);
+const defaultSelection = countries.slice(0, 2).map((country) => country.countryCode);
+const formatValue = (value: number | string | null | undefined) => value ?? labels.noData;
+const comparatorScriptUrl = `${import.meta.env.BASE_URL}country-comparator.js?v=20260513-1`;
+---
+
+<section class="country-comparator-app" aria-labelledby="country-comparator-title">
+  <script type="application/json" id="country-comparator-data" set:html={JSON.stringify(countries)}></script>
+  <script type="application/json" id="country-comparator-labels" set:html={JSON.stringify(labels)}></script>
+
+  <div class="hero-card country-comparator-hero">
+    <div>
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h1 id="country-comparator-title">{labels.title}</h1>
+      <p class="hero-copy">{labels.description}</p>
+    </div>
+  </div>
+
+  <form class="history-controls country-comparator-controls" data-country-comparator-form>
+    <div>
+      <label for="country-comparator-select">{labels.selectTitle}</label>
+      <select id="country-comparator-select" name="countries" multiple size="8" data-country-comparator-select aria-describedby="country-comparator-help">
+        {countries.map((country) => (
+          <option value={country.countryCode} selected={defaultSelection.includes(country.countryCode)}>{country.country}</option>
+        ))}
+      </select>
+      <p class="country-comparator-help" id="country-comparator-help">{labels.selectHelp}</p>
+    </div>
+    <button class="action-button action-button--primary" type="submit">{labels.compareButton}</button>
+    <button class="action-button" type="button" data-country-comparator-reset>{labels.resetButton}</button>
+  </form>
+
+  <p class="feedback" data-country-comparator-status aria-live="polite">{labels.selected}: {defaultSelection.length}</p>
+
+  <div class="country-comparator-cards" data-country-comparator-cards>
+    {countries.slice(0, 2).map((country) => (
+      <article class="stats-kpi country-comparator-card">
+        <header>
+          {country.flag && <img class="history-flag" src={country.flag} alt="" width="64" height="64" loading="lazy" decoding="async" />}
+          <h2>{country.country}</h2>
+        </header>
+        <dl>
+          <div><dt>{labels.participations}</dt><dd>{country.participations}</dd></div>
+          <div><dt>{labels.wins}</dt><dd>{country.wins}</dd></div>
+          <div><dt>{labels.bestPlace}</dt><dd>{formatValue(country.bestPlace)}</dd></div>
+          <div><dt>{labels.averagePoints}</dt><dd>{formatValue(country.averagePoints)}</dd></div>
+          <div><dt>{labels.lastParticipation}</dt><dd>{formatValue(country.lastParticipation)}</dd></div>
+        </dl>
+      </article>
+    ))}
+  </div>
+
+  <article class="stats-card">
+    <p class="eyebrow">{labels.overviewTitle}</p>
+    <h2>{labels.overviewTitle}</h2>
+    <div class="stats-table-wrap" data-country-comparator-overview></div>
+  </article>
+
+  <article class="stats-card">
+    <p class="eyebrow">{labels.decadeTitle}</p>
+    <h2>{labels.decadeTitle}</h2>
+    <div class="stats-table-wrap stats-table-wrap--wide" data-country-comparator-decades></div>
+  </article>
+</section>
+
+<script type="module" src={comparatorScriptUrl}></script>
+
+<style>
+  :global(.country-comparator-app) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  :global(.country-comparator-controls) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.country-comparator-controls select) {
+    width: 100%;
+    min-height: 13rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: inherit;
+    padding: 0.65rem;
+  }
+
+  :global(.country-comparator-controls option) {
+    padding: 0.35rem;
+  }
+
+  :global(.country-comparator-help) {
+    margin: 0.45rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.88rem;
+    font-weight: 750;
+  }
+
+  :global(.country-comparator-cards) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  :global(.country-comparator-card) {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  :global(.country-comparator-card header) {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  :global(.country-comparator-card h2) {
+    margin: 0;
+    font-size: 1.25rem;
+    line-height: 1.1;
+  }
+
+  :global(.country-comparator-card dl) {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+  }
+
+  :global(.country-comparator-card div) {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: 1px solid var(--color-border);
+    padding-top: 0.55rem;
+  }
+
+  :global(.country-comparator-card dt) {
+    color: var(--color-muted);
+    font-weight: 850;
+  }
+
+  :global(.country-comparator-card dd) {
+    margin: 0;
+    font-weight: 950;
+  }
+
+  @media (min-width: 720px) {
+    :global(.country-comparator-app) {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+
+    :global(.country-comparator-controls) {
+      grid-template-columns: minmax(16rem, 1fr) minmax(9rem, auto) minmax(9rem, auto);
+      align-items: end;
+    }
+  }
+</style>
