@@ -17,15 +17,18 @@ const statsUrl = getLocalizedPath('/stats/', locale);
 const alternateLocales = getAlternateLocales(locale);
 const currentPath = Astro.url.pathname;
 const countryPathMatch = currentPath.match(/\/paises(?:\/([a-z0-9-]+))?\/?$/i);
+const editionPathMatch = currentPath.match(/\/ediciones(?:\/(\d{4}))?\/?$/i);
 const alternatePath = currentPath.includes('/puntos-por-pais')
   ? '/puntos-por-pais/'
-  : countryPathMatch
-    ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
-    : currentPath.includes('/historico')
-      ? '/historico/'
-      : currentPath.includes('/stats')
-        ? '/stats/'
-        : '/';
+  : editionPathMatch
+    ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
+    : countryPathMatch
+      ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
+      : currentPath.includes('/historico')
+        ? '/historico/'
+        : currentPath.includes('/stats')
+          ? '/stats/'
+          : '/';
 ---
 
 <header class="site-header app-header">
