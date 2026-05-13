@@ -1,6 +1,7 @@
 ---
 import { getLocalizedPath, useTranslations } from '../i18n/ui';
 import { defaultLocale, type Locale } from '../config/site';
+import { getNewsLabels } from '../i18n/newsLabels';
 import type { EurovisionEdition } from '../lib/eurovisionEditions';
 
 interface Props {
@@ -10,12 +11,14 @@ interface Props {
 
 const { locale = defaultLocale, latestEdition } = Astro.props;
 const t = useTranslations(locale);
+const newsLabels = getNewsLabels(locale);
 const editionUrl = getLocalizedPath(`/ediciones/${latestEdition.year}/`, locale);
 const voteUrl = getLocalizedPath('/vota/', locale);
 const modules = [
   { title: t('home.module.vote.title'), description: t('home.module.vote.description'), href: voteUrl, icon: '🗳️' },
   { title: t('home.module.history.title'), description: t('home.module.history.description'), href: getLocalizedPath('/historico/', locale), icon: '🏆' },
   { title: t('home.module.countries.title'), description: t('home.module.countries.description'), href: getLocalizedPath('/paises/', locale), icon: '🌍' },
+  { title: newsLabels.title, description: newsLabels.description, href: getLocalizedPath('/noticias/', locale), icon: '📰' },
   { title: t('home.module.editions.title'), description: t('home.module.editions.description'), href: editionUrl, icon: '🎤' },
   { title: t('home.module.countryPoints.title'), description: t('home.module.countryPoints.description'), href: getLocalizedPath('/puntos-por-pais/', locale), icon: '🤝' },
   { title: t('home.module.stats.title'), description: t('home.module.stats.description'), href: getLocalizedPath('/stats/', locale), icon: '📊' },
