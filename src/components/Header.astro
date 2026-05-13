@@ -17,6 +17,7 @@ const navLabels = getNavigationLabels(locale);
 const rankingLabels = getRankingLabels(locale);
 const homeUrl = getLocalizedPath('/', locale);
 const voteUrl = getLocalizedPath('/vota/', locale);
+const predictionUrl = getLocalizedPath('/quiniela/', locale);
 const historyUrl = getLocalizedPath('/historico/', locale);
 const countriesUrl = getLocalizedPath('/paises/', locale);
 const newsUrl = getLocalizedPath('/noticias/', locale);
@@ -28,25 +29,27 @@ const countryPathMatch = currentPath.match(/\/paises(?:\/([a-z0-9-]+))?\/?$/i);
 const editionPathMatch = currentPath.match(/\/ediciones(?:\/(\d{4}))?\/?$/i);
 const rankingPathMatch = currentPath.match(/\/rankings(?:\/([a-z0-9-]+))?\/?$/i);
 const comparatorPathMatch = currentPath.match(/\/comparador-paises\/?$/i);
-const alternatePath = currentPath.includes('/vota')
-  ? '/vota/'
-  : currentPath.includes('/puntos-por-pais')
-    ? '/puntos-por-pais/'
-    : currentPath.includes('/noticias')
-      ? '/noticias/'
-      : rankingPathMatch
-        ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
-        : comparatorPathMatch
-          ? '/comparador-paises/'
-          : editionPathMatch
-            ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
-            : countryPathMatch
-              ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
-              : currentPath.includes('/historico')
-                ? '/historico/'
-                : currentPath.includes('/stats')
-                  ? '/stats/'
-                  : '/';
+const alternatePath = currentPath.includes('/quiniela')
+  ? '/quiniela/'
+  : currentPath.includes('/vota')
+    ? '/vota/'
+    : currentPath.includes('/puntos-por-pais')
+      ? '/puntos-por-pais/'
+      : currentPath.includes('/noticias')
+        ? '/noticias/'
+        : rankingPathMatch
+          ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
+          : comparatorPathMatch
+            ? '/comparador-paises/'
+            : editionPathMatch
+              ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
+              : countryPathMatch
+                ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
+                : currentPath.includes('/historico')
+                  ? '/historico/'
+                  : currentPath.includes('/stats')
+                    ? '/stats/'
+                    : '/';
 const dataLinks = [
   { href: historyUrl, label: t('nav.history') },
   { href: countriesUrl, label: t('nav.countries') },
@@ -64,6 +67,7 @@ const dataLinks = [
     <nav aria-label={t('nav.menu')} class="main-nav main-nav--desktop">
       <a href={homeUrl}>{t('nav.home')}</a>
       <a href={voteUrl}>{t('nav.vote')}</a>
+      <a href={predictionUrl}>{navLabels.prediction}</a>
       <details class="nav-dropdown">
         <summary>{navLabels.dataMenu}</summary>
         <div class="nav-dropdown__list">
@@ -97,6 +101,7 @@ const dataLinks = [
         <nav aria-label={t('nav.menu')} class="mobile-menu__nav">
           <a href={homeUrl}>{t('nav.home')}</a>
           <a href={voteUrl}>{t('nav.vote')}</a>
+          <a href={predictionUrl}>{navLabels.prediction}</a>
           <details class="mobile-menu__section">
             <summary>{navLabels.dataMenu}</summary>
             <div>
