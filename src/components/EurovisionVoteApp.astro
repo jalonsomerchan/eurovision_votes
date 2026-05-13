@@ -1,6 +1,14 @@
 ---
+import { defaultLocale, type Locale } from '../config/site';
 import { eurovision2026Contests as contests } from '../config/eurovision2026';
+import { getVoteLabels } from '../i18n/featureLabels';
 
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = defaultLocale } = Astro.props;
+const labels = getVoteLabels(locale);
 const firebaseConfig = {
   apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY ?? '',
   authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
@@ -9,33 +17,34 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
   appId: import.meta.env.PUBLIC_FIREBASE_APP_ID ?? '',
 };
-const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-1`;
+const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-2`;
 ---
 
 <section class="eurovision-vote-app" aria-labelledby="vote-title">
   <script type="application/json" id="eurovision-contests" set:html={JSON.stringify(contests)}></script>
   <script type="application/json" id="firebase-config" set:html={JSON.stringify(firebaseConfig)}></script>
+  <script type="application/json" id="vote-labels" set:html={JSON.stringify(labels)}></script>
 
   <div class="hero-card">
     <div>
-      <p class="eyebrow">Votación Eurovision 2026</p>
-      <h1 id="vote-title">Vota tus canciones favoritas de Eurovision 2026</h1>
-      <p class="hero-copy">Puntúa cada país del 0 al 10 en las semifinales y en la final. Guarda tus votos, compártelos y compara tus resultados con otros eurofans.</p>
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h1 id="vote-title">{labels.heading}</h1>
+      <p class="hero-copy">{labels.copy}</p>
     </div>
     <div class="user-card">
-      <span class="status-label">Tu perfil</span>
-      <strong data-voter-name>Votante invitado</strong>
-      <button class="mini-button" type="button" data-open-name>Cambiar nombre</button>
-      <button class="mini-button" type="button" data-share-votes>Compartir mis votos</button>
+      <span class="status-label">{labels.profile}</span>
+      <strong data-voter-name>{labels.guest}</strong>
+      <button class="mini-button" type="button" data-open-name>{labels.changeName}</button>
+      <button class="mini-button" type="button" data-share-votes>{labels.shareVotes}</button>
     </div>
   </div>
 
-  <div class="tabs" role="tablist" aria-label="Semifinales y final de Eurovision 2026" data-tabs></div>
+  <div class="tabs" role="tablist" aria-label={labels.tabsLabel} data-tabs></div>
 
   <div class="status-card" aria-live="polite">
-    <div><span class="status-label">Gala seleccionada</span><strong data-active-name>Semifinal 1</strong></div>
-    <div><span class="status-label">Canciones votadas</span><strong data-voted-count>0/0</strong></div>
-    <div><span class="status-label">Estado de guardado</span><strong data-cloud-status>Guardado local</strong></div>
+    <div><span class="status-label">{labels.selectedShow}</span><strong data-active-name>Semifinal 1</strong></div>
+    <div><span class="status-label">{labels.votedSongs}</span><strong data-voted-count>0/0</strong></div>
+    <div><span class="status-label">{labels.saveStatus}</span><strong data-cloud-status>{labels.localSaved}</strong></div>
   </div>
 
   <p class="feedback" role="status" aria-live="polite" data-feedback></p>
@@ -44,12 +53,12 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-1`;
 
 <div class="app-modal" data-name-modal hidden>
   <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
-    <h2 id="name-modal-title">Elige un nombre para tus votos</h2>
-    <p>Así podrás identificar tus puntuaciones y compartirlas con otros seguidores de Eurovision.</p>
+    <h2 id="name-modal-title">{labels.nameTitle}</h2>
+    <p>{labels.nameCopy}</p>
     <form data-name-form>
-      <label class="field-label" for="voter-name-input">Nombre</label>
+      <label class="field-label" for="voter-name-input">{labels.nameLabel}</label>
       <input id="voter-name-input" class="text-input" name="name" autocomplete="name" maxlength="60" required />
-      <div class="modal-actions"><button class="action-button action-button--primary" type="submit">Guardar nombre</button></div>
+      <div class="modal-actions"><button class="action-button action-button--primary" type="submit">{labels.saveName}</button></div>
     </form>
   </div>
 </div>
@@ -57,14 +66,14 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-1`;
 <div class="app-modal" data-settings-modal hidden>
   <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
     <div class="modal-header-row">
-      <div><p class="eyebrow">Tus votaciones</p><h2 id="settings-modal-title">Guardar, importar o reiniciar votos</h2></div>
-      <button class="modal-close" type="button" data-close-settings aria-label="Cerrar ajustes">×</button>
+      <div><p class="eyebrow">{labels.votesEyebrow}</p><h2 id="settings-modal-title">{labels.votesTitle}</h2></div>
+      <button class="modal-close" type="button" data-close-settings aria-label={labels.closeSettings}>×</button>
     </div>
     <div class="settings-grid">
-      <button class="action-button action-button--primary" type="button" data-export>Exportar votos</button>
-      <label class="action-button" for="vote-import">Importar votos</label>
+      <button class="action-button action-button--primary" type="button" data-export>{labels.exportVotes}</button>
+      <label class="action-button" for="vote-import">{labels.importVotes}</label>
       <input id="vote-import" class="visually-hidden" type="file" accept="application/json,.json" data-import />
-      <button class="action-button action-button--danger" type="button" data-reset>Borrar votos</button>
+      <button class="action-button action-button--danger" type="button" data-reset>{labels.deleteVotes}</button>
     </div>
   </div>
 </div>
