@@ -44,11 +44,11 @@ try {
   if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId) {
     const app = initializeApp(firebaseConfig);
     db = initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
-    setCloudStatus('Preparado');
+    setCloudStatus('Guardado online');
   }
 } catch (error) {
   console.error('Firebase init error:', error);
-  setCloudStatus('Error');
+  setCloudStatus('Guardado local');
 }
 
 function loadJson(key, fallback) {
@@ -155,7 +155,7 @@ function saveVoter(name) {
 }
 
 function renderVoter() {
-  if (voterNameNode) voterNameNode.textContent = voter?.name || 'Sin nombre';
+  if (voterNameNode) voterNameNode.textContent = voter?.name || 'Votante invitado';
 }
 
 function renderTabs() {
@@ -166,7 +166,7 @@ function renderTabs() {
     const disabled = songs.length === 0;
     const totalVotes = Object.keys(votes[contest.id] || {}).length;
     const status = isSemi(contest.id) ? getSemiStatus(contest.id) : 'open';
-    const label = disabled ? 'Pendiente' : status === 'closed' ? 'Cerrada' : status === 'pending' ? 'Pendiente' : `${totalVotes}/${songs.length}`;
+    const label = disabled ? 'Pendiente' : status === 'closed' ? 'Cerrada' : status === 'pending' ? 'Próximamente' : `${totalVotes}/${songs.length}`;
     return `<button class="tab ${selected ? 'is-active' : ''}" type="button" role="tab" aria-selected="${selected}" data-contest-id="${contest.id}"><span>${escapeHtml(contest.name)}</span><small>${label}</small></button>`;
   }).join('');
 }
@@ -194,7 +194,7 @@ function renderSongs() {
 
   if (!songList) return;
   if (!songs.length) {
-    songList.innerHTML = `<article class="empty-state"><span aria-hidden="true">🎤</span><h2>${escapeHtml(contest.name)}</h2><p>Pendiente</p></article>`;
+    songList.innerHTML = `<article class="empty-state"><span aria-hidden="true">🎤</span><h2>${escapeHtml(contest.name)}</h2><p>Las canciones de esta gala se mostrarán cuando estén disponibles.</p></article>`;
     return;
   }
 
@@ -204,10 +204,10 @@ function renderSongs() {
     const average = getAverage(contest.id, songKey);
     const badges = [];
     badges.push(`<span class="result-badge result-badge--average">Media ${formatAverage(average)}</span>`);
-    if (isSemi(contest.id) && semiStatus === 'closed') badges.push(qualifiers.has(songKey) ? '<span class="result-badge result-badge--qualified">Pasa a la final</span>' : '<span class="result-badge">No clasificado</span>');
+    if (isSemi(contest.id) && semiStatus === 'closed') badges.push(qualifiers.has(songKey) ? '<span class="result-badge result-badge--qualified">Clasificado para la final</span>' : '<span class="result-badge">No clasificado</span>');
     if (contest.id === 'final' && positions[songKey]) badges.push(`<span class="result-badge result-badge--qualified">Puesto ${positions[songKey]}</span>`);
     const scoreButtons = Array.from({ length: 11 }, (_, score) => `<button class="score-button ${currentScore === score ? 'is-selected' : ''}" type="button" aria-pressed="${currentScore === score}" data-score="${score}" data-song-key="${songKey}" ${votingClosed || votingPending ? 'disabled' : ''}>${score}</button>`).join('');
-    const message = votingClosed ? 'Votación cerrada para esta semifinal.' : votingPending ? 'Votación pendiente de inicio.' : '';
+    const message = votingClosed ? 'La votación de esta semifinal ya está cerrada.' : votingPending ? 'La votación de esta semifinal se abrirá próximamente.' : '';
     return `<article class="song-card ${votingClosed || votingPending ? 'is-closed' : ''}"><div class="song-main"><a href="${countryProfileUrl(song.flag)}" aria-label="Ver ficha de ${escapeHtml(song.country)}"><img class="flag" width="64" height="48" loading="lazy" alt="Bandera de ${escapeHtml(song.country)}" src="https://flagsapi.com/${song.flag}/flat/64.png" /></a><div class="song-info"><div class="song-meta"><span class="running-order">${song.runningOrder || 'FD'}</span>${song.directFinalist ? '<span class="direct-badge">Finalista directo</span>' : ''}${badges.join('')}</div><h2>${countryLink(song)}</h2><p><strong>${escapeHtml(song.artist)}</strong> — «${escapeHtml(song.song)}»</p></div><div class="selected-score" aria-label="Puntuación actual">${currentScore ?? '—'}</div></div>${message ? `<p class="closed-note">${message}</p>` : `<div class="score-grid" aria-label="Puntuar ${escapeHtml(song.country)} del 0 al 10">${scoreButtons}</div>`}</article>`;
   }).join('');
 }
@@ -269,7 +269,7 @@ async function saveCloudVotes() {
     return;
   }
   if (isSemi(activeContestId) && getSemiStatus(activeContestId) !== 'open') {
-    setCloudStatus(getSemiStatus(activeContestId) === 'closed' ? 'Cerrada' : 'Pendiente');
+    setCloudStatus(getSemiStatus(activeContestId) === 'closed' ? 'Votación cerrada' : 'Próximamente');
     showFeedback(getSemiStatus(activeContestId) === 'closed' ? 'La votación de esta semifinal está cerrada.' : 'La votación de esta semifinal todavía no ha empezado.');
     return;
   }
@@ -282,11 +282,11 @@ async function saveCloudVotes() {
       votes,
       updatedAt: serverTimestamp(),
     }, { merge: true }), 12000);
-    setCloudStatus('Guardado');
+    setCloudStatus('Guardado online');
   } catch (error) {
     console.error('Firestore save error:', error);
-    setCloudStatus('Error');
-    showFeedback(`No se pudieron guardar los votos en Firebase (${error?.message || 'error'}). Se mantienen en este dispositivo.`);
+    setCloudStatus('Guardado local');
+    showFeedback('No se pudieron guardar los votos online. Se mantienen guardados en este dispositivo.');
   }
 }
 
@@ -308,7 +308,7 @@ async function shareVotes() {
   await saveCloudVotes();
   const shareUrl = getShareUrl();
   const title = `Votaciones de ${voter.name} en Eurovision Votes 2026`;
-  const text = `Consulta mis votaciones de Eurovision 2026.`;
+  const text = 'Consulta mis votaciones de Eurovision 2026.';
 
   try {
     if (navigator.share) {
@@ -375,7 +375,7 @@ $('[data-export]')?.addEventListener('click', () => {
   link.download = 'eurovision-2026-votos.json';
   link.click();
   URL.revokeObjectURL(url);
-  showFeedback('Votos exportados en JSON.');
+  showFeedback('Archivo de votos exportado correctamente.');
 });
 importInput?.addEventListener('change', async (event) => {
   const file = event.target.files?.[0];
@@ -392,7 +392,7 @@ importInput?.addEventListener('change', async (event) => {
     closeModal(settingsModal);
     showFeedback('Votos importados correctamente.');
   } catch {
-    showFeedback('No se pudo importar el JSON. Revisa el formato del archivo.');
+    showFeedback('No se pudo importar el archivo de votos. Revisa el formato e inténtalo de nuevo.');
   } finally {
     event.target.value = '';
   }
@@ -404,7 +404,7 @@ $('[data-reset]')?.addEventListener('click', () => {
   renderSongs();
   queueCloudSave();
   closeModal(settingsModal);
-  showFeedback('Votos reseteados.');
+  showFeedback('Votos borrados correctamente.');
 });
 
 renderVoter();
