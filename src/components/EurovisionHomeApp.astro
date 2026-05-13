@@ -13,12 +13,12 @@ const t = useTranslations(locale);
 const editionUrl = getLocalizedPath(`/ediciones/${latestEdition.year}/`, locale);
 const voteUrl = getLocalizedPath('/vota/', locale);
 const modules = [
-  { key: 'vote', href: voteUrl, icon: '🗳️' },
-  { key: 'history', href: getLocalizedPath('/historico/', locale), icon: '🏆' },
-  { key: 'countries', href: getLocalizedPath('/paises/', locale), icon: '🌍' },
-  { key: 'editions', href: editionUrl, icon: '🎤' },
-  { key: 'countryPoints', href: getLocalizedPath('/puntos-por-pais/', locale), icon: '🤝' },
-  { key: 'stats', href: getLocalizedPath('/stats/', locale), icon: '📊' },
+  { title: t('home.module.vote.title'), description: t('home.module.vote.description'), href: voteUrl, icon: '🗳️' },
+  { title: t('home.module.history.title'), description: t('home.module.history.description'), href: getLocalizedPath('/historico/', locale), icon: '🏆' },
+  { title: t('home.module.countries.title'), description: t('home.module.countries.description'), href: getLocalizedPath('/paises/', locale), icon: '🌍' },
+  { title: t('home.module.editions.title'), description: t('home.module.editions.description'), href: editionUrl, icon: '🎤' },
+  { title: t('home.module.countryPoints.title'), description: t('home.module.countryPoints.description'), href: getLocalizedPath('/puntos-por-pais/', locale), icon: '🤝' },
+  { title: t('home.module.stats.title'), description: t('home.module.stats.description'), href: getLocalizedPath('/stats/', locale), icon: '📊' },
 ];
 ---
 
@@ -69,8 +69,8 @@ const modules = [
       {modules.map((module) => (
         <a class="home-module-card" href={module.href}>
           <span aria-hidden="true">{module.icon}</span>
-          <strong>{t(`home.module.${module.key}.title`)}</strong>
-          <p>{t(`home.module.${module.key}.description`)}</p>
+          <strong>{module.title}</strong>
+          <p>{module.description}</p>
         </a>
       ))}
     </div>
