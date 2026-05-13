@@ -23,8 +23,8 @@ img, picture, svg, video { display: block; max-width: 100%; }
 .settings-trigger { padding: 0.45rem 0.8rem; color: var(--color-primary); }
 .mini-button { margin-top: 0.65rem; padding: 0.45rem 0.8rem; font-size: 0.85rem; }
 
-.eurovision-vote-app, .stats-app { display: grid; gap: 1rem; padding: 1.25rem 0 3rem; }
-.hero-card, .status-card, .song-card, .empty-state, .user-card, .modal-panel, .stats-card, .stats-kpi, .distribution-card { border: 1px solid color-mix(in srgb, var(--color-border), transparent 15%); background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%); box-shadow: 0 20px 55px rgb(15 23 42 / 0.08); }
+.eurovision-vote-app, .stats-app, .history-app { display: grid; gap: 1rem; padding: 1.25rem 0 3rem; }
+.hero-card, .status-card, .song-card, .empty-state, .user-card, .modal-panel, .stats-card, .stats-kpi, .distribution-card, .history-contest-card, .history-winner-card { border: 1px solid color-mix(in srgb, var(--color-border), transparent 15%); background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%); box-shadow: 0 20px 55px rgb(15 23 42 / 0.08); }
 .hero-card { display: grid; gap: 1.25rem; overflow: hidden; border-radius: 2rem; padding: clamp(1.25rem, 4vw, 2.5rem); position: relative; }
 .hero-card::after { content: ''; position: absolute; inset: auto -5rem -7rem auto; width: 14rem; height: 14rem; border-radius: 999px; background: color-mix(in srgb, var(--color-primary), transparent 72%); pointer-events: none; }
 .user-card { z-index: 1; border-radius: 1.35rem; padding: 1rem; }
@@ -32,6 +32,7 @@ img, picture, svg, video { display: block; max-width: 100%; }
 .eyebrow { margin: 0 0 0.5rem; color: var(--color-primary); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; }
 .hero-card h1 { margin: 0; max-width: 12ch; font-size: clamp(2.4rem, 11vw, 5.8rem); line-height: 0.92; letter-spacing: -0.08em; }
 .hero-copy { margin: 1rem 0 0; max-width: 42rem; color: var(--color-muted); font-size: clamp(1rem, 2.5vw, 1.2rem); }
+.hero-copy code, .empty-state code { border-radius: 0.45rem; background: color-mix(in srgb, var(--color-primary), transparent 88%); padding: 0.1rem 0.32rem; color: var(--color-primary); font-size: 0.92em; }
 
 .action-button, .tab, .score-button { min-height: 44px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-bg); color: var(--color-text); cursor: pointer; font: inherit; font-weight: 800; text-align: center; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
 .action-button { display: inline-flex; align-items: center; justify-content: center; padding: 0.8rem 1rem; text-decoration: none; }
@@ -68,8 +69,8 @@ img, picture, svg, video { display: block; max-width: 100%; }
 .empty-state h2, .empty-state p { margin: 0; }
 .empty-state p { max-width: 34rem; color: var(--color-muted); }
 
-.stats-hero { align-items: end; }
-.stats-actions { z-index: 1; display: grid; gap: 0.65rem; min-width: min(100%, 14rem); }
+.stats-hero, .history-hero { align-items: end; }
+.stats-actions, .history-actions { z-index: 1; display: grid; gap: 0.65rem; min-width: min(100%, 14rem); }
 .stats-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
 .stats-kpi { border-radius: 1.35rem; padding: 1rem; }
 .stats-kpi span { display: block; color: var(--color-muted); font-size: 0.76rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -95,6 +96,37 @@ img, picture, svg, video { display: block; max-width: 100%; }
 .score-bar div { height: 0.55rem; border-radius: 999px; background: linear-gradient(90deg, var(--color-primary) var(--bar-size), color-mix(in srgb, var(--color-border), transparent 35%) var(--bar-size)); }
 .stats-empty { margin: 0; color: var(--color-muted); font-weight: 800; }
 
+.history-controls { display: grid; grid-template-columns: 1fr; gap: 0.75rem; border: 1px solid var(--color-border); border-radius: 1.5rem; padding: 1rem; background: color-mix(in srgb, var(--color-bg), transparent 8%); }
+.history-controls label { display: grid; gap: 0.35rem; color: var(--color-muted); font-weight: 900; }
+.history-controls label:first-child { min-width: 0; }
+.history-timeline { display: grid; gap: 1rem; }
+.history-winner-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem; }
+.history-winner-card { border-radius: 1.2rem; padding: 1rem; box-shadow: none; }
+.history-winner-card span { color: var(--color-primary); font-weight: 950; }
+.history-winner-card strong { display: block; margin-top: 0.25rem; font-size: 1.15rem; }
+.history-winner-card p { margin: 0.25rem 0 0; color: var(--color-muted); font-size: 0.9rem; }
+.history-contest-card { display: grid; gap: 1rem; border-radius: 1.5rem; padding: 1rem; }
+.history-contest-card > header { display: grid; gap: 0.75rem; align-items: start; }
+.history-contest-card h2, .history-contest-card h3, .history-contest-card p { margin: 0; }
+.history-contest-card h2 { font-size: clamp(1.4rem, 4vw, 2.15rem); letter-spacing: -0.05em; }
+.history-winner-pill { justify-self: start; border: 1px solid var(--color-border); border-radius: 1rem; padding: 0.7rem 0.85rem; background: var(--color-bg); }
+.history-winner-pill span { display: block; color: var(--color-muted); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
+.history-winner-pill strong { display: block; color: var(--color-primary); font-size: 1.05rem; }
+.history-contest-grid { display: grid; gap: 1rem; }
+.history-contest-main { border-radius: 1.2rem; padding: 1rem; background: color-mix(in srgb, var(--color-primary), transparent 90%); }
+.history-contest-main h3 { font-size: 1.35rem; }
+.history-contest-main p { margin-top: 0.2rem; color: var(--color-muted); }
+.history-contest-main strong { display: block; margin-top: 0.55rem; color: var(--color-primary); }
+.history-meta-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; margin: 0; }
+.history-meta-list div { min-width: 0; border: 1px solid var(--color-border); border-radius: 1rem; padding: 0.75rem; background: var(--color-bg); }
+.history-meta-list dt { color: var(--color-muted); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.history-meta-list dd { margin: 0.2rem 0 0; overflow-wrap: anywhere; font-weight: 850; }
+.history-details { border-top: 1px solid var(--color-border); padding-top: 0.85rem; }
+.history-details summary { cursor: pointer; color: var(--color-primary); font-weight: 900; }
+.history-details[open] summary { margin-bottom: 0.85rem; }
+.history-entry-table { min-width: 38rem; }
+.history-more { margin: 0.65rem 0 0; color: var(--color-muted); font-size: 0.9rem; font-weight: 800; }
+
 .app-modal[hidden] { display: none; }
 .app-modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: end center; padding: 1rem; background: rgb(15 10 30 / 0.58); backdrop-filter: blur(10px); }
 .modal-panel { width: min(100%, 32rem); max-height: calc(100dvh - 2rem); overflow: auto; border-radius: 1.75rem; padding: 1.2rem; }
@@ -108,21 +140,25 @@ img, picture, svg, video { display: block; max-width: 100%; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
 @media (min-width: 720px) {
-  .eurovision-vote-app, .stats-app { gap: 1.35rem; padding-block: 2rem 4rem; }
+  .eurovision-vote-app, .stats-app, .history-app { gap: 1.35rem; padding-block: 2rem 4rem; }
   .hero-card { grid-template-columns: minmax(0, 1fr) minmax(12rem, auto); align-items: end; }
   .song-card { padding: 1rem; }
   .score-grid { grid-template-columns: repeat(11, minmax(0, 1fr)); }
   .app-modal { place-items: center; }
   .stats-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .history-controls { grid-template-columns: minmax(16rem, 1fr) repeat(3, minmax(8rem, 0.42fr)); }
+  .history-contest-card > header { grid-template-columns: minmax(0, 1fr) auto; }
+  .history-contest-grid { grid-template-columns: minmax(0, 1.1fr) minmax(17rem, 0.9fr); }
 }
 
 @media (min-width: 1024px) {
   .stats-summary { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .history-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 @media (prefers-color-scheme: dark) {
   :root { color-scheme: dark; --color-bg: #100b1f; --color-text: #f7f2ff; --color-muted: #c4b8d8; --color-border: #322647; --color-primary: #a78bfa; }
-  .hero-card, .status-card, .song-card, .empty-state, .user-card, .modal-panel, .stats-card, .stats-kpi, .distribution-card { box-shadow: 0 20px 55px rgb(0 0 0 / 0.28); }
+  .hero-card, .status-card, .song-card, .empty-state, .user-card, .modal-panel, .stats-card, .stats-kpi, .distribution-card, .history-contest-card, .history-winner-card { box-shadow: 0 20px 55px rgb(0 0 0 / 0.28); }
   .direct-badge { color: #fbbf24; }
   .action-button--danger { color: #fca5a5; }
 }
