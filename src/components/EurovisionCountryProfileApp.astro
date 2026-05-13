@@ -45,7 +45,7 @@ const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(
   </div>
 
   <section class="stats-card country-current-card" aria-labelledby="current-title">
-    <p class="eyebrow">Eurovision 2026</p>
+    <p class="eyebrow"><a class="country-link edition-link" href={editionUrl(2026)}>Eurovision 2026</a></p>
     <h2 id="current-title">{t('countryProfile.currentTitle')}</h2>
     {profile.isCurrentParticipant ? (
       <div class="country-current-grid">
