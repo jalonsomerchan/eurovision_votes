@@ -27,7 +27,7 @@ const labels = getNewsLabels(locale);
 
 <section class="news-app" aria-labelledby="news-title">
   <header class="hero-card news-hero">
-    <div>
+    <div class="news-hero__content">
       <p class="eyebrow">{labels.eyebrow}</p>
       <h1 id="news-title">{labels.title}</h1>
       <p class="hero-copy">{labels.description}</p>
@@ -69,8 +69,30 @@ const labels = getNewsLabels(locale);
     padding: 1.25rem 0 3rem;
   }
 
+  :global(.news-hero) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    align-items: end;
+    overflow: hidden;
+  }
+
+  :global(.news-hero__content) {
+    min-width: 0;
+    max-width: 58rem;
+  }
+
+  :global(.news-hero h1) {
+    max-width: 12ch;
+  }
+
+  :global(.news-hero .hero-copy) {
+    max-width: 44rem;
+  }
+
   :global(.news-source-card) {
     z-index: 1;
+    width: min(100%, 36rem);
     border: 1px solid var(--color-border);
     border-radius: 1.25rem;
     background: var(--color-bg);
@@ -98,6 +120,14 @@ const labels = getNewsLabels(locale);
     :global(.news-app) {
       gap: 1.35rem;
       padding-block: 2rem 4rem;
+    }
+
+    :global(.news-hero) {
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.48fr);
+    }
+
+    :global(.news-source-card) {
+      justify-self: end;
     }
   }
 </style>
