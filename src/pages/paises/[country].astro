@@ -1,0 +1,27 @@
+---
+import EurovisionCountryProfileApp from '../../components/EurovisionCountryProfileApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { useTranslations } from '../../i18n/ui';
+import { getEurovisionCountryProfile, listEurovisionCountryCodes } from '../../lib/eurovisionCountryProfiles';
+
+export async function getStaticPaths() {
+  const countries = await listEurovisionCountryCodes(defaultLocale);
+  return countries.map((country) => ({ params: { country: country.toLowerCase() } }));
+}
+
+const countryParam = Astro.params.country ?? '';
+const t = useTranslations(defaultLocale);
+const profile = await getEurovisionCountryProfile(countryParam, defaultLocale);
+
+if (!profile) {
+  return Astro.redirect('/404/');
+}
+---
+
+<BaseLayout title={`${profile.country} - ${t('countryProfile.titleSuffix')}`} description={t('countryProfile.description')} locale={defaultLocale}>
+  <Container>
+    <EurovisionCountryProfileApp profile={profile} locale={defaultLocale} />
+  </Container>
+</BaseLayout>
