@@ -3,7 +3,7 @@ import EurovisionCountryProfileApp from '../../../components/EurovisionCountryPr
 import Container from '../../../components/Container.astro';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { defaultLocale, locales, type Locale } from '../../../config/site';
-import { isLocale, useTranslations } from '../../../i18n/ui';
+import { isLocale } from '../../../i18n/ui';
 import { getEurovisionCountryProfile, listEurovisionCountryCodes } from '../../../lib/eurovisionCountryProfiles';
 
 export async function getStaticPaths() {
@@ -16,15 +16,17 @@ export async function getStaticPaths() {
 const localeParam = Astro.params.locale;
 const countryParam = Astro.params.country ?? '';
 const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
-const t = useTranslations(locale);
 const profile = await getEurovisionCountryProfile(countryParam, locale);
 
 if (!profile) {
   return Astro.redirect('/404/');
 }
+
+const title = `${profile.country} en Eurovision: historial, canciones, puntos y resultados`;
+const description = `Consulta la ficha de ${profile.country} en Eurovision con participaciones, victorias, mejor posición, puntos totales, canciones, artistas y resultados año a año.`;
 ---
 
-<BaseLayout title={`${profile.country} - ${t('countryProfile.titleSuffix')}`} description={t('countryProfile.description')} locale={locale}>
+<BaseLayout title={title} description={description} locale={locale}>
   <Container>
     <EurovisionCountryProfileApp profile={profile} locale={locale} />
   </Container>
