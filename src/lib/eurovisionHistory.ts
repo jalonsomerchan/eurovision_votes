@@ -47,10 +47,12 @@ type RecordLike = Record<string, unknown>;
 type FinalResult = { place?: number | null; points?: number | null; runningOrder?: number | null };
 
 const DATASET_DIR = path.join(process.cwd(), 'public', 'dataset');
+const SENIOR_DATASET_DIR = path.join(DATASET_DIR, 'data', 'senior');
 const MAX_FILES = 4000;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const YEAR_RE = /\b(19[5-9]\d|20\d{2})\b/;
-const CONTESTANT_PATH_RE = /(?:^|[/\\])contestants[/\\](\d+)_([a-z]{2}(?:-[a-z]{3})?)(?:[/\\]|$)/i;
+const SENIOR_PATH_RE = /(?:^|[/\\])data[/\\]senior[/\\]/i;
+const CONTESTANT_PATH_RE = /(?:^|[/\\])data[/\\]senior[/\\](\d{4})[/\\]contestants[/\\](\d+)_([a-z]{2}(?:-[a-z]{3})?)(?:[/\\]|$)/i;
 const FINAL_ROUND_PATH_RE = /(?:^|[/\\])data[/\\]senior[/\\](\d{4})[/\\]rounds[/\\]final\.json$/i;
 const historyCache = new Map<Locale, Promise<EurovisionHistoryData>>();
 
@@ -88,6 +90,10 @@ function toNumber(value: unknown) {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+
+function isSeniorDatasetPath(filePath: string) {
+  return SENIOR_PATH_RE.test(filePath);
 }
 
 function toYear(record: RecordLike, filePath: string) {
@@ -164,8 +170,9 @@ function contestantPathInfo(filePath: string) {
   const match = filePath.match(CONTESTANT_PATH_RE);
   if (!match) return null;
   return {
-    contestantId: Number(match[1]),
-    countryCode: match[2].toUpperCase(),
+    year: Number(match[1]),
+    contestantId: Number(match[2]),
+    countryCode: match[3].toUpperCase(),
   };
 }
 
@@ -207,13 +214,14 @@ function looksLikeVoteRow(record: RecordLike) {
 }
 
 function entryFrom(record: RecordLike, filePath: string, countryMap: CountryMap, locale: Locale): EurovisionEntry | null {
-  if (!filePath.includes('contestants')) return null;
+  if (!isSeniorDatasetPath(filePath) || !filePath.includes('contestants')) return null;
   if (looksLikeVoteRow(record)) return null;
-  const year = toYear(record, filePath);
+  const pathInfo = contestantPathInfo(filePath);
+  if (!pathInfo) return null;
+  const year = pathInfo.year || toYear(record, filePath);
   if (!year) return null;
 
-  const pathInfo = contestantPathInfo(filePath);
-  const country = countryInfo(getValue(record, ['country', 'participantCountry', 'entryCountry', 'nation', 'delegation']) ?? pathInfo?.countryCode, countryMap, locale);
+  const country = countryInfo(getValue(record, ['country', 'participantCountry', 'entryCountry', 'nation', 'delegation']) ?? pathInfo.countryCode, countryMap, locale);
   const artist = toText(getValue(record, ['artist', 'artists', 'performer', 'performers', 'singer', 'act', 'contestant', 'participant']));
   const song = toText(getValue(record, ['song', 'songTitle', 'title', 'entry', 'composition']));
   const explicitPlace = toNumber(getValue(record, ['place', 'rank', 'position', 'placing', 'finalPlace', 'semiFinalPlace', 'resultPlace']));
@@ -221,7 +229,7 @@ function entryFrom(record: RecordLike, filePath: string, countryMap: CountryMap,
   const points = toNumber(getValue(record, ['points', 'totalPoints', 'score', 'totalScore', 'finalPoints']));
   const runningOrder = toNumber(getValue(record, ['runningOrder', 'draw', 'order', 'startPosition']));
 
-  if (!country.name || (!artist && !song && place === null && points === null && pathInfo?.contestantId === undefined)) return null;
+  if (!country.name || (!artist && !song && place === null && points === null)) return null;
   if (country.name.length > 60 || artist.length > 120 || song.length > 160) return null;
 
   return {
@@ -234,11 +242,12 @@ function entryFrom(record: RecordLike, filePath: string, countryMap: CountryMap,
     points,
     place,
     runningOrder,
-    contestantId: pathInfo?.contestantId ?? toNumber(getValue(record, ['id', 'contestantId'])),
+    contestantId: pathInfo.contestantId,
   };
 }
 
 function contestInfoFrom(record: RecordLike, filePath: string, countryMap: CountryMap, locale: Locale) {
+  if (!isSeniorDatasetPath(filePath)) return null;
   const year = toYear(record, filePath);
   if (!year) return null;
 
@@ -285,12 +294,12 @@ function withFinalResult(entry: EurovisionEntry, finalResults: Map<string, Final
 }
 
 async function buildEurovisionHistory(locale: Locale = defaultLocale): Promise<EurovisionHistoryData> {
-  if (!existsSync(DATASET_DIR)) {
+  if (!existsSync(SENIOR_DATASET_DIR)) {
     return { contests: [], sources: [], generatedAt: new Date().toISOString(), datasetFound: false, locale };
   }
 
   const countryMap = loadCountryMap();
-  const jsonFiles = walkJsonFiles(DATASET_DIR);
+  const jsonFiles = walkJsonFiles(SENIOR_DATASET_DIR);
   const objects: Array<{ record: RecordLike; filePath: string }> = [];
   const finalResults = new Map<string, FinalResult>();
 
