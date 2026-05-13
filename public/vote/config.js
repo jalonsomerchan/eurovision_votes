@@ -27,6 +27,7 @@ export function readInitialData() {
   const contests = readJsonScript('eurovision-contests', []);
   const firebaseConfig = readJsonScript('firebase-config', {});
   const labels = readJsonScript('vote-labels', {});
+  const topCardLabels = readJsonScript('top-card-labels', {});
 
-  return { contests, firebaseConfig, labels, t: createTranslator(labels) };
+  return { contests, firebaseConfig, labels, t: createTranslator(labels), topCardLabels };
 }
