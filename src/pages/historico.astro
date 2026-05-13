@@ -8,7 +8,7 @@ import { getEurovisionHistory } from '../lib/eurovisionHistory';
 const history = await getEurovisionHistory(defaultLocale);
 ---
 
-<BaseLayout title="Historico de Eurovision" description="Historico de festivales de Eurovision con ganadores, sedes, participantes, banderas y canciones." locale={defaultLocale}>
+<BaseLayout title="Histórico de Eurovision: ganadores, resultados y países" description="Consulta el histórico completo de Eurovision con ganadores, sedes, países participantes, artistas, canciones, posiciones y puntos de cada edición." locale={defaultLocale}>
   <Container>
     <EurovisionHistoryApp history={history} locale={defaultLocale} />
   </Container>
