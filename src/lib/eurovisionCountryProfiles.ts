@@ -11,14 +11,17 @@ export interface CurrentEditionEntry {
   directFinalist?: boolean;
 }
 
-export interface CountryProfile {
+export interface CountryProfileSummary {
   countryCode: string;
   country: string;
   flag: string;
-  currentEntries: CurrentEditionEntry[];
-  isCurrentParticipant: boolean;
   participations: number;
   wins: number;
+  isCurrentParticipant: boolean;
+}
+
+export interface CountryProfile extends CountryProfileSummary {
+  currentEntries: CurrentEditionEntry[];
   averagePlace: number | null;
   bestPlace: number | null;
   averagePoints: number | null;
@@ -70,6 +73,25 @@ export async function listEurovisionCountryCodes(locale: Locale = defaultLocale)
   }
 
   return [...codes].sort();
+}
+
+export async function listEurovisionCountryProfiles(locale: Locale = defaultLocale): Promise<CountryProfileSummary[]> {
+  const historyData = await getEurovisionHistory(locale);
+  const countryMap = countryMapFromHistory(historyData);
+  const codes = await listEurovisionCountryCodes(locale);
+
+  return codes.map((countryCode) => {
+    const entries = historyData.contests.flatMap((contest) => contest.entries.filter((entry) => entry.countryCode === countryCode));
+    const wins = entries.filter((entry) => entry.place === 1).length;
+    return {
+      countryCode,
+      country: localizedCountryName(countryCode, countryMap, locale),
+      flag: flagUrlFromCountryCode(countryCode),
+      participations: entries.length,
+      wins,
+      isCurrentParticipant: currentEditionEntries(countryCode).length > 0,
+    };
+  }).sort((a, b) => a.country.localeCompare(b.country));
 }
 
 export async function getEurovisionCountryProfile(countryCodeParam: string, locale: Locale = defaultLocale): Promise<CountryProfile | null> {
