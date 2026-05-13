@@ -36,6 +36,7 @@ describe('Eurovision prediction utility', () => {
     assert.match(app, /data-prediction-winner/);
     assert.match(app, /data-prediction-slot/);
     assert.match(app, /data-prediction-country/);
+    assert.match(app, /prediction-country-card/);
     assert.match(labels, /getPredictionLabels/);
     assert.match(labels, /Quiniela Eurovision 2026/);
     assert.match(labels, /Eurovision 2026 prediction/);
@@ -62,6 +63,7 @@ describe('Eurovision prediction utility', () => {
     const image = readText('public/prediction/image.js');
     const storage = readText('public/prediction/storage.js');
     const render = readText('public/prediction/render.js');
+    const styles = readText('public/prediction.css');
     const layout = readText('src/layouts/BaseLayout.astro');
     const docs = readText('docs/prediction.md');
 
@@ -80,7 +82,7 @@ describe('Eurovision prediction utility', () => {
     assert.match(storage, /localStorage/);
     assert.match(storage, /name: prediction\.name/);
     assert.match(render, /visually-hidden/);
-    assert.match(render, /prediction-country-card/);
+    assert.match(styles, /prediction-country-card/);
     assert.match(layout, /prediction\.css/);
     assert.match(docs, /eurovision\.alon\.one/);
   });
