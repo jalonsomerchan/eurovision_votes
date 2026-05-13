@@ -52,13 +52,16 @@ El dataset histórico se lee desde `public/dataset/data/senior`. Los helpers que
 
 - `/noticias/`: noticias de Eurovision desde el feed RSS público de ESCplus España. La carga se hace durante el build mediante `src/lib/newsFeed.mjs`; si el feed falla, la página muestra un estado de error en vez de romper el build. Solo se muestran título, resumen del feed, fecha, autoría, categorías y enlace externo a ESCplus España.
 - `/{locale}/noticias/`: versión localizada de la página de noticias para los idiomas secundarios configurados.
+- `/rankings/`: índice de rankings históricos evergreen generados desde el dataset disponible.
+- `/rankings/{slug}/`: páginas SEO de rankings históricos, como países con más victorias, más participaciones, ganadores por década, mejores puntuaciones disponibles, más top 10, sedes repetidas y ediciones con más participantes.
+- `/{locale}/rankings/` y `/{locale}/rankings/{slug}/`: versiones localizadas de los rankings para los idiomas secundarios configurados.
 - `/paises/`: índice de fichas por país.
 - `/paises/{codigo}/`: ficha SEO indexable de cada país, generada desde el dataset disponible. Incluye title/meta description únicos, h1, estadísticas, participación actual cuando exista, gráfica, tabla histórica, enlaces internos, FAQ visible y estados claros para datos ausentes.
 - `/{locale}/paises/{codigo}/`: versión localizada de cada ficha para los idiomas secundarios configurados.
 - `/comparador-paises/`: comparador de países. Permite seleccionar dos o más países y compara participaciones, victorias, mejor posición, puntos medios, resultados por décadas y última participación.
 - `/{locale}/comparador-paises/`: versión localizada para los idiomas secundarios configurados.
 
-Las noticias usan `src/lib/newsFeed.mjs` para parsear RSS 2.0 de WordPress con namespaces y CDATA, `src/components/EurovisionNewsApp.astro` para la interfaz y `src/i18n/newsLabels.ts` para textos traducidos. Las fichas por país usan `src/lib/eurovisionCountryProfiles.ts` para centralizar datos y cálculos, `src/components/EurovisionCountryProfileApp.astro` como orquestador, componentes pequeños para gráfica, tabla, enlaces y FAQ, y `src/i18n/countryProfileSeoLabels.ts` para textos SEO/FAQ traducidos. El comparador usa `src/lib/countryComparison.ts`, `src/components/EurovisionCountryComparatorApp.astro`, `public/country-comparator.js` y `src/i18n/countryComparisonLabels.ts`.
+Los rankings usan `src/lib/eurovisionRankings.ts` para centralizar cálculos, `src/components/RankingsIndexApp.astro`, `src/components/EurovisionRankingApp.astro` y `src/components/RankingTable.astro` para la interfaz, y `src/i18n/rankingLabels.ts` para textos SEO/UI traducidos. Los rankings explican límites del dataset cuando faltan puntos, sedes u otros datos, y no inventan información. Las noticias usan `src/lib/newsFeed.mjs` para parsear RSS 2.0 de WordPress con namespaces y CDATA, `src/components/EurovisionNewsApp.astro` para la interfaz y `src/i18n/newsLabels.ts` para textos traducidos. Las fichas por país usan `src/lib/eurovisionCountryProfiles.ts` para centralizar datos y cálculos, `src/components/EurovisionCountryProfileApp.astro` como orquestador, componentes pequeños para gráfica, tabla, enlaces y FAQ, y `src/i18n/countryProfileSeoLabels.ts` para textos SEO/FAQ traducidos. El comparador usa `src/lib/countryComparison.ts`, `src/components/EurovisionCountryComparatorApp.astro`, `public/country-comparator.js` y `src/i18n/countryComparisonLabels.ts`.
 
 ## Estructura recomendada
 

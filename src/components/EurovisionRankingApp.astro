@@ -1,0 +1,85 @@
+---
+import RankingTable from './RankingTable.astro';
+import { defaultLocale, type Locale } from '../config/site';
+import { getLocalizedPath } from '../i18n/ui';
+import { getRankingLabels, getRankingText } from '../i18n/rankingLabels';
+import type { RankingData } from '../lib/eurovisionRankings';
+
+interface Props {
+  ranking: RankingData;
+  locale?: Locale;
+}
+
+const { ranking, locale = defaultLocale } = Astro.props;
+const labels = getRankingLabels(locale);
+const text = getRankingText(ranking.slug, locale);
+const limits = [
+  labels.defaultLimit,
+  ranking.hasMissingPoints && ranking.slug === 'mejores-puntuaciones' ? labels.pointsLimit : '',
+  ranking.hasMissingHosts && ranking.slug === 'sedes-repetidas' ? labels.hostsLimit : '',
+].filter(Boolean);
+---
+
+<article class="ranking-page" aria-labelledby="ranking-title">
+  <header class="hero-card ranking-hero">
+    <div>
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h1 id="ranking-title">{text.title}</h1>
+      <p class="hero-copy">{text.intro}</p>
+    </div>
+    <div class="history-actions">
+      <a class="action-button action-button--primary" href={getLocalizedPath('/rankings/', locale)}>{labels.allRankings}</a>
+    </div>
+  </header>
+
+  {ranking.rows.length ? (
+    <section class="stats-card" aria-labelledby="ranking-table-title">
+      <p class="eyebrow">{labels.ranking}</p>
+      <h2 id="ranking-table-title">{text.title}</h2>
+      <RankingTable ranking={ranking} locale={locale} />
+    </section>
+  ) : (
+    <div class="empty-state ranking-empty" role="status">
+      <span aria-hidden="true">🏆</span>
+      <h2>{labels.emptyTitle}</h2>
+      <p>{labels.emptyDescription}</p>
+    </div>
+  )}
+
+  <section class="stats-card ranking-limits" aria-labelledby="ranking-limits-title">
+    <p class="eyebrow">Dataset</p>
+    <h2 id="ranking-limits-title">{labels.limitationsTitle}</h2>
+    <ul>
+      {limits.map((limit) => <li>{limit}</li>)}
+    </ul>
+  </section>
+</article>
+
+<style>
+  :global(.ranking-page) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  :global(.ranking-limits ul) {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+    padding-left: 1.15rem;
+    color: var(--color-muted);
+    font-weight: 750;
+  }
+
+  :global(.ranking-empty) {
+    justify-items: start;
+    text-align: left;
+  }
+
+  @media (min-width: 720px) {
+    :global(.ranking-page) {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+  }
+</style>
