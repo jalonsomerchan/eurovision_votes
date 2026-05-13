@@ -36,12 +36,12 @@ const alternatePath = currentPath.includes('/vota')
 
 <header class="site-header app-header">
   <Container class="header-inner">
-    <a class="site-brand" href={homeUrl} aria-label="Eurovision Votes 2026">
+    <a class="site-brand" href={homeUrl} aria-label={siteConfig.name}>
       <span class="site-brand__mark">EV</span>
       <span class="site-brand__text">{siteConfig.name}</span>
     </a>
 
-    <nav aria-label="Navegación principal" class="main-nav main-nav--desktop">
+    <nav aria-label={t('nav.menu')} class="main-nav main-nav--desktop">
       <a href={homeUrl}>{t('nav.home')}</a>
       <a href={voteUrl}>{t('nav.vote')}</a>
       <a href={historyUrl}>{t('nav.history')}</a>
@@ -60,7 +60,7 @@ const alternatePath = currentPath.includes('/vota')
     </nav>
 
     <details class="mobile-menu" data-mobile-menu>
-      <summary aria-label="Abrir menú" aria-controls="mobile-menu-panel">
+      <summary aria-label={t('nav.menu')} aria-controls="mobile-menu-panel">
         <span></span>
         <span></span>
         <span></span>
@@ -70,7 +70,7 @@ const alternatePath = currentPath.includes('/vota')
           <strong>{t('nav.menu')}</strong>
           <small>{localeLabels[locale]}</small>
         </div>
-        <nav aria-label="Menú móvil" class="mobile-menu__nav">
+        <nav aria-label={t('nav.menu')} class="mobile-menu__nav">
           <a href={homeUrl}>{t('nav.home')}</a>
           <a href={voteUrl}>{t('nav.vote')}</a>
           <a href={historyUrl}>{t('nav.history')}</a>
@@ -79,7 +79,7 @@ const alternatePath = currentPath.includes('/vota')
           <a href={statsUrl}>{t('nav.stats')}</a>
           <button type="button" data-open-settings>{t('nav.settings')}</button>
         </nav>
-        <div class="mobile-menu__languages" aria-label="Cambiar idioma">
+        <div class="mobile-menu__languages" aria-label={t('nav.language')}>
           <strong>{t('nav.language')}</strong>
           <div>
             {alternateLocales.map((alternateLocale) => (
