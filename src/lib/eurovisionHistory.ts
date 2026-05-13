@@ -34,11 +34,13 @@ export interface EurovisionHistoryData {
 }
 
 type RecordLike = Record<string, unknown>;
+type CountryMap = Record<string, string>;
 
 const DATASET_DIR = path.join(process.cwd(), 'public', 'dataset');
 const MAX_FILES = 4000;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const YEAR_RE = /\b(19[5-9]\d|20\d{2})\b/;
+const CONTESTANT_PATH_RE = /(?:^|[/\\])contestants[/\\](\d+)_([a-z]{2}(?:-[a-z]{3})?)(?:[/\\]|$)/i;
 
 function normalizeKey(key: string) {
   return key.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -116,6 +118,40 @@ function collectObjects(value: unknown, filePath: string, output: Array<{ record
   }
 }
 
+function loadCountryMap(): CountryMap {
+  const countriesPath = path.join(DATASET_DIR, 'data', 'countries.json');
+  if (!existsSync(countriesPath)) return {};
+
+  try {
+    const parsed = JSON.parse(readFileSync(countriesPath, 'utf8'));
+    if (!isRecord(parsed)) return {};
+
+    return Object.fromEntries(
+      Object.entries(parsed)
+        .map(([code, name]) => [code.toUpperCase(), toText(name)])
+        .filter(([, name]) => name),
+    );
+  } catch {
+    return {};
+  }
+}
+
+function countryName(value: unknown, countryMap: CountryMap) {
+  const raw = toText(value);
+  if (!raw) return '';
+  const code = raw.toUpperCase();
+  return countryMap[code] ?? raw;
+}
+
+function contestantPathInfo(filePath: string) {
+  const match = filePath.match(CONTESTANT_PATH_RE);
+  if (!match) return null;
+  return {
+    place: Number(match[1]) + 1,
+    countryCode: match[2].toUpperCase(),
+  };
+}
+
 function looksLikeVoteRow(record: RecordLike) {
   return Boolean(
     getValue(record, ['fromCountry', 'votingCountry', 'voterCountry', 'from']) &&
@@ -124,15 +160,18 @@ function looksLikeVoteRow(record: RecordLike) {
   );
 }
 
-function entryFrom(record: RecordLike, filePath: string): EurovisionEntry | null {
+function entryFrom(record: RecordLike, filePath: string, countryMap: CountryMap): EurovisionEntry | null {
+  if (!filePath.includes('contestants')) return null;
   if (looksLikeVoteRow(record)) return null;
   const year = toYear(record, filePath);
   if (!year) return null;
 
-  const country = toText(getValue(record, ['country', 'participantCountry', 'entryCountry', 'nation', 'delegation']));
+  const pathInfo = contestantPathInfo(filePath);
+  const country = countryName(getValue(record, ['country', 'participantCountry', 'entryCountry', 'nation', 'delegation']) ?? pathInfo?.countryCode, countryMap);
   const artist = toText(getValue(record, ['artist', 'artists', 'performer', 'performers', 'singer', 'act', 'contestant', 'participant']));
   const song = toText(getValue(record, ['song', 'songTitle', 'title', 'entry', 'composition']));
-  const place = toNumber(getValue(record, ['place', 'rank', 'position', 'placing', 'finalPlace', 'semiFinalPlace', 'resultPlace']));
+  const explicitPlace = toNumber(getValue(record, ['place', 'rank', 'position', 'placing', 'finalPlace', 'semiFinalPlace', 'resultPlace']));
+  const place = explicitPlace ?? pathInfo?.place ?? null;
   const points = toNumber(getValue(record, ['points', 'totalPoints', 'score', 'totalScore', 'finalPoints']));
   const runningOrder = toNumber(getValue(record, ['runningOrder', 'draw', 'order', 'startPosition']));
 
@@ -150,16 +189,17 @@ function entryFrom(record: RecordLike, filePath: string): EurovisionEntry | null
   };
 }
 
-function contestInfoFrom(record: RecordLike, filePath: string) {
+function contestInfoFrom(record: RecordLike, filePath: string, countryMap: CountryMap) {
   const year = toYear(record, filePath);
   if (!year) return null;
 
+  const isContestFile = /(?:^|[/\\])contest\.json$/i.test(filePath);
   const hostCity = toText(getValue(record, ['hostCity', 'city', 'host', 'locationCity']));
-  const hostCountry = toText(getValue(record, ['hostCountry', 'countryHost', 'locationCountry']));
+  const hostCountry = countryName(getValue(record, isContestFile ? ['hostCountry', 'countryHost', 'locationCountry', 'country'] : ['hostCountry', 'countryHost', 'locationCountry']), countryMap);
   const venue = toText(getValue(record, ['venue', 'arena', 'location', 'place']));
   const slogan = toText(getValue(record, ['slogan', 'theme']));
   const date = toText(getValue(record, ['date', 'finalDate', 'eventDate', 'grandFinalDate']));
-  const winner = toText(getValue(record, ['winner', 'winningCountry', 'winnerCountry']));
+  const winner = countryName(getValue(record, ['winner', 'winningCountry', 'winnerCountry']), countryMap);
 
   if (!hostCity && !hostCountry && !venue && !slogan && !date && !winner) return null;
   return { year, hostCity, hostCountry, venue, slogan, date, winner };
@@ -175,6 +215,7 @@ export async function getEurovisionHistory(): Promise<EurovisionHistoryData> {
     return { contests: [], sources: [], generatedAt: new Date().toISOString(), datasetFound: false };
   }
 
+  const countryMap = loadCountryMap();
   const jsonFiles = walkJsonFiles(DATASET_DIR);
   const objects: Array<{ record: RecordLike; filePath: string }> = [];
 
@@ -191,7 +232,7 @@ export async function getEurovisionHistory(): Promise<EurovisionHistoryData> {
   const sources = [...new Set(jsonFiles.map((file) => path.relative(DATASET_DIR, file)))].sort();
 
   for (const { record, filePath } of objects) {
-    const info = contestInfoFrom(record, filePath);
+    const info = contestInfoFrom(record, filePath, countryMap);
     if (info) {
       const contest = contests.get(info.year) ?? { year: info.year, participants: 0, entries: [] };
       contest.hostCity = mergeText(contest.hostCity, info.hostCity);
@@ -203,7 +244,7 @@ export async function getEurovisionHistory(): Promise<EurovisionHistoryData> {
       contests.set(info.year, contest);
     }
 
-    const entry = entryFrom(record, filePath);
+    const entry = entryFrom(record, filePath, countryMap);
     if (entry) {
       const contest = contests.get(entry.year) ?? { year: entry.year, participants: 0, entries: [] };
       const key = `${entry.country}|${entry.artist ?? ''}|${entry.song ?? ''}`.toLowerCase();
