@@ -1,0 +1,17 @@
+---
+import EurovisionNewsApp from '../../components/EurovisionNewsApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { getNewsLabels } from '../../i18n/newsLabels';
+import { getEscplusNewsFeed } from '../../lib/newsFeed.mjs';
+
+const labels = getNewsLabels(defaultLocale);
+const feed = await getEscplusNewsFeed();
+---
+
+<BaseLayout title={labels.title} description={labels.description} locale={defaultLocale}>
+  <Container>
+    <EurovisionNewsApp items={feed.items} error={feed.error} sourceUrl={feed.sourceUrl} locale={defaultLocale} />
+  </Container>
+</BaseLayout>
