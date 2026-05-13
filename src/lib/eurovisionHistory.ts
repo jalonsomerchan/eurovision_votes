@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { defaultLocale, type Locale } from '../config/site';
+import { countryCodeFrom, flagUrlFromCountryCode, localizedCountryName, type CountryMap } from '../config/eurovisionCountries';
 
 export interface EurovisionEntry {
   year: number;
@@ -12,6 +13,7 @@ export interface EurovisionEntry {
   points?: number | null;
   place?: number | null;
   runningOrder?: number | null;
+  contestantId?: number | null;
 }
 
 export interface EurovisionContest {
@@ -42,38 +44,14 @@ export interface EurovisionHistoryData {
 }
 
 type RecordLike = Record<string, unknown>;
-type CountryMap = Record<string, string>;
-type LocalizedCountryMap = Partial<Record<Locale, Record<string, string>>>;
+type FinalResult = { place?: number | null; points?: number | null; runningOrder?: number | null };
 
 const DATASET_DIR = path.join(process.cwd(), 'public', 'dataset');
 const MAX_FILES = 4000;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const YEAR_RE = /\b(19[5-9]\d|20\d{2})\b/;
 const CONTESTANT_PATH_RE = /(?:^|[/\\])contestants[/\\](\d+)_([a-z]{2}(?:-[a-z]{3})?)(?:[/\\]|$)/i;
-
-const countryTranslations: LocalizedCountryMap = {
-  es: {
-    AL: 'Albania', AD: 'Andorra', AM: 'Armenia', AU: 'Australia', AT: 'Austria', AZ: 'Azerbaiyan', BY: 'Bielorrusia', BE: 'Belgica', BA: 'Bosnia y Herzegovina', BG: 'Bulgaria', HR: 'Croacia', CY: 'Chipre', CZ: 'Chequia', DK: 'Dinamarca', EE: 'Estonia', FI: 'Finlandia', FR: 'Francia', GE: 'Georgia', DE: 'Alemania', GR: 'Grecia', HU: 'Hungria', IS: 'Islandia', IE: 'Irlanda', IL: 'Israel', IT: 'Italia', KZ: 'Kazajistan', LV: 'Letonia', LT: 'Lituania', LU: 'Luxemburgo', MT: 'Malta', MD: 'Moldavia', MC: 'Monaco', ME: 'Montenegro', MA: 'Marruecos', NL: 'Paises Bajos', MK: 'Macedonia del Norte', NO: 'Noruega', PL: 'Polonia', PT: 'Portugal', RO: 'Rumania', RU: 'Rusia', SM: 'San Marino', RS: 'Serbia', CS: 'Serbia y Montenegro', SK: 'Eslovaquia', SI: 'Eslovenia', ES: 'España', SE: 'Suecia', CH: 'Suiza', TR: 'Turquia', UA: 'Ucrania', GB: 'Reino Unido', 'GB-WLS': 'Gales', YU: 'Yugoslavia'
-  },
-  en: {
-    AL: 'Albania', AD: 'Andorra', AM: 'Armenia', AU: 'Australia', AT: 'Austria', AZ: 'Azerbaijan', BY: 'Belarus', BE: 'Belgium', BA: 'Bosnia and Herzegovina', BG: 'Bulgaria', HR: 'Croatia', CY: 'Cyprus', CZ: 'Czechia', DK: 'Denmark', EE: 'Estonia', FI: 'Finland', FR: 'France', GE: 'Georgia', DE: 'Germany', GR: 'Greece', HU: 'Hungary', IS: 'Iceland', IE: 'Ireland', IL: 'Israel', IT: 'Italy', KZ: 'Kazakhstan', LV: 'Latvia', LT: 'Lithuania', LU: 'Luxembourg', MT: 'Malta', MD: 'Moldova', MC: 'Monaco', ME: 'Montenegro', MA: 'Morocco', NL: 'Netherlands', MK: 'North Macedonia', NO: 'Norway', PL: 'Poland', PT: 'Portugal', RO: 'Romania', RU: 'Russia', SM: 'San Marino', RS: 'Serbia', CS: 'Serbia and Montenegro', SK: 'Slovakia', SI: 'Slovenia', ES: 'Spain', SE: 'Sweden', CH: 'Switzerland', TR: 'Turkey', UA: 'Ukraine', GB: 'United Kingdom', 'GB-WLS': 'Wales', YU: 'Yugoslavia'
-  },
-  fr: {
-    AL: 'Albanie', AD: 'Andorre', AM: 'Armenie', AU: 'Australie', AT: 'Autriche', AZ: 'Azerbaidjan', BY: 'Bielorussie', BE: 'Belgique', BA: 'Bosnie-Herzegovine', BG: 'Bulgarie', HR: 'Croatie', CY: 'Chypre', CZ: 'Tchequie', DK: 'Danemark', EE: 'Estonie', FI: 'Finlande', FR: 'France', GE: 'Georgie', DE: 'Allemagne', GR: 'Grece', HU: 'Hongrie', IS: 'Islande', IE: 'Irlande', IL: 'Israel', IT: 'Italie', KZ: 'Kazakhstan', LV: 'Lettonie', LT: 'Lituanie', LU: 'Luxembourg', MT: 'Malte', MD: 'Moldavie', MC: 'Monaco', ME: 'Montenegro', MA: 'Maroc', NL: 'Pays-Bas', MK: 'Macedoine du Nord', NO: 'Norvege', PL: 'Pologne', PT: 'Portugal', RO: 'Roumanie', RU: 'Russie', SM: 'Saint-Marin', RS: 'Serbie', CS: 'Serbie-et-Montenegro', SK: 'Slovaquie', SI: 'Slovenie', ES: 'Espagne', SE: 'Suede', CH: 'Suisse', TR: 'Turquie', UA: 'Ukraine', GB: 'Royaume-Uni', 'GB-WLS': 'Pays de Galles', YU: 'Yougoslavie'
-  },
-  pt: {
-    AL: 'Albania', AD: 'Andorra', AM: 'Armenia', AU: 'Australia', AT: 'Austria', AZ: 'Azerbaijao', BY: 'Bielorrussia', BE: 'Belgica', BA: 'Bosnia e Herzegovina', BG: 'Bulgaria', HR: 'Croacia', CY: 'Chipre', CZ: 'Chequia', DK: 'Dinamarca', EE: 'Estonia', FI: 'Finlandia', FR: 'Franca', GE: 'Georgia', DE: 'Alemanha', GR: 'Grecia', HU: 'Hungria', IS: 'Islandia', IE: 'Irlanda', IL: 'Israel', IT: 'Italia', KZ: 'Cazaquistao', LV: 'Letonia', LT: 'Lituania', LU: 'Luxemburgo', MT: 'Malta', MD: 'Moldavia', MC: 'Monaco', ME: 'Montenegro', MA: 'Marrocos', NL: 'Paises Baixos', MK: 'Macedonia do Norte', NO: 'Noruega', PL: 'Polonia', PT: 'Portugal', RO: 'Romenia', RU: 'Russia', SM: 'Sao Marinho', RS: 'Servia', CS: 'Servia e Montenegro', SK: 'Eslovaquia', SI: 'Eslovenia', ES: 'Espanha', SE: 'Suecia', CH: 'Suica', TR: 'Turquia', UA: 'Ucrania', GB: 'Reino Unido', 'GB-WLS': 'Pais de Gales', YU: 'Jugoslavia'
-  },
-  ca: {
-    AL: 'Albania', AD: 'Andorra', AM: 'Armenia', AU: 'Australia', AT: 'Austria', AZ: 'Azerbaidjan', BY: 'Bielorussia', BE: 'Belgica', BA: 'Bosnia i Hercegovina', BG: 'Bulgaria', HR: 'Croacia', CY: 'Xipre', CZ: 'Txequia', DK: 'Dinamarca', EE: 'Estonia', FI: 'Finlandia', FR: 'Franca', GE: 'Georgia', DE: 'Alemanya', GR: 'Grecia', HU: 'Hongria', IS: 'Islandia', IE: 'Irlanda', IL: 'Israel', IT: 'Italia', KZ: 'Kazakhstan', LV: 'Letonia', LT: 'Lituania', LU: 'Luxemburg', MT: 'Malta', MD: 'Moldavia', MC: 'Monaco', ME: 'Montenegro', MA: 'Marroc', NL: 'Paisos Baixos', MK: 'Macedonia del Nord', NO: 'Noruega', PL: 'Polonia', PT: 'Portugal', RO: 'Romania', RU: 'Russia', SM: 'San Marino', RS: 'Serbia', CS: 'Serbia i Montenegro', SK: 'Eslovaquia', SI: 'Eslovenia', ES: 'Espanya', SE: 'Suecia', CH: 'Suissa', TR: 'Turquia', UA: 'Ucraina', GB: 'Regne Unit', 'GB-WLS': 'Gal·les', YU: 'Iugoslavia'
-  },
-  eu: {
-    AL: 'Albania', AD: 'Andorra', AM: 'Armenia', AU: 'Australia', AT: 'Austria', AZ: 'Azerbaijan', BY: 'Bielorrusia', BE: 'Belgika', BA: 'Bosnia eta Herzegovina', BG: 'Bulgaria', HR: 'Kroazia', CY: 'Zipre', CZ: 'Txekia', DK: 'Danimarka', EE: 'Estonia', FI: 'Finlandia', FR: 'Frantzia', GE: 'Georgia', DE: 'Alemania', GR: 'Grezia', HU: 'Hungaria', IS: 'Islandia', IE: 'Irlanda', IL: 'Israel', IT: 'Italia', KZ: 'Kazakhstan', LV: 'Letonia', LT: 'Lituania', LU: 'Luxenburgo', MT: 'Malta', MD: 'Moldavia', MC: 'Monako', ME: 'Montenegro', MA: 'Maroko', NL: 'Herbehereak', MK: 'Ipar Mazedonia', NO: 'Norvegia', PL: 'Polonia', PT: 'Portugal', RO: 'Errumania', RU: 'Errusia', SM: 'San Marino', RS: 'Serbia', CS: 'Serbia eta Montenegro', SK: 'Eslovakia', SI: 'Eslovenia', ES: 'Espainia', SE: 'Suedia', CH: 'Suitza', TR: 'Turkia', UA: 'Ukraina', GB: 'Erresuma Batua', 'GB-WLS': 'Gales', YU: 'Jugoslavia'
-  },
-  gl: {
-    AL: 'Albania', AD: 'Andorra', AM: 'Armenia', AU: 'Australia', AT: 'Austria', AZ: 'Acerbaixan', BY: 'Bielorrusia', BE: 'Belxica', BA: 'Bosnia e Hercegovina', BG: 'Bulgaria', HR: 'Croacia', CY: 'Chipre', CZ: 'Chequia', DK: 'Dinamarca', EE: 'Estonia', FI: 'Finlandia', FR: 'Francia', GE: 'Xeorxia', DE: 'Alemaña', GR: 'Grecia', HU: 'Hungria', IS: 'Islandia', IE: 'Irlanda', IL: 'Israel', IT: 'Italia', KZ: 'Casaquistan', LV: 'Letonia', LT: 'Lituania', LU: 'Luxemburgo', MT: 'Malta', MD: 'Moldavia', MC: 'Monaco', ME: 'Montenegro', MA: 'Marrocos', NL: 'Paises Baixos', MK: 'Macedonia do Norte', NO: 'Noruega', PL: 'Polonia', PT: 'Portugal', RO: 'Romania', RU: 'Rusia', SM: 'San Marino', RS: 'Serbia', CS: 'Serbia e Montenegro', SK: 'Eslovaquia', SI: 'Eslovenia', ES: 'España', SE: 'Suecia', CH: 'Suiza', TR: 'Turquia', UA: 'Ucraína', GB: 'Reino Unido', 'GB-WLS': 'Gales', YU: 'Iugoslavia'
-  },
-};
+const FINAL_ROUND_PATH_RE = /(?:^|[/\\])data[/\\]senior[/\\](\d{4})[/\\]rounds[/\\]final\.json$/i;
 
 function normalizeKey(key: string) {
   return key.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -169,33 +147,15 @@ function loadCountryMap(): CountryMap {
   }
 }
 
-function countryCodeFrom(value: unknown, countryMap: CountryMap) {
-  const raw = toText(value);
-  if (!raw) return '';
-  const upper = raw.toUpperCase();
-  if (countryMap[upper] || countryTranslations.en?.[upper]) return upper;
-  const normalizedRaw = normalizeKey(raw);
-  const found = Object.entries(countryMap).find(([, name]) => normalizeKey(name) === normalizedRaw);
-  return found?.[0] ?? '';
-}
-
-function flagEmoji(code: string) {
-  if (code === 'GB-WLS') return '🏴';
-  if (!/^[A-Z]{2}$/.test(code)) return '🏳️';
-  return [...code].map((char) => String.fromCodePoint(127397 + char.charCodeAt(0))).join('');
-}
-
 function countryInfo(value: unknown, countryMap: CountryMap, locale: Locale) {
-  const code = countryCodeFrom(value, countryMap);
   const raw = toText(value);
-  const name = code
-    ? countryTranslations[locale]?.[code] ?? countryTranslations[defaultLocale]?.[code] ?? countryTranslations.en?.[code] ?? countryMap[code] ?? raw
-    : raw;
+  const code = raw ? countryCodeFrom(raw, countryMap) : '';
+  const name = code ? localizedCountryName(code, countryMap, locale) : raw;
 
   return {
     code: code || undefined,
     name,
-    flag: code ? flagEmoji(code) : undefined,
+    flag: code ? flagUrlFromCountryCode(code) : undefined,
   };
 }
 
@@ -203,9 +163,38 @@ function contestantPathInfo(filePath: string) {
   const match = filePath.match(CONTESTANT_PATH_RE);
   if (!match) return null;
   return {
-    place: Number(match[1]) + 1,
+    contestantId: Number(match[1]),
     countryCode: match[2].toUpperCase(),
   };
+}
+
+function finalResultKey(year: number, contestantId: number) {
+  return `${year}:${contestantId}`;
+}
+
+function getTotalPoints(scores: unknown) {
+  if (!Array.isArray(scores)) return null;
+  const total = scores.find((score) => isRecord(score) && toText(score.name).toLowerCase() === 'total');
+  const fallback = scores.find(isRecord);
+  return toNumber(isRecord(total) ? total.points : isRecord(fallback) ? fallback.points : null);
+}
+
+function loadFinalResults(filePath: string, parsed: unknown, output: Map<string, FinalResult>) {
+  const relativePath = path.relative(DATASET_DIR, filePath);
+  const match = relativePath.match(FINAL_ROUND_PATH_RE);
+  if (!match || !isRecord(parsed) || !Array.isArray(parsed.performances)) return;
+
+  const year = Number(match[1]);
+  for (const performance of parsed.performances) {
+    if (!isRecord(performance)) continue;
+    const contestantId = toNumber(performance.contestantId);
+    if (contestantId === null) continue;
+    output.set(finalResultKey(year, contestantId), {
+      place: toNumber(performance.place),
+      points: getTotalPoints(performance.scores),
+      runningOrder: toNumber(performance.running),
+    });
+  }
 }
 
 function looksLikeVoteRow(record: RecordLike) {
@@ -227,11 +216,11 @@ function entryFrom(record: RecordLike, filePath: string, countryMap: CountryMap,
   const artist = toText(getValue(record, ['artist', 'artists', 'performer', 'performers', 'singer', 'act', 'contestant', 'participant']));
   const song = toText(getValue(record, ['song', 'songTitle', 'title', 'entry', 'composition']));
   const explicitPlace = toNumber(getValue(record, ['place', 'rank', 'position', 'placing', 'finalPlace', 'semiFinalPlace', 'resultPlace']));
-  const place = explicitPlace ?? pathInfo?.place ?? null;
+  const place = explicitPlace ?? null;
   const points = toNumber(getValue(record, ['points', 'totalPoints', 'score', 'totalScore', 'finalPoints']));
   const runningOrder = toNumber(getValue(record, ['runningOrder', 'draw', 'order', 'startPosition']));
 
-  if (!country.name || (!artist && !song && place === null && points === null)) return null;
+  if (!country.name || (!artist && !song && place === null && points === null && pathInfo?.contestantId === undefined)) return null;
   if (country.name.length > 60 || artist.length > 120 || song.length > 160) return null;
 
   return {
@@ -244,6 +233,7 @@ function entryFrom(record: RecordLike, filePath: string, countryMap: CountryMap,
     points,
     place,
     runningOrder,
+    contestantId: pathInfo?.contestantId ?? toNumber(getValue(record, ['id', 'contestantId'])),
   };
 }
 
@@ -280,6 +270,19 @@ function mergeText(current: string | undefined, next: string | undefined) {
   return current;
 }
 
+function withFinalResult(entry: EurovisionEntry, finalResults: Map<string, FinalResult>) {
+  if (entry.contestantId === undefined || entry.contestantId === null) return entry;
+  const result = finalResults.get(finalResultKey(entry.year, entry.contestantId));
+  if (!result) return entry;
+
+  return {
+    ...entry,
+    place: result.place ?? entry.place,
+    points: result.points ?? entry.points,
+    runningOrder: result.runningOrder ?? entry.runningOrder,
+  };
+}
+
 export async function getEurovisionHistory(locale: Locale = defaultLocale): Promise<EurovisionHistoryData> {
   if (!existsSync(DATASET_DIR)) {
     return { contests: [], sources: [], generatedAt: new Date().toISOString(), datasetFound: false, locale };
@@ -288,10 +291,12 @@ export async function getEurovisionHistory(locale: Locale = defaultLocale): Prom
   const countryMap = loadCountryMap();
   const jsonFiles = walkJsonFiles(DATASET_DIR);
   const objects: Array<{ record: RecordLike; filePath: string }> = [];
+  const finalResults = new Map<string, FinalResult>();
 
   for (const filePath of jsonFiles) {
     try {
       const parsed = JSON.parse(readFileSync(filePath, 'utf8'));
+      loadFinalResults(filePath, parsed, finalResults);
       collectObjects(parsed, path.relative(DATASET_DIR, filePath), objects);
     } catch {
       // Ignore invalid or non-standard JSON files in the dataset.
@@ -321,15 +326,17 @@ export async function getEurovisionHistory(locale: Locale = defaultLocale): Prom
     const entry = entryFrom(record, filePath, countryMap, locale);
     if (entry) {
       const contest = contests.get(entry.year) ?? { year: entry.year, participants: 0, entries: [] };
-      const key = `${entry.countryCode ?? entry.country}|${entry.artist ?? ''}|${entry.song ?? ''}`.toLowerCase();
-      const existingIndex = contest.entries.findIndex((item) => `${item.countryCode ?? item.country}|${item.artist ?? ''}|${item.song ?? ''}`.toLowerCase() === key);
-      if (existingIndex === -1) contest.entries.push(entry);
+      const enrichedEntry = withFinalResult(entry, finalResults);
+      const key = `${enrichedEntry.contestantId ?? enrichedEntry.countryCode ?? enrichedEntry.country}|${enrichedEntry.artist ?? ''}|${enrichedEntry.song ?? ''}`.toLowerCase();
+      const existingIndex = contest.entries.findIndex((item) => `${item.contestantId ?? item.countryCode ?? item.country}|${item.artist ?? ''}|${item.song ?? ''}`.toLowerCase() === key);
+      if (existingIndex === -1) contest.entries.push(enrichedEntry);
       contests.set(entry.year, contest);
     }
   }
 
   const result = [...contests.values()].map((contest) => {
     const entries = contest.entries
+      .map((entry) => withFinalResult(entry, finalResults))
       .sort((a, b) => (a.place ?? 999) - (b.place ?? 999) || (a.runningOrder ?? 999) - (b.runningOrder ?? 999) || a.country.localeCompare(b.country));
     const winner = entries.find((entry) => entry.place === 1) ?? [...entries].sort((a, b) => (b.points ?? -1) - (a.points ?? -1))[0];
 
