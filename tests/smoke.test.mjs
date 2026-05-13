@@ -114,6 +114,7 @@ describe('project smoke checks', () => {
     const app = readText('src/components/EurovisionVoteApp.astro');
     const statsApp = readText('src/components/EurovisionStatsApp.astro');
     const voteScript = readText('public/vote.js');
+    const voteRender = readText('public/vote/render.js');
     const statsScript = readText('public/stats.js');
     const featureLabels = readText('src/i18n/featureLabels.ts');
     const statsLabels = readText('src/i18n/statsLabels.ts');
@@ -127,18 +128,39 @@ describe('project smoke checks', () => {
     assert.match(app, /vote-labels/);
     assert.match(statsApp, /stats-labels/);
     assert.match(app, /vote\.js/);
-    assert.match(voteScript, /localStorage/);
+    assert.match(voteScript, /createVoteActions/);
+    assert.match(voteScript, /getOrCreateDeviceId/);
     assert.match(featureLabels, /Exportar votos/);
     assert.match(featureLabels, /Export votes/);
     assert.match(featureLabels, /Borrar votos/);
     assert.match(statsLabels, /Statistiques de l’Eurovision 2026/);
     assert.match(statsScript, /stats-labels/);
-    assert.match(voteScript, /flagsapi\.com/);
+    assert.match(voteRender, /flagsapi\.com/);
     assert.match(contestConfig, /Semifinal 1/);
     assert.match(contestConfig, /Semifinal 2/);
     assert.match(contestConfig, /Final/);
   });
 
+  it('keeps the vote client split into focused modules', () => {
+    [
+      'public/vote/actions.js',
+      'public/vote/cloud.js',
+      'public/vote/config.js',
+      'public/vote/contest.js',
+      'public/vote/dom.js',
+      'public/vote/render.js',
+      'public/vote/storage.js',
+    ].forEach((path) => {
+      assert.equal(existsSync(join(root, path)), true, `${path} should exist`);
+    });
+
+    assert.match(readText('public/vote/cloud.js'), /initializeFirestore/);
+    assert.match(readText('public/vote/actions.js'), /shareVotes/);
+    assert.match(readText('public/vote/actions.js'), /exportVotes/);
+    assert.match(readText('public/vote/actions.js'), /importVotes/);
+    assert.match(readText('public/vote/render.js'), /createRenderer/);
+    assert.match(readText('public/vote/storage.js'), /localStorage/);
+  });
 
   it('restricts historical dataset parsing to senior Eurovision only', () => {
     const history = readText('src/lib/eurovisionHistory.ts');
@@ -152,9 +174,8 @@ describe('project smoke checks', () => {
     assert.doesNotMatch(history, /walkJsonFiles\(DATASET_DIR\)/);
     assert.match(editions, /data\[\/\\\\\]senior/);
     assert.match(editions, /CONTESTANT_PATH_RE/);
-    
   });
-  
+
   it('includes evergreen Eurovision rankings', () => {
     const rankingsIndex = readText('src/pages/rankings/index.astro');
     const localizedRankingsIndex = readText('src/pages/[locale]/rankings/index.astro');
@@ -182,7 +203,6 @@ describe('project smoke checks', () => {
     assert.match(rankingLabels, /Países com mais vitórias/);
     assert.match(header, /rankingsUrl/);
     assert.match(home, /rankingLabels/);
-
   });
 
   it('includes the ESCplus news page', () => {
@@ -282,11 +302,8 @@ describe('project smoke checks', () => {
     const readme = readText('README.md');
 
     assert.match(readme, /\S/, 'README.md should not be empty');
-
     assert.match(readme, /Senior/, 'README.md should document the senior-only dataset scope');
-
     assert.match(readme, /\/rankings\//, 'README.md should document rankings route');
-
     assert.match(readme, /\/noticias\//, 'README.md should document news route');
     assert.match(readme, /\/paises\/\{codigo\}\//, 'README.md should document country profile routes');
     assert.equal(existsSync(join(root, 'agents.md')), true, 'agents.md should exist');

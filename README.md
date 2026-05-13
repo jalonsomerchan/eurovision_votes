@@ -50,6 +50,7 @@ El proyecto incluye páginas estáticas y compatibles con GitHub Pages para expl
 
 El dataset histórico se lee desde `public/dataset/data/senior`. Los helpers que recorren el dataset deben mantener ese alcance y no procesar carpetas junior u otros concursos.
 
+- `/vota/`: app de votación de Eurovision 2026. La UI se renderiza desde `src/components/EurovisionVoteApp.astro` y la lógica de cliente entra por `public/vote.js`.
 - `/noticias/`: noticias de Eurovision desde el feed RSS público de ESCplus España. La carga se hace durante el build mediante `src/lib/newsFeed.mjs`; si el feed falla, la página muestra un estado de error en vez de romper el build. Solo se muestran título, resumen del feed, fecha, autoría, categorías y enlace externo a ESCplus España.
 - `/{locale}/noticias/`: versión localizada de la página de noticias para los idiomas secundarios configurados.
 - `/rankings/`: índice de rankings históricos evergreen generados desde el dataset disponible.
@@ -60,6 +61,8 @@ El dataset histórico se lee desde `public/dataset/data/senior`. Los helpers que
 - `/{locale}/paises/{codigo}/`: versión localizada de cada ficha para los idiomas secundarios configurados.
 - `/comparador-paises/`: comparador de países. Permite seleccionar dos o más países y compara participaciones, victorias, mejor posición, puntos medios, resultados por décadas y última participación.
 - `/{locale}/comparador-paises/`: versión localizada para los idiomas secundarios configurados.
+
+La app de votación mantiene `public/vote.js` como orquestador pequeño y separa responsabilidades en módulos ES bajo `public/vote/`: `config.js` lee los JSON embebidos y labels, `storage.js` gestiona localStorage/device id, `dom.js` contiene utilidades de DOM/modales/feedback, `contest.js` centraliza reglas de concursos y medias, `render.js` pinta pestañas y canciones, `cloud.js` encapsula Firebase/Firestore y `actions.js` cubre importar, exportar, resetear y compartir votos. Los textos visibles deben seguir viniendo de los labels existentes inyectados por Astro.
 
 Los rankings usan `src/lib/eurovisionRankings.ts` para centralizar cálculos, `src/components/RankingsIndexApp.astro`, `src/components/EurovisionRankingApp.astro` y `src/components/RankingTable.astro` para la interfaz, y `src/i18n/rankingLabels.ts` para textos SEO/UI traducidos. Los rankings explican límites del dataset cuando faltan puntos, sedes u otros datos, y no inventan información. Las noticias usan `src/lib/newsFeed.mjs` para parsear RSS 2.0 de WordPress con namespaces y CDATA, `src/components/EurovisionNewsApp.astro` para la interfaz y `src/i18n/newsLabels.ts` para textos traducidos. Las fichas por país usan `src/lib/eurovisionCountryProfiles.ts` para centralizar datos y cálculos, `src/components/EurovisionCountryProfileApp.astro` como orquestador, componentes pequeños para gráfica, tabla, enlaces y FAQ, y `src/i18n/countryProfileSeoLabels.ts` para textos SEO/FAQ traducidos. El comparador usa `src/lib/countryComparison.ts`, `src/components/EurovisionCountryComparatorApp.astro`, `public/country-comparator.js` y `src/i18n/countryComparisonLabels.ts`.
 
