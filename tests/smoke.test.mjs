@@ -23,6 +23,8 @@ describe('project smoke checks', () => {
       'src/pages/[locale]/index.astro',
       'src/pages/vota.astro',
       'src/pages/[locale]/vota.astro',
+      'src/pages/stats.astro',
+      'src/pages/[locale]/stats.astro',
       'src/pages/404.astro',
       'src/pages/manifest.webmanifest.ts',
       'src/pages/robots.txt.ts',
@@ -30,6 +32,7 @@ describe('project smoke checks', () => {
       'src/config/site.ts',
       'src/i18n/ui.ts',
       'src/i18n/featureLabels.ts',
+      'src/i18n/statsLabels.ts',
       'src/i18n/translations/es.json',
       'src/i18n/translations/en.json',
       'src/styles/global.css',
@@ -90,24 +93,32 @@ describe('project smoke checks', () => {
     });
   });
 
-  it('includes the Eurovision homepage and voting app', () => {
+  it('includes the Eurovision homepage, voting app and stats app', () => {
     const home = readText('src/pages/index.astro');
     const votePage = readText('src/pages/vota.astro');
+    const localizedStatsPage = readText('src/pages/[locale]/stats.astro');
     const app = readText('src/components/EurovisionVoteApp.astro');
+    const statsApp = readText('src/components/EurovisionStatsApp.astro');
     const voteScript = readText('public/vote.js');
+    const statsScript = readText('public/stats.js');
     const featureLabels = readText('src/i18n/featureLabels.ts');
+    const statsLabels = readText('src/i18n/statsLabels.ts');
     const contestConfig = readText('src/config/eurovision2026.ts');
     const siteConfig = readText('src/config/site.ts');
 
     assert.match(siteConfig, /name: 'Eurovision 2026'/);
     assert.match(home, /EurovisionHomeApp/);
     assert.match(votePage, /EurovisionVoteApp/);
+    assert.match(localizedStatsPage, /EurovisionStatsApp/);
     assert.match(app, /vote-labels/);
+    assert.match(statsApp, /stats-labels/);
     assert.match(app, /vote\.js/);
     assert.match(voteScript, /localStorage/);
     assert.match(featureLabels, /Exportar votos/);
     assert.match(featureLabels, /Export votes/);
     assert.match(featureLabels, /Borrar votos/);
+    assert.match(statsLabels, /Statistiques de l’Eurovision 2026/);
+    assert.match(statsScript, /stats-labels/);
     assert.match(voteScript, /flagsapi\.com/);
     assert.match(contestConfig, /Semifinal 1/);
     assert.match(contestConfig, /Semifinal 2/);
