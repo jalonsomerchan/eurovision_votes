@@ -29,6 +29,7 @@ describe('project smoke checks', () => {
       'src/layouts/BaseLayout.astro',
       'src/config/site.ts',
       'src/i18n/ui.ts',
+      'src/i18n/featureLabels.ts',
       'src/i18n/translations/es.json',
       'src/i18n/translations/en.json',
       'src/styles/global.css',
@@ -94,15 +95,19 @@ describe('project smoke checks', () => {
     const votePage = readText('src/pages/vota.astro');
     const app = readText('src/components/EurovisionVoteApp.astro');
     const voteScript = readText('public/vote.js');
+    const featureLabels = readText('src/i18n/featureLabels.ts');
     const contestConfig = readText('src/config/eurovision2026.ts');
+    const siteConfig = readText('src/config/site.ts');
 
+    assert.match(siteConfig, /name: 'Eurovision 2026'/);
     assert.match(home, /EurovisionHomeApp/);
     assert.match(votePage, /EurovisionVoteApp/);
+    assert.match(app, /vote-labels/);
     assert.match(app, /vote\.js/);
     assert.match(voteScript, /localStorage/);
-    assert.match(app, /Exportar votos/);
-    assert.match(app, /Importar votos/);
-    assert.match(app, /Borrar votos/);
+    assert.match(featureLabels, /Exportar votos/);
+    assert.match(featureLabels, /Export votes/);
+    assert.match(featureLabels, /Borrar votos/);
     assert.match(voteScript, /flagsapi\.com/);
     assert.match(contestConfig, /Semifinal 1/);
     assert.match(contestConfig, /Semifinal 2/);
