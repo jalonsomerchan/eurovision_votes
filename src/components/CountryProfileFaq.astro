@@ -1,0 +1,49 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { formatCountryProfileLabel, getCountryProfileSeoLabels } from '../i18n/countryProfileSeoLabels';
+
+interface Props {
+  country: string;
+  locale?: Locale;
+}
+
+const { country, locale = defaultLocale } = Astro.props;
+const labels = getCountryProfileSeoLabels(locale);
+---
+
+<section class="stats-card country-profile-faq" aria-labelledby="country-profile-faq-title">
+  <p class="eyebrow">FAQ</p>
+  <h2 id="country-profile-faq-title">{formatCountryProfileLabel(labels.faqTitle, country)}</h2>
+  <details>
+    <summary>{labels.faqDataQuestion}</summary>
+    <p>{labels.faqDataAnswer}</p>
+  </details>
+  <details>
+    <summary>{labels.faqHistoryQuestion}</summary>
+    <p>{labels.faqHistoryAnswer}</p>
+  </details>
+  <details>
+    <summary>{labels.faqMissingQuestion}</summary>
+    <p>{labels.faqMissingAnswer}</p>
+  </details>
+</section>
+
+<style>
+  :global(.country-profile-faq details) {
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    background: var(--color-bg);
+    padding: 0.85rem 1rem;
+  }
+
+  :global(.country-profile-faq summary) {
+    cursor: pointer;
+    color: var(--color-text);
+    font-weight: 900;
+  }
+
+  :global(.country-profile-faq p) {
+    margin: 0.65rem 0 0;
+    color: var(--color-muted);
+  }
+</style>
