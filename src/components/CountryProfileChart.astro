@@ -1,0 +1,97 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import type { EurovisionEntry } from '../lib/eurovisionHistory';
+
+interface Props {
+  entries: EurovisionEntry[];
+  locale?: Locale;
+}
+
+const { entries, locale = defaultLocale } = Astro.props;
+const t = useTranslations(locale);
+const chartEntries = entries
+  .filter((entry) => typeof entry.place === 'number')
+  .sort((a, b) => a.year - b.year)
+  .slice(-18);
+const chartWidth = 720;
+const chartHeight = 220;
+const maxPlace = Math.max(26, ...chartEntries.map((entry) => entry.place ?? 0));
+const points = chartEntries.map((entry, index) => {
+  const x = chartEntries.length <= 1 ? chartWidth / 2 : (index / (chartEntries.length - 1)) * chartWidth;
+  const y = ((entry.place ?? maxPlace) - 1) / Math.max(1, maxPlace - 1) * (chartHeight - 28) + 14;
+  return { x, y, entry };
+});
+const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
+const editionUrl = (year: number) => getLocalizedPath(`/ediciones/${year}/`, locale);
+---
+
+<section class="stats-card" aria-labelledby="chart-title">
+  <p class="eyebrow">{t('countryProfile.chartEyebrow')}</p>
+  <h2 id="chart-title">{t('countryProfile.chartTitle')}</h2>
+  {points.length > 1 ? (
+    <div class="country-chart-wrap" role="img" aria-label={t('countryProfile.chartTitle')}>
+      <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} class="country-chart" aria-hidden="true">
+        <line x1="0" y1="14" x2={chartWidth} y2="14" class="country-chart-grid" />
+        <line x1="0" y1={chartHeight - 14} x2={chartWidth} y2={chartHeight - 14} class="country-chart-grid" />
+        <polyline points={polyline} class="country-chart-line" />
+        {points.map((point) => (
+          <g>
+            <circle cx={point.x} cy={point.y} r="5" class="country-chart-dot" />
+            <title>{point.entry.year}: #{point.entry.place}</title>
+          </g>
+        ))}
+      </svg>
+      <div class="country-chart-years">
+        {points.map((point) => <a class="country-link edition-link" href={editionUrl(point.entry.year)}>{point.entry.year}</a>)}
+      </div>
+    </div>
+  ) : (
+    <div class="empty-state country-profile-empty">
+      <span aria-hidden="true">📉</span>
+      <h3>{t('countryProfile.chartTitle')}</h3>
+      <p>{t('countryProfile.noChartData')}</p>
+    </div>
+  )}
+</section>
+
+<style>
+  :global(.country-chart-wrap) {
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  :global(.country-chart) {
+    min-width: 42rem;
+    width: 100%;
+    height: auto;
+  }
+
+  :global(.country-chart-grid) {
+    stroke: var(--color-border);
+    stroke-width: 2;
+  }
+
+  :global(.country-chart-line) {
+    fill: none;
+    stroke: var(--color-primary);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  :global(.country-chart-dot) {
+    fill: var(--color-bg);
+    stroke: var(--color-primary);
+    stroke-width: 4;
+  }
+
+  :global(.country-chart-years) {
+    display: flex;
+    justify-content: space-between;
+    min-width: 42rem;
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    font-weight: 900;
+  }
+</style>
