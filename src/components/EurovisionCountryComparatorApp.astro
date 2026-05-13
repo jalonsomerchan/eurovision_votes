@@ -27,10 +27,10 @@ const comparatorScriptUrl = `${import.meta.env.BASE_URL}country-comparator.js?v=
     </div>
   </div>
 
-  <form class="history-controls country-comparator-controls" data-country-comparator-form aria-labelledby="country-comparator-controls-title">
+  <form class="history-controls country-comparator-controls" data-country-comparator-form>
     <div>
       <label for="country-comparator-select">{labels.selectTitle}</label>
-      <select id="country-comparator-select" name="countries" multiple size="8" data-country-comparator-select>
+      <select id="country-comparator-select" name="countries" multiple size="8" data-country-comparator-select aria-describedby="country-comparator-help">
         {countries.map((country) => (
           <option value={country.countryCode} selected={defaultSelection.includes(country.countryCode)}>{country.country}</option>
         ))}
@@ -41,7 +41,7 @@ const comparatorScriptUrl = `${import.meta.env.BASE_URL}country-comparator.js?v=
     <button class="action-button" type="button" data-country-comparator-reset>{labels.resetButton}</button>
   </form>
 
-  <p class="feedback" data-country-comparator-status>{labels.selected}: {defaultSelection.length}</p>
+  <p class="feedback" data-country-comparator-status aria-live="polite">{labels.selected}: {defaultSelection.length}</p>
 
   <div class="country-comparator-cards" data-country-comparator-cards>
     {countries.slice(0, 2).map((country) => (
