@@ -3,7 +3,6 @@ import EurovisionCountryProfileApp from '../../components/EurovisionCountryProfi
 import Container from '../../components/Container.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { defaultLocale } from '../../config/site';
-import { useTranslations } from '../../i18n/ui';
 import { getEurovisionCountryProfile, listEurovisionCountryCodes } from '../../lib/eurovisionCountryProfiles';
 
 export async function getStaticPaths() {
@@ -12,15 +11,17 @@ export async function getStaticPaths() {
 }
 
 const countryParam = Astro.params.country ?? '';
-const t = useTranslations(defaultLocale);
 const profile = await getEurovisionCountryProfile(countryParam, defaultLocale);
 
 if (!profile) {
   return Astro.redirect('/404/');
 }
+
+const title = `${profile.country} en Eurovision: historial, canciones, puntos y resultados`;
+const description = `Consulta la ficha de ${profile.country} en Eurovision con participaciones, victorias, mejor posición, puntos totales, canciones, artistas y resultados año a año.`;
 ---
 
-<BaseLayout title={`${profile.country} - ${t('countryProfile.titleSuffix')}`} description={t('countryProfile.description')} locale={defaultLocale}>
+<BaseLayout title={title} description={description} locale={defaultLocale}>
   <Container>
     <EurovisionCountryProfileApp profile={profile} locale={defaultLocale} />
   </Container>
