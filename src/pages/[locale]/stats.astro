@@ -1,0 +1,24 @@
+---
+import EurovisionStatsApp from '../../components/EurovisionStatsApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale, locales, type Locale } from '../../config/site';
+import { isLocale } from '../../i18n/ui';
+import { getStatsLabels } from '../../i18n/statsLabels';
+
+export function getStaticPaths() {
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .map((locale) => ({ params: { locale } }));
+}
+
+const localeParam = Astro.params.locale;
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const labels = getStatsLabels(locale);
+---
+
+<BaseLayout title={labels.title} description={labels.description} locale={locale}>
+  <Container>
+    <EurovisionStatsApp locale={locale} />
+  </Container>
+</BaseLayout>
