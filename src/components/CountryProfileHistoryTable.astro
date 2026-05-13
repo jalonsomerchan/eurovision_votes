@@ -1,0 +1,124 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import { getCountryProfileSeoLabels } from '../i18n/countryProfileSeoLabels';
+import type { EurovisionEntry } from '../lib/eurovisionHistory';
+
+interface Props {
+  entries: EurovisionEntry[];
+  locale?: Locale;
+}
+
+const { entries, locale = defaultLocale } = Astro.props;
+const t = useTranslations(locale);
+const labels = getCountryProfileSeoLabels(locale);
+const missingValue = labels.dataEmptyTitle;
+const formatValue = (value: number | string | null | undefined) => value ?? missingValue;
+const editionUrl = (year: number) => getLocalizedPath(`/ediciones/${year}/`, locale);
+---
+
+<section class="stats-card" aria-labelledby="history-table-title">
+  <p class="eyebrow">{t('countryProfile.historyEyebrow')}</p>
+  <h2 id="history-table-title">{t('countryProfile.historyTitle')}</h2>
+  {entries.length ? (
+    <div class="stats-table-wrap country-history-table-wrap">
+      <table class="stats-table country-history-table">
+        <thead>
+          <tr>
+            <th>{t('countryProfile.year')}</th>
+            <th>{t('countryProfile.song')}</th>
+            <th>{t('countryProfile.artist')}</th>
+            <th>{t('countryProfile.place')}</th>
+            <th>{t('countryProfile.points')}</th>
+            <th>{t('countryProfile.runningOrderShort')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry) => (
+            <tr>
+              <td data-label={t('countryProfile.year')}><a class="country-link edition-link" href={editionUrl(entry.year)}>{entry.year}</a></td>
+              <td data-label={t('countryProfile.song')}><strong>{entry.song || missingValue}</strong></td>
+              <td data-label={t('countryProfile.artist')}>{entry.artist || missingValue}</td>
+              <td data-label={t('countryProfile.place')}>{formatValue(entry.place)}</td>
+              <td data-label={t('countryProfile.points')}>{formatValue(entry.points)}</td>
+              <td data-label={t('countryProfile.runningOrderShort')}>{formatValue(entry.runningOrder)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <div class="empty-state country-profile-empty">
+      <span aria-hidden="true">📭</span>
+      <h3>{labels.dataEmptyTitle}</h3>
+      <p>{labels.dataEmptyDescription}</p>
+    </div>
+  )}
+</section>
+
+<style>
+  :global(.country-history-table) {
+    min-width: 44rem;
+  }
+
+  @media (max-width: 719px) {
+    :global(.country-history-table-wrap) {
+      border: 0;
+      overflow: visible;
+    }
+
+    :global(.country-history-table) {
+      min-width: 0;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    :global(.country-history-table thead) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    :global(.country-history-table),
+    :global(.country-history-table tbody),
+    :global(.country-history-table tr),
+    :global(.country-history-table td) {
+      display: block;
+      width: 100%;
+    }
+
+    :global(.country-history-table tr) {
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: 1rem;
+      background: var(--color-bg);
+      overflow: hidden;
+    }
+
+    :global(.country-history-table td) {
+      display: grid;
+      grid-template-columns: minmax(7rem, 0.42fr) minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.75rem;
+      text-align: left;
+    }
+
+    :global(.country-history-table td:last-child) {
+      border-bottom: 0;
+    }
+
+    :global(.country-history-table td::before) {
+      content: attr(data-label);
+      color: var(--color-muted);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+  }
+</style>
