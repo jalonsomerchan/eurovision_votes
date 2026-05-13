@@ -1,0 +1,98 @@
+---
+import Container from '../components/Container.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { defaultLocale } from '../config/site';
+import { getEurovisionHistory } from '../lib/eurovisionHistory';
+
+const history = await getEurovisionHistory();
+const contests = history.contests;
+const firstYear = contests.at(-1)?.year;
+const lastYear = contests[0]?.year;
+const totalEntries = contests.reduce((sum, contest) => sum + contest.participants, 0);
+const countries = new Set(contests.flatMap((contest) => contest.entries.map((entry) => entry.country)));
+const latestContests = contests.slice(0, 8);
+---
+
+<BaseLayout title="Historico de Eurovision" description="Consulta el historico de festivales de Eurovision con ganadores, sedes, participantes y canciones del dataset EurovisionAPI." locale={defaultLocale}>
+  <Container>
+    <section class="history-app" aria-labelledby="history-title">
+      <script type="application/json" id="history-data" set:html={JSON.stringify(history)}></script>
+
+      <div class="hero-card history-hero">
+        <div>
+          <p class="eyebrow">Dataset EurovisionAPI</p>
+          <h1 id="history-title">Historico de Eurovision</h1>
+          <p class="hero-copy">Explora cada edicion del festival con sede, ganador, participantes y canciones. Los datos se leen desde el submodulo <code>public/dataset</code>.</p>
+        </div>
+        <div class="history-actions">
+          <a class="action-button" href="/">Volver a votar</a>
+          <a class="action-button" href="/stats/">Estadisticas</a>
+        </div>
+      </div>
+
+      {!history.datasetFound ? (
+        <article class="empty-state">
+          <span>📁</span>
+          <h2>No se encontro el dataset</h2>
+          <p>Inicializa el submodulo con <code>git submodule update --init --recursive</code> para generar el historico.</p>
+        </article>
+      ) : (
+        <>
+          <div class="stats-summary history-summary" aria-label="Resumen del historico">
+            <div class="stats-kpi"><span>Festivales</span><strong>{contests.length}</strong></div>
+            <div class="stats-kpi"><span>Periodo</span><strong>{firstYear && lastYear ? `${firstYear}-${lastYear}` : '-'}</strong></div>
+            <div class="stats-kpi"><span>Participaciones</span><strong>{totalEntries}</strong></div>
+            <div class="stats-kpi"><span>Paises</span><strong>{countries.size}</strong></div>
+          </div>
+
+          <section class="history-controls" aria-label="Filtros del historico">
+            <label>
+              <span>Buscar</span>
+              <input class="text-input" type="search" placeholder="Pais, artista, cancion, ciudad..." data-history-search />
+            </label>
+            <label>
+              <span>Desde</span>
+              <select class="text-input" data-history-from>
+                <option value="">Primer año</option>
+                {contests.map((contest) => <option value={contest.year}>{contest.year}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Hasta</span>
+              <select class="text-input" data-history-to>
+                <option value="">Ultimo año</option>
+                {contests.map((contest) => <option value={contest.year}>{contest.year}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Orden</span>
+              <select class="text-input" data-history-sort>
+                <option value="desc">Mas recientes primero</option>
+                <option value="asc">Mas antiguos primero</option>
+              </select>
+            </label>
+          </section>
+
+          <p class="feedback" data-history-status>{contests.length} festivales cargados.</p>
+
+          <section class="stats-card" aria-labelledby="latest-winners-title">
+            <p class="eyebrow">Ganadores recientes</p>
+            <h2 id="latest-winners-title">Ultimos festivales</h2>
+            <div class="history-winner-grid">
+              {latestContests.map((contest) => (
+                <article class="history-winner-card">
+                  <span>{contest.year}</span>
+                  <strong>{contest.winner || 'Sin ganador'}</strong>
+                  <p>{[contest.winnerArtist, contest.winnerSong].filter(Boolean).join(' - ') || 'Cancion pendiente'}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section class="history-timeline" data-history-list aria-live="polite"></section>
+        </>
+      )}
+    </section>
+  </Container>
+</BaseLayout>
+<script type="module" src="/history.js"></script>
