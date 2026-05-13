@@ -3,6 +3,8 @@ import { initializeFirestore, collection, getDocs } from 'https://www.gstatic.co
 
 const contests = JSON.parse(document.getElementById('stats-contests')?.textContent || '[]');
 const firebaseConfig = JSON.parse(document.getElementById('stats-firebase-config')?.textContent || '{}');
+const labels = JSON.parse(document.getElementById('stats-labels')?.textContent || '{}');
+const pageLocale = document.documentElement.lang || 'es';
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -21,8 +23,10 @@ const html = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&'
 const average = (values) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
 const formatAverage = (value) => Number.isFinite(value) ? value.toFixed(2).replace('.', ',') : '-';
 const keyFor = (song) => `${song.flag}-${song.country}`.toLowerCase();
-const countryProfileUrl = (flag) => `/paises/${String(flag || '').toLowerCase()}/`;
+const localizedPath = (path) => `${pageLocale === 'es' ? '' : `/${pageLocale}`}${path}`;
+const countryProfileUrl = (flag) => localizedPath(`/paises/${String(flag || '').toLowerCase()}/`);
 const countryAnchor = (song, label = song.country) => `<a class="country-link" href="${countryProfileUrl(song.flag)}">${html(label)}</a>`;
+const t = (key, fallback, replacements = {}) => Object.entries(replacements).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, value), labels[key] || fallback || key);
 const setStatus = (text, error = false) => {
   if (!statusNode) return;
   statusNode.textContent = text;
@@ -34,7 +38,7 @@ try {
   db = initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
 } catch (error) {
   console.error(error);
-  setStatus('Firebase no esta configurado.', true);
+  setStatus(t('notConfigured', 'Las estadísticas online no están configuradas.'), true);
 }
 
 function getSongs() {
@@ -90,12 +94,12 @@ function renderSummary() {
   const mostVoted = [...countries].sort((a, b) => b.count - a.count)[0];
   const completeUsers = users.filter((user) => user.count === getSongs().length && getSongs().length > 0).length;
   const items = [
-    ['Votantes', voters.length],
-    ['Votos emitidos', allScores.length],
-    ['Media global', formatAverage(average(allScores))],
-    ['Lider', leader ? `${leader.country} (${formatAverage(leader.mean)})` : '-'],
-    ['Mas votado', mostVoted ? `${mostVoted.country} (${mostVoted.count})` : '-'],
-    ['Usuarios completos', completeUsers],
+    [t('voters', 'Votantes'), voters.length],
+    [t('votesCast', 'Votos emitidos'), allScores.length],
+    [t('globalAverage', 'Media global'), formatAverage(average(allScores))],
+    [t('leader', 'Líder'), leader ? `${leader.country} (${formatAverage(leader.mean)})` : '-'],
+    [t('mostVoted', 'Más votado'), mostVoted ? `${mostVoted.country} (${mostVoted.count})` : '-'],
+    [t('completeUsers', 'Usuarios completos'), completeUsers],
   ];
   summaryNode.innerHTML = items.map(([label, value]) => `<div class="stats-kpi"><span>${html(label)}</span><strong>${html(value)}</strong></div>`).join('');
 }
@@ -103,42 +107,42 @@ function renderSummary() {
 function renderRanking() {
   const rows = countryStats();
   if (!rows.length) {
-    rankingNode.innerHTML = '<p class="stats-empty">No hay canciones en esta gala.</p>';
+    rankingNode.innerHTML = `<p class="stats-empty">${html(t('noSongs', 'No hay canciones en esta gala.'))}</p>`;
     return;
   }
-  rankingNode.innerHTML = `<table class="stats-table"><thead><tr><th>#</th><th>Pais</th><th>Gala</th><th>Votos</th><th>Media</th><th>Total</th><th>Min.</th><th>Max.</th></tr></thead><tbody>${rows.map((row, index) => `<tr><td>${index + 1}</td><td><span class="stats-country"><a href="${countryProfileUrl(row.flag)}"><img src="https://flagsapi.com/${row.flag}/flat/64.png" alt="" loading="lazy"></a><strong>${countryAnchor(row)}</strong><small>${html(row.artist)} - ${html(row.song)}</small></span></td><td>${html(row.contestName)}</td><td>${row.count}</td><td><strong>${formatAverage(row.mean)}</strong></td><td>${row.total}</td><td>${row.min ?? '-'}</td><td>${row.max ?? '-'}</td></tr>`).join('')}</tbody></table>`;
+  rankingNode.innerHTML = `<table class="stats-table"><thead><tr><th>#</th><th>${html(t('country', 'País'))}</th><th>${html(t('show', 'Gala'))}</th><th>${html(t('votes', 'Votos'))}</th><th>${html(t('average', 'Media'))}</th><th>${html(t('total', 'Total'))}</th><th>${html(t('min', 'Mín.'))}</th><th>${html(t('max', 'Máx.'))}</th></tr></thead><tbody>${rows.map((row, index) => `<tr><td>${index + 1}</td><td><span class="stats-country"><a href="${countryProfileUrl(row.flag)}"><img src="https://flagsapi.com/${row.flag}/flat/64.png" alt="" loading="lazy"></a><strong>${countryAnchor(row)}</strong><small>${html(row.artist)} - ${html(row.song)}</small></span></td><td>${html(row.contestName)}</td><td>${row.count}</td><td><strong>${formatAverage(row.mean)}</strong></td><td>${row.total}</td><td>${row.min ?? '-'}</td><td>${row.max ?? '-'}</td></tr>`).join('')}</tbody></table>`;
 }
 
 function renderDistribution() {
   const rows = countryStats().filter((row) => row.count);
   if (!rows.length) {
-    distributionNode.innerHTML = '<p class="stats-empty">Todavia no hay votos para calcular distribucion.</p>';
+    distributionNode.innerHTML = `<p class="stats-empty">${html(t('noDistribution', 'Todavía no hay votos para calcular la distribución.'))}</p>`;
     return;
   }
   distributionNode.innerHTML = rows.map((row) => {
     const max = Math.max(...row.distribution, 1);
     const bars = row.distribution.map((count, score) => `<div class="score-bar"><span>${score}</span><div style="--bar-size:${(count / max) * 100}%"></div><strong>${count}</strong></div>`).join('');
-    return `<section class="distribution-card"><header><strong>${countryAnchor(row)}</strong><span>${row.count} votos - media ${formatAverage(row.mean)}</span></header><div class="score-bars">${bars}</div></section>`;
+    return `<section class="distribution-card"><header><strong>${countryAnchor(row)}</strong><span>${row.count} ${html(t('votes', 'votos').toLowerCase())} - ${html(t('average', 'media').toLowerCase())} ${formatAverage(row.mean)}</span></header><div class="score-bars">${bars}</div></section>`;
   }).join('');
 }
 
 function renderUsers() {
   const rows = userStats();
   if (!rows.length) {
-    userSummaryNode.innerHTML = '<p class="stats-empty">Todavia no hay votantes.</p>';
+    userSummaryNode.innerHTML = `<p class="stats-empty">${html(t('noVoters', 'Todavía no hay votantes.'))}</p>`;
     return;
   }
-  userSummaryNode.innerHTML = `<table class="stats-table"><thead><tr><th>Usuario</th><th>Votos</th><th>Media</th><th>Total</th><th>Mayor puntuacion</th><th>Actualizado</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${html(row.name)}</strong></td><td>${row.count}</td><td><strong>${formatAverage(row.mean)}</strong></td><td>${row.total}</td><td>${row.top ? `${row.top.score} a ${countryAnchor(row.top.song)}` : '-'}</td><td>${html(row.updated)}</td></tr>`).join('')}</tbody></table>`;
+  userSummaryNode.innerHTML = `<table class="stats-table"><thead><tr><th>${html(t('user', 'Usuario'))}</th><th>${html(t('votes', 'Votos'))}</th><th>${html(t('average', 'Media'))}</th><th>${html(t('total', 'Total'))}</th><th>${html(t('topScore', 'Mayor puntuación'))}</th><th>${html(t('updated', 'Actualizado'))}</th></tr></thead><tbody>${rows.map((row) => `<tr><td><strong>${html(row.name)}</strong></td><td>${row.count}</td><td><strong>${formatAverage(row.mean)}</strong></td><td>${row.total}</td><td>${row.top ? `${row.top.score} · ${countryAnchor(row.top.song)}` : '-'}</td><td>${html(row.updated)}</td></tr>`).join('')}</tbody></table>`;
 }
 
 function renderMatrix() {
   const songs = getSongs();
   const users = userStats();
   if (!songs.length || !users.length) {
-    userVotesNode.innerHTML = '<p class="stats-empty">No hay datos suficientes para mostrar el detalle.</p>';
+    userVotesNode.innerHTML = `<p class="stats-empty">${html(t('noDetail', 'No hay datos suficientes para mostrar el detalle.'))}</p>`;
     return;
   }
-  userVotesNode.innerHTML = `<table class="stats-table stats-table--matrix"><thead><tr><th>Usuario</th>${songs.map((song) => `<th>${countryAnchor(song)}</th>`).join('')}<th>Media</th></tr></thead><tbody>${users.map((user) => `<tr><td><strong>${html(user.name)}</strong></td>${songs.map((song) => `<td>${scoreOf(user, song) ?? '-'}</td>`).join('')}<td><strong>${formatAverage(user.mean)}</strong></td></tr>`).join('')}</tbody></table>`;
+  userVotesNode.innerHTML = `<table class="stats-table stats-table--matrix"><thead><tr><th>${html(t('user', 'Usuario'))}</th>${songs.map((song) => `<th>${countryAnchor(song)}</th>`).join('')}<th>${html(t('average', 'Media'))}</th></tr></thead><tbody>${users.map((user) => `<tr><td><strong>${html(user.name)}</strong></td>${songs.map((song) => `<td>${scoreOf(user, song) ?? '-'}</td>`).join('')}<td><strong>${formatAverage(user.mean)}</strong></td></tr>`).join('')}</tbody></table>`;
 }
 
 function render() {
@@ -152,22 +156,22 @@ function render() {
 async function loadStats() {
   if (!db) return;
   try {
-    setStatus('Cargando estadisticas...');
+    setStatus(t('loading', 'Cargando estadísticas...'));
     const snapshot = await getDocs(collection(db, 'eurovision2026Votes'));
     voters = snapshot.docs.map((item) => {
       const data = item.data();
       return {
         id: item.id,
-        name: data.voterName || 'Sin nombre',
+        name: data.voterName || t('unnamed', 'Sin nombre'),
         votes: data.votes || {},
-        updated: data.updatedAt?.toDate ? data.updatedAt.toDate().toLocaleString('es-ES') : '-',
+        updated: data.updatedAt?.toDate ? data.updatedAt.toDate().toLocaleString(pageLocale) : '-',
       };
     });
     render();
-    setStatus(`Estadisticas actualizadas: ${voters.length} votantes.`);
+    setStatus(t('statsUpdated', 'Estadísticas actualizadas: {count} votantes.', { count: voters.length }));
   } catch (error) {
     console.error(error);
-    setStatus(`No se pudieron cargar las estadisticas: ${error?.message || 'error'}.`, true);
+    setStatus(t('loadError', 'No se pudieron cargar las estadísticas: {error}.', { error: error?.message || 'error' }), true);
   }
 }
 
