@@ -3,7 +3,7 @@ import EurovisionEditionApp from '../../../components/EurovisionEditionApp.astro
 import Container from '../../../components/Container.astro';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { defaultLocale, locales, type Locale } from '../../../config/site';
-import { isLocale, useTranslations } from '../../../i18n/ui';
+import { isLocale } from '../../../i18n/ui';
 import { getEurovisionEdition, listEurovisionEditionYears } from '../../../lib/eurovisionEditions';
 
 export async function getStaticPaths() {
@@ -16,16 +16,21 @@ export async function getStaticPaths() {
 const localeParam = Astro.params.locale;
 const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
 const year = Number(Astro.params.year);
-const t = useTranslations(locale);
 const availableYears = await listEurovisionEditionYears(locale);
 const edition = await getEurovisionEdition(year, locale);
 
 if (!edition) {
   return Astro.redirect('/404/');
 }
+
+const host = [edition.hostCity, edition.hostCountry].filter(Boolean).join(', ');
+const title = `Eurovision ${edition.year}: resultados, ganador, semifinales y final`;
+const description = edition.winner
+  ? `Consulta Eurovision ${edition.year}${host ? ` en ${host}` : ''}: ganador ${edition.winner}, participantes, canciones, puntos y resultados de semifinales y final.`
+  : `Consulta Eurovision ${edition.year}${host ? ` en ${host}` : ''}: países participantes, canciones, semifinales, final, orden de actuación y datos de la edición.`;
 ---
 
-<BaseLayout title={`Eurovision ${edition.year}`} description={t('edition.description')} locale={locale}>
+<BaseLayout title={title} description={description} locale={locale}>
   <Container>
     <EurovisionEditionApp edition={edition} locale={locale} availableYears={availableYears} />
   </Container>
