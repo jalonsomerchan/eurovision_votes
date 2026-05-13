@@ -25,6 +25,7 @@ const normalize = (value) => String(value ?? '').normalize('NFD').replace(/[\u03
 const formatNumber = (value) => Number.isFinite(value) ? numberFormatter.format(value) : '-';
 const localizedPath = (path) => `${pageLocale === 'es' ? '' : `/${pageLocale}`}${path}`;
 const countryUrl = (code) => code ? localizedPath(`/paises/${String(code).toLowerCase()}/`) : '';
+const editionUrl = (year) => localizedPath(`/ediciones/${year}/`);
 const flag = (src) => src ? `<img class="history-flag" src="${html(src)}" alt="" loading="lazy" decoding="async" width="64" height="64">` : '';
 const countryLine = (country, src, code) => {
   const content = `${flag(src)}<span>${html(country)}</span>`;
@@ -42,11 +43,15 @@ function filteredTargets(source) {
   return (source?.targets || []).filter((target) => !query || normalize(`${target.country} ${target.countryCode}`).includes(query));
 }
 
+function renderYear(year) {
+  return `<a class="country-link edition-link" href="${html(editionUrl(year))}">${html(year)}</a>`;
+}
+
 function renderYears(years = []) {
   if (!years.length) return '-';
   const first = years[0];
   const last = years[years.length - 1];
-  return first === last ? html(first) : `${html(first)}-${html(last)}`;
+  return first === last ? renderYear(first) : `${renderYear(first)}-${renderYear(last)}`;
 }
 
 function render() {
