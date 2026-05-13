@@ -17,6 +17,7 @@ const localeParam = Astro.params.locale;
 const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
 const year = Number(Astro.params.year);
 const t = useTranslations(locale);
+const availableYears = await listEurovisionEditionYears(locale);
 const edition = await getEurovisionEdition(year, locale);
 
 if (!edition) {
@@ -26,6 +27,6 @@ if (!edition) {
 
 <BaseLayout title={`Eurovision ${edition.year}`} description={t('edition.description')} locale={locale}>
   <Container>
-    <EurovisionEditionApp edition={edition} locale={locale} />
+    <EurovisionEditionApp edition={edition} locale={locale} availableYears={availableYears} />
   </Container>
 </BaseLayout>
