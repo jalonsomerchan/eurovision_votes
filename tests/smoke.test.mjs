@@ -139,6 +139,22 @@ describe('project smoke checks', () => {
     assert.match(contestConfig, /Final/);
   });
 
+
+  it('restricts historical dataset parsing to senior Eurovision only', () => {
+    const history = readText('src/lib/eurovisionHistory.ts');
+    const editions = readText('src/lib/eurovisionEditions.ts');
+
+    assert.match(history, /SENIOR_DATASET_DIR/);
+    assert.match(history, /path\.join\(DATASET_DIR, 'data', 'senior'\)/);
+    assert.match(history, /data\[\/\\\\\]senior/);
+    assert.match(history, /walkJsonFiles\(SENIOR_DATASET_DIR\)/);
+    assert.match(history, /isSeniorDatasetPath/);
+    assert.doesNotMatch(history, /walkJsonFiles\(DATASET_DIR\)/);
+    assert.match(editions, /data\[\/\\\\\]senior/);
+    assert.match(editions, /CONTESTANT_PATH_RE/);
+    
+  });
+  
   it('includes evergreen Eurovision rankings', () => {
     const rankingsIndex = readText('src/pages/rankings/index.astro');
     const localizedRankingsIndex = readText('src/pages/[locale]/rankings/index.astro');
@@ -166,6 +182,7 @@ describe('project smoke checks', () => {
     assert.match(rankingLabels, /Países com mais vitórias/);
     assert.match(header, /rankingsUrl/);
     assert.match(home, /rankingLabels/);
+
   });
 
   it('includes the ESCplus news page', () => {
@@ -265,7 +282,11 @@ describe('project smoke checks', () => {
     const readme = readText('README.md');
 
     assert.match(readme, /\S/, 'README.md should not be empty');
+
+    assert.match(readme, /Senior/, 'README.md should document the senior-only dataset scope');
+
     assert.match(readme, /\/rankings\//, 'README.md should document rankings route');
+
     assert.match(readme, /\/noticias\//, 'README.md should document news route');
     assert.match(readme, /\/paises\/\{codigo\}\//, 'README.md should document country profile routes');
     assert.equal(existsSync(join(root, 'agents.md')), true, 'agents.md should exist');
