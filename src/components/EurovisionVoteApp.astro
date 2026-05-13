@@ -18,23 +18,24 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-1`;
 
   <div class="hero-card">
     <div>
-      <p class="eyebrow">Eurovision 2026</p>
-      <h1 id="vote-title">Vota tus canciones favoritas</h1>
+      <p class="eyebrow">Votación Eurovision 2026</p>
+      <h1 id="vote-title">Vota tus canciones favoritas de Eurovision 2026</h1>
+      <p class="hero-copy">Puntúa cada país del 0 al 10 en las semifinales y en la final. Guarda tus votos, compártelos y compara tus resultados con otros eurofans.</p>
     </div>
     <div class="user-card">
-      <span class="status-label">Votante</span>
-      <strong data-voter-name>Sin nombre</strong>
+      <span class="status-label">Tu perfil</span>
+      <strong data-voter-name>Votante invitado</strong>
       <button class="mini-button" type="button" data-open-name>Cambiar nombre</button>
-      <button class="mini-button" type="button" data-share-votes>Compartir mis votaciones</button>
+      <button class="mini-button" type="button" data-share-votes>Compartir mis votos</button>
     </div>
   </div>
 
-  <div class="tabs" role="tablist" aria-label="Galas de Eurovision 2026" data-tabs></div>
+  <div class="tabs" role="tablist" aria-label="Semifinales y final de Eurovision 2026" data-tabs></div>
 
   <div class="status-card" aria-live="polite">
-    <div><span class="status-label">Gala activa</span><strong data-active-name>Semifinal 1</strong></div>
-    <div><span class="status-label">Votadas</span><strong data-voted-count>0/0</strong></div>
-    <div><span class="status-label">Firebase</span><strong data-cloud-status>Sin configurar</strong></div>
+    <div><span class="status-label">Gala seleccionada</span><strong data-active-name>Semifinal 1</strong></div>
+    <div><span class="status-label">Canciones votadas</span><strong data-voted-count>0/0</strong></div>
+    <div><span class="status-label">Estado de guardado</span><strong data-cloud-status>Guardado local</strong></div>
   </div>
 
   <p class="feedback" role="status" aria-live="polite" data-feedback></p>
@@ -43,8 +44,8 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-1`;
 
 <div class="app-modal" data-name-modal hidden>
   <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
-    <h2 id="name-modal-title">¿Cómo te llamas?</h2>
-    <p>Tu nombre se usará para guardar tus votos en Firebase.</p>
+    <h2 id="name-modal-title">Elige un nombre para tus votos</h2>
+    <p>Así podrás identificar tus puntuaciones y compartirlas con otros seguidores de Eurovision.</p>
     <form data-name-form>
       <label class="field-label" for="voter-name-input">Nombre</label>
       <input id="voter-name-input" class="text-input" name="name" autocomplete="name" maxlength="60" required />
@@ -56,14 +57,14 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-1`;
 <div class="app-modal" data-settings-modal hidden>
   <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
     <div class="modal-header-row">
-      <div><p class="eyebrow">Ajustes</p><h2 id="settings-modal-title">Gestionar votos</h2></div>
+      <div><p class="eyebrow">Tus votaciones</p><h2 id="settings-modal-title">Guardar, importar o reiniciar votos</h2></div>
       <button class="modal-close" type="button" data-close-settings aria-label="Cerrar ajustes">×</button>
     </div>
     <div class="settings-grid">
-      <button class="action-button action-button--primary" type="button" data-export>Exportar JSON</button>
-      <label class="action-button" for="vote-import">Importar JSON</label>
+      <button class="action-button action-button--primary" type="button" data-export>Exportar votos</button>
+      <label class="action-button" for="vote-import">Importar votos</label>
       <input id="vote-import" class="visually-hidden" type="file" accept="application/json,.json" data-import />
-      <button class="action-button action-button--danger" type="button" data-reset>Resetear votos</button>
+      <button class="action-button action-button--danger" type="button" data-reset>Borrar votos</button>
     </div>
   </div>
 </div>
