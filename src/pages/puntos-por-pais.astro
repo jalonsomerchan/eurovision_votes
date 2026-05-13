@@ -1,0 +1,17 @@
+---
+import EurovisionCountryPointsApp from '../components/EurovisionCountryPointsApp.astro';
+import Container from '../components/Container.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { defaultLocale } from '../config/site';
+import { useTranslations } from '../i18n/ui';
+import { getEurovisionCountryPoints } from '../lib/eurovisionCountryPoints';
+
+const t = useTranslations(defaultLocale);
+const data = await getEurovisionCountryPoints(defaultLocale);
+---
+
+<BaseLayout title={t('countryPoints.title')} description={t('countryPoints.description')} locale={defaultLocale}>
+  <Container>
+    <EurovisionCountryPointsApp data={data} locale={defaultLocale} />
+  </Container>
+</BaseLayout>
