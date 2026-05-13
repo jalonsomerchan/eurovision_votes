@@ -1,0 +1,26 @@
+---
+import RankingsIndexApp from '../../../components/RankingsIndexApp.astro';
+import Container from '../../../components/Container.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { defaultLocale, locales, type Locale } from '../../../config/site';
+import { isLocale } from '../../../i18n/ui';
+import { getRankingLabels } from '../../../i18n/rankingLabels';
+import { listEurovisionRankings } from '../../../lib/eurovisionRankings';
+
+export function getStaticPaths() {
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .map((locale) => ({ params: { locale } }));
+}
+
+const localeParam = Astro.params.locale;
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const labels = getRankingLabels(locale);
+const rankings = await listEurovisionRankings(locale);
+---
+
+<BaseLayout title={labels.indexTitle} description={labels.indexDescription} locale={locale}>
+  <Container>
+    <RankingsIndexApp rankings={rankings} locale={locale} />
+  </Container>
+</BaseLayout>
