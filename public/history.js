@@ -17,6 +17,8 @@ const formatValue = (value) => value === undefined || value === null || value ==
 const normalize = (value) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const localizedPath = (path) => `${pageLocale === 'es' ? '' : `/${pageLocale}`}${path}`;
 const countryUrl = (code) => code ? localizedPath(`/paises/${String(code).toLowerCase()}/`) : '';
+const editionUrl = (year) => localizedPath(`/ediciones/${year}/`);
+const editionLink = (year) => `<a class="country-link edition-link" href="${html(editionUrl(year))}">${html(year)}</a>`;
 const flag = (src) => src ? `<img class="history-flag" src="${html(src)}" alt="" loading="lazy" decoding="async" width="64" height="64">` : '';
 const countryLine = (name, flagSrc, code) => {
   const content = `${flag(flagSrc)}<span>${formatValue(name)}</span>`;
@@ -88,8 +90,8 @@ function renderContest(contest) {
   return `<article class="history-contest-card">
     <header>
       <div>
-        <p class="eyebrow">Festival ${html(contest.year)}</p>
-        <h2>${html(contest.year)}${host ? ` · <span class="history-host-title">${flag(contest.hostFlag)}${html(host)}</span>` : ''}</h2>
+        <p class="eyebrow">Festival ${editionLink(contest.year)}</p>
+        <h2>${editionLink(contest.year)}${host ? ` · <span class="history-host-title">${flag(contest.hostFlag)}${html(host)}</span>` : ''}</h2>
       </div>
       <div class="history-winner-pill"><span>Ganador</span><strong>${countryLine(contest.winner, contest.winnerFlag, contest.winnerCode)}</strong></div>
     </header>
