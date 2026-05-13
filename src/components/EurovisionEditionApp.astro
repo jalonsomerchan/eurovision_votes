@@ -27,7 +27,7 @@ const roundHasResults = edition.rounds.some((round) => round.entries.some((entry
     <div class="history-actions">
       <a class="action-button" href={historyUrl}>{t('edition.historyLink')}</a>
       {edition.year > 1956 && <a class="action-button" href={editionPath(edition.year - 1)}>{edition.year - 1}</a>}
-      <a class="action-button" href={editionPath(edition.year + 1)}>{edition.year + 1}</a>
+      {edition.year < 2026 && <a class="action-button" href={editionPath(edition.year + 1)}>{edition.year + 1}</a>}
     </div>
   </div>
 
