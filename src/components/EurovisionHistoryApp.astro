@@ -98,3 +98,35 @@ const statsUrl = getLocalizedPath('/stats/', locale);
   )}
 </section>
 <script type="module" src="/history.js"></script>
+
+<style>
+  :global(.history-country-line) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    vertical-align: middle;
+  }
+
+  :global(.history-country-line > span:last-child) {
+    min-width: 0;
+  }
+
+  :global(.history-flag) {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 1.85rem;
+    height: 1.35rem;
+    border-radius: 0.35rem;
+    background: color-mix(in srgb, var(--color-border), transparent 42%);
+    box-shadow: 0 6px 14px rgb(15 23 42 / 0.1);
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  :global(.history-contest-card h2 .history-flag) {
+    margin-inline: 0.25rem 0.35rem;
+    transform: translateY(0.08rem);
+  }
+</style>
