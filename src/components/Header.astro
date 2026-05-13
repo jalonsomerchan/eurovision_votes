@@ -3,6 +3,7 @@ import Container from './Container.astro';
 import { localeLabels, siteConfig, type Locale } from '../config/site';
 import { getAlternateLocales, getLocalizedPath, useTranslations } from '../i18n/ui';
 import { getNewsLabels } from '../i18n/newsLabels';
+import { getNavigationLabels } from '../i18n/navigationLabels';
 import { getRankingLabels } from '../i18n/rankingLabels';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 const { locale } = Astro.props;
 const t = useTranslations(locale);
 const newsLabels = getNewsLabels(locale);
+const navLabels = getNavigationLabels(locale);
 const rankingLabels = getRankingLabels(locale);
 const homeUrl = getLocalizedPath('/', locale);
 const voteUrl = getLocalizedPath('/vota/', locale);
@@ -20,7 +22,6 @@ const countriesUrl = getLocalizedPath('/paises/', locale);
 const newsUrl = getLocalizedPath('/noticias/', locale);
 const rankingsUrl = getLocalizedPath('/rankings/', locale);
 const countryPointsUrl = getLocalizedPath('/puntos-por-pais/', locale);
-const statsUrl = getLocalizedPath('/stats/', locale);
 const alternateLocales = getAlternateLocales(locale);
 const currentPath = Astro.url.pathname;
 const countryPathMatch = currentPath.match(/\/paises(?:\/([a-z0-9-]+))?\/?$/i);
@@ -46,6 +47,11 @@ const alternatePath = currentPath.includes('/vota')
                 : currentPath.includes('/stats')
                   ? '/stats/'
                   : '/';
+const dataLinks = [
+  { href: historyUrl, label: t('nav.history') },
+  { href: countriesUrl, label: t('nav.countries') },
+  { href: countryPointsUrl, label: t('nav.pointsByCountry') },
+];
 ---
 
 <header class="site-header app-header">
@@ -58,12 +64,14 @@ const alternatePath = currentPath.includes('/vota')
     <nav aria-label={t('nav.menu')} class="main-nav main-nav--desktop">
       <a href={homeUrl}>{t('nav.home')}</a>
       <a href={voteUrl}>{t('nav.vote')}</a>
-      <a href={historyUrl}>{t('nav.history')}</a>
-      <a href={countriesUrl}>{t('nav.countries')}</a>
+      <details class="nav-dropdown">
+        <summary>{navLabels.dataMenu}</summary>
+        <div class="nav-dropdown__list">
+          {dataLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+        </div>
+      </details>
       <a href={newsUrl}>{newsLabels.nav}</a>
       <a href={rankingsUrl}>{rankingLabels.ranking}</a>
-      <a href={countryPointsUrl}>{t('nav.pointsByCountry')}</a>
-      <a href={statsUrl}>{t('nav.stats')}</a>
       <details class="locale-menu">
         <summary>{localeLabels[locale]}</summary>
         <div class="locale-menu__list">
@@ -89,12 +97,14 @@ const alternatePath = currentPath.includes('/vota')
         <nav aria-label={t('nav.menu')} class="mobile-menu__nav">
           <a href={homeUrl}>{t('nav.home')}</a>
           <a href={voteUrl}>{t('nav.vote')}</a>
-          <a href={historyUrl}>{t('nav.history')}</a>
-          <a href={countriesUrl}>{t('nav.countries')}</a>
+          <details class="mobile-menu__section">
+            <summary>{navLabels.dataMenu}</summary>
+            <div>
+              {dataLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+            </div>
+          </details>
           <a href={newsUrl}>{newsLabels.nav}</a>
           <a href={rankingsUrl}>{rankingLabels.ranking}</a>
-          <a href={countryPointsUrl}>{t('nav.pointsByCountry')}</a>
-          <a href={statsUrl}>{t('nav.stats')}</a>
           <button type="button" data-open-settings>{t('nav.settings')}</button>
         </nav>
         <div class="mobile-menu__languages" aria-label={t('nav.language')}>
