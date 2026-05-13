@@ -10,8 +10,14 @@ const ENTITY_MAP = {
 };
 
 function decodeEntity(entity) {
-  if (entity.startsWith('#x')) return String.fromCodePoint(Number.parseInt(entity.slice(2), 16));
-  if (entity.startsWith('#')) return String.fromCodePoint(Number.parseInt(entity.slice(1), 10));
+  if (entity.startsWith('#x')) {
+    const codePoint = Number.parseInt(entity.slice(2), 16);
+    return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : `&${entity};`;
+  }
+  if (entity.startsWith('#')) {
+    const codePoint = Number.parseInt(entity.slice(1), 10);
+    return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : `&${entity};`;
+  }
   return ENTITY_MAP[entity] ?? `&${entity};`;
 }
 
@@ -92,14 +98,14 @@ export function parseEscplusRss(xml) {
 }
 
 export async function getEscplusNewsFeed({ feedUrl = ESCPLUS_FEED_URL, limit = 12, timeoutMs = 6000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const response = await fetch(feedUrl, {
       headers: { accept: 'application/rss+xml, application/xml, text/xml' },
       signal: controller.signal,
     });
-    clearTimeout(timer);
 
     if (!response.ok) throw new Error(`RSS request failed with ${response.status}`);
 
@@ -115,5 +121,7 @@ export async function getEscplusNewsFeed({ feedUrl = ESCPLUS_FEED_URL, limit = 1
       items: [],
       sourceUrl: feedUrl,
     };
+  } finally {
+    clearTimeout(timer);
   }
 }
