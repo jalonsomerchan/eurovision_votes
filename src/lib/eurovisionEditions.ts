@@ -139,14 +139,16 @@ function roundSortValue(round: EditionRound) {
 }
 
 function ensureThreeRounds(rounds: EditionRound[]) {
-  const byId = new Map(rounds.map((round) => [round.id, round]));
   const aliases = [
     { id: 'semi-1', label: 'Semifinal 1', match: (round: EditionRound) => round.label.includes('1') },
     { id: 'semi-2', label: 'Semifinal 2', match: (round: EditionRound) => round.label.includes('2') },
     { id: 'final', label: 'Final', match: (round: EditionRound) => round.label === 'Final' },
   ];
 
-  return aliases.map((alias) => rounds.find(alias.match) ?? byId.get(alias.id) ?? { id: alias.id, label: alias.label, entries: [] });
+  return aliases.map((alias) => {
+    const round = rounds.find(alias.match);
+    return { id: alias.id, label: alias.label, entries: round?.entries ?? [] };
+  });
 }
 
 function readContestants(files: string[], countryMap: CountryMap, locale: Locale) {
@@ -299,7 +301,7 @@ async function buildEditions(locale: Locale) {
       edition.rounds = sortedRounds;
       edition.stats = editionStats(sortedRounds);
       edition.participants = new Set(sortedRounds.flatMap((round) => round.entries.map((entry) => entry.countryCode ?? entry.country))).size || edition.participants;
-      const finalWinner = sortedRounds.find((round) => round.label === 'Final')?.entries.find((entry) => entry.place === 1);
+      const finalWinner = sortedRounds.find((round) => round.id === 'final')?.entries.find((entry) => entry.place === 1);
       if (finalWinner) {
         edition.winner = finalWinner.country;
         edition.winnerCode = finalWinner.countryCode;
