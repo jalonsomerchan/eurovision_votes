@@ -11,10 +11,11 @@ const { locale } = Astro.props;
 const t = useTranslations(locale);
 const homeUrl = getLocalizedPath('/', locale);
 const historyUrl = getLocalizedPath('/historico/', locale);
+const countryPointsUrl = getLocalizedPath('/puntos-por-pais/', locale);
 const statsUrl = getLocalizedPath('/stats/', locale);
 const alternateLocales = getAlternateLocales(locale);
 const currentPath = Astro.url.pathname;
-const alternatePath = currentPath.includes('/historico') ? '/historico/' : currentPath.includes('/stats') ? '/stats/' : '/';
+const alternatePath = currentPath.includes('/puntos-por-pais') ? '/puntos-por-pais/' : currentPath.includes('/historico') ? '/historico/' : currentPath.includes('/stats') ? '/stats/' : '/';
 ---
 
 <header class="site-header app-header">
@@ -26,8 +27,9 @@ const alternatePath = currentPath.includes('/historico') ? '/historico/' : curre
 
     <nav aria-label="Navegación principal" class="main-nav main-nav--desktop">
       <a href={homeUrl}>{t('nav.home')}</a>
-      <a href={historyUrl}>Histórico</a>
-      <a href={statsUrl}>Estadísticas</a>
+      <a href={historyUrl}>{t('nav.history')}</a>
+      <a href={countryPointsUrl}>{t('nav.pointsByCountry')}</a>
+      <a href={statsUrl}>{t('nav.stats')}</a>
       <details class="locale-menu">
         <summary>{localeLabels[locale]}</summary>
         <div class="locale-menu__list">
@@ -36,7 +38,7 @@ const alternatePath = currentPath.includes('/historico') ? '/historico/' : curre
           ))}
         </div>
       </details>
-      <button class="settings-trigger" type="button" data-open-settings>Ajustes</button>
+      <button class="settings-trigger" type="button" data-open-settings>{t('nav.settings')}</button>
     </nav>
 
     <details class="mobile-menu" data-mobile-menu>
@@ -47,17 +49,18 @@ const alternatePath = currentPath.includes('/historico') ? '/historico/' : curre
       </summary>
       <div id="mobile-menu-panel" class="mobile-menu__panel">
         <div class="mobile-menu__head">
-          <strong>Menú</strong>
+          <strong>{t('nav.menu')}</strong>
           <small>{localeLabels[locale]}</small>
         </div>
         <nav aria-label="Menú móvil" class="mobile-menu__nav">
           <a href={homeUrl}>{t('nav.home')}</a>
-          <a href={historyUrl}>Histórico</a>
-          <a href={statsUrl}>Estadísticas</a>
-          <button type="button" data-open-settings>Ajustes</button>
+          <a href={historyUrl}>{t('nav.history')}</a>
+          <a href={countryPointsUrl}>{t('nav.pointsByCountry')}</a>
+          <a href={statsUrl}>{t('nav.stats')}</a>
+          <button type="button" data-open-settings>{t('nav.settings')}</button>
         </nav>
         <div class="mobile-menu__languages" aria-label="Cambiar idioma">
-          <strong>Idioma</strong>
+          <strong>{t('nav.language')}</strong>
           <div>
             {alternateLocales.map((alternateLocale) => (
               <a href={getLocalizedPath(alternatePath, alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
