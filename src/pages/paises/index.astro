@@ -1,0 +1,17 @@
+---
+import EurovisionCountryIndexApp from '../../components/EurovisionCountryIndexApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { useTranslations } from '../../i18n/ui';
+import { listEurovisionCountryProfiles } from '../../lib/eurovisionCountryProfiles';
+
+const t = useTranslations(defaultLocale);
+const countries = await listEurovisionCountryProfiles(defaultLocale);
+---
+
+<BaseLayout title={t('countryIndex.title')} description={t('countryIndex.description')} locale={defaultLocale}>
+  <Container>
+    <EurovisionCountryIndexApp countries={countries} locale={defaultLocale} />
+  </Container>
+</BaseLayout>
