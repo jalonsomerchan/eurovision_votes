@@ -25,6 +25,8 @@ describe('project smoke checks', () => {
       'src/pages/[locale]/vota.astro',
       'src/pages/stats.astro',
       'src/pages/[locale]/stats.astro',
+      'src/pages/paises/[countryCode].astro',
+      'src/pages/[locale]/paises/[countryCode].astro',
       'src/pages/comparador-paises/index.astro',
       'src/pages/[locale]/comparador-paises/index.astro',
       'src/pages/404.astro',
@@ -36,6 +38,7 @@ describe('project smoke checks', () => {
       'src/i18n/featureLabels.ts',
       'src/i18n/statsLabels.ts',
       'src/i18n/countryComparisonLabels.ts',
+      'src/i18n/countryProfileSeoLabels.ts',
       'src/i18n/translations/es.json',
       'src/i18n/translations/en.json',
       'src/styles/global.css',
@@ -128,6 +131,29 @@ describe('project smoke checks', () => {
     assert.match(contestConfig, /Final/);
   });
 
+  it('includes SEO country profile pages', () => {
+    const countryPage = readText('src/pages/paises/[countryCode].astro');
+    const localizedCountryPage = readText('src/pages/[locale]/paises/[countryCode].astro');
+    const profileApp = readText('src/components/EurovisionCountryProfileApp.astro');
+    const profileChart = readText('src/components/CountryProfileChart.astro');
+    const profileTable = readText('src/components/CountryProfileHistoryTable.astro');
+    const profileFaq = readText('src/components/CountryProfileFaq.astro');
+    const profileRelated = readText('src/components/CountryProfileRelatedLinks.astro');
+    const seoLabels = readText('src/i18n/countryProfileSeoLabels.ts');
+
+    assert.match(countryPage, /getStaticPaths/);
+    assert.match(countryPage, /formatCountryProfileLabel/);
+    assert.match(localizedCountryPage, /locales/);
+    assert.match(profileApp, /CountryProfileFaq/);
+    assert.match(profileApp, /CountryProfileHistoryTable/);
+    assert.match(profileChart, /country-chart/);
+    assert.match(profileTable, /data-label/);
+    assert.match(profileFaq, /details/);
+    assert.match(profileRelated, /comparador-paises/);
+    assert.match(seoLabels, /Eurovision: historial/);
+    assert.match(seoLabels, /Eurovision: history/);
+  });
+
   it('includes the Eurovision country comparator', () => {
     const comparatorPage = readText('src/pages/comparador-paises/index.astro');
     const localizedComparatorPage = readText('src/pages/[locale]/comparador-paises/index.astro');
@@ -167,6 +193,7 @@ describe('project smoke checks', () => {
     const readme = readText('README.md');
 
     assert.match(readme, /\S/, 'README.md should not be empty');
+    assert.match(readme, /\/paises\/\{codigo\}\//, 'README.md should document country profile routes');
     assert.equal(existsSync(join(root, 'agents.md')), true, 'agents.md should exist');
     assert.equal(existsSync(join(root, 'docs/design-system.md')), true, 'docs/design-system.md should exist');
   });
