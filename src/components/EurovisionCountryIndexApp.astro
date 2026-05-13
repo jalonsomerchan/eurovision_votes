@@ -1,0 +1,102 @@
+---
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import { defaultLocale, type Locale } from '../config/site';
+import type { CountryProfileSummary } from '../lib/eurovisionCountryProfiles';
+
+interface Props {
+  countries: CountryProfileSummary[];
+  locale?: Locale;
+}
+
+const { countries, locale = defaultLocale } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<section class="country-index-app" aria-labelledby="country-index-title">
+  <div class="hero-card country-profile-hero">
+    <div>
+      <p class="eyebrow">{t('countryIndex.eyebrow')}</p>
+      <h1 id="country-index-title">{t('countryIndex.title')}</h1>
+      <p class="hero-copy">{t('countryIndex.description')}</p>
+    </div>
+  </div>
+
+  <div class="country-index-grid">
+    {countries.map((country) => (
+      <a class="country-index-card" href={getLocalizedPath(`/paises/${country.countryCode.toLowerCase()}/`, locale)}>
+        {country.flag && <img class="history-flag" src={country.flag} alt="" loading="lazy" decoding="async" width="64" height="64" />}
+        <strong>{country.country}</strong>
+        <span>{country.participations} · {country.wins}</span>
+        {country.isCurrentParticipant && <em>{t('countryIndex.currentParticipant')}</em>}
+      </a>
+    ))}
+  </div>
+</section>
+
+<style>
+  :global(.country-index-app) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  :global(.country-index-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  :global(.country-index-card) {
+    display: grid;
+    gap: 0.35rem;
+    min-height: 9rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1.25rem;
+    background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%);
+    color: var(--color-text);
+    padding: 1rem;
+    text-decoration: none;
+    box-shadow: 0 14px 34px rgb(15 23 42 / 0.07);
+    transition: transform 160ms ease, border-color 160ms ease;
+  }
+
+  :global(.country-index-card:hover) {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--color-primary), var(--color-border) 30%);
+  }
+
+  :global(.country-index-card .history-flag) {
+    width: 2.4rem;
+    height: 1.7rem;
+  }
+
+  :global(.country-index-card strong) {
+    font-size: 1.15rem;
+    line-height: 1.1;
+  }
+
+  :global(.country-index-card span) {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+    font-weight: 800;
+  }
+
+  :global(.country-index-card em) {
+    align-self: end;
+    justify-self: start;
+    border-radius: 999px;
+    background: color-mix(in srgb, #22c55e, transparent 82%);
+    color: #15803d;
+    padding: 0.18rem 0.55rem;
+    font-size: 0.72rem;
+    font-style: normal;
+    font-weight: 900;
+  }
+
+  @media (min-width: 720px) {
+    :global(.country-index-app) {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+  }
+</style>
