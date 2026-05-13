@@ -1,0 +1,214 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { getNewsLabels } from '../i18n/newsLabels';
+
+interface NewsItem {
+  title: string;
+  link: string;
+  description: string;
+  pubDate: string;
+  publishedAt: string | null;
+  creator: string;
+  categories: string[];
+  guid: string;
+}
+
+interface Props {
+  error?: string | null;
+  items: NewsItem[];
+  locale?: Locale;
+  sourceUrl: string;
+}
+
+const { error = null, items, locale = defaultLocale, sourceUrl } = Astro.props;
+const labels = getNewsLabels(locale);
+const formatDate = (isoDate: string | null, fallback: string) => {
+  if (!isoDate) return fallback;
+  try {
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(isoDate));
+  } catch {
+    return fallback;
+  }
+};
+---
+
+<section class="news-app" aria-labelledby="news-title">
+  <header class="hero-card news-hero">
+    <div>
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h1 id="news-title">{labels.title}</h1>
+      <p class="hero-copy">{labels.description}</p>
+    </div>
+    <div class="news-source-card">
+      <strong>{labels.source}</strong>
+      <p>{labels.attribution}</p>
+      <a class="country-link" href={sourceUrl} target="_blank" rel="noopener noreferrer">RSS ESCplus España</a>
+    </div>
+  </header>
+
+  {error && (
+    <div class="empty-state news-state" role="status">
+      <span aria-hidden="true">⚠️</span>
+      <h2>{labels.errorTitle}</h2>
+      <p>{labels.errorDescription}</p>
+    </div>
+  )}
+
+  {!error && items.length === 0 && (
+    <div class="empty-state news-state" role="status">
+      <span aria-hidden="true">📰</span>
+      <h2>{labels.emptyTitle}</h2>
+      <p>{labels.emptyDescription}</p>
+    </div>
+  )}
+
+  {items.length > 0 && (
+    <div class="news-grid">
+      {items.map((item) => (
+        <article class="news-card">
+          <div class="news-card__content">
+            <p class="eyebrow">{labels.source}</p>
+            <h2><a href={item.link} target="_blank" rel="noopener noreferrer">{item.title}</a></h2>
+            {item.description && <p class="news-summary">{item.description}</p>}
+            <dl class="news-meta">
+              {item.publishedAt || item.pubDate ? (
+                <div><dt>{labels.published}</dt><dd><time datetime={item.publishedAt ?? undefined}>{formatDate(item.publishedAt, item.pubDate)}</time></dd></div>
+              ) : null}
+              {item.creator && <div><dt>{labels.author}</dt><dd>{item.creator}</dd></div>}
+            </dl>
+            {item.categories.length > 0 && (
+              <div class="news-categories" aria-label={labels.categories}>
+                {item.categories.slice(0, 6).map((category) => <span>{category}</span>)}
+              </div>
+            )}
+          </div>
+          <a class="action-button" href={item.link} target="_blank" rel="noopener noreferrer">
+            {labels.externalLink}
+            <span class="visually-hidden">. {labels.opensNewTab}</span>
+          </a>
+        </article>
+      ))}
+    </div>
+  )}
+</section>
+
+<style>
+  :global(.news-app) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  :global(.news-source-card) {
+    z-index: 1;
+    border: 1px solid var(--color-border);
+    border-radius: 1.25rem;
+    background: var(--color-bg);
+    padding: 1rem;
+  }
+
+  :global(.news-source-card p) {
+    margin: 0.35rem 0;
+    color: var(--color-muted);
+    font-weight: 750;
+  }
+
+  :global(.news-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 0.85rem;
+  }
+
+  :global(.news-card) {
+    display: grid;
+    gap: 1rem;
+    align-content: space-between;
+    border: 1px solid color-mix(in srgb, var(--color-border), transparent 15%);
+    border-radius: 1.5rem;
+    background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%);
+    box-shadow: 0 20px 55px rgb(15 23 42 / 0.08);
+    padding: 1rem;
+  }
+
+  :global(.news-card h2) {
+    margin: 0;
+    font-size: clamp(1.2rem, 4vw, 1.55rem);
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+  }
+
+  :global(.news-card h2 a) {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :global(.news-card h2 a:hover) {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  :global(.news-summary) {
+    margin: 0.75rem 0 0;
+    color: var(--color-muted);
+    font-weight: 700;
+  }
+
+  :global(.news-meta) {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0.85rem 0 0;
+  }
+
+  :global(.news-meta div) {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  :global(.news-meta dt) {
+    color: var(--color-muted);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  :global(.news-meta dd) {
+    margin: 0;
+    font-weight: 850;
+  }
+
+  :global(.news-categories) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.85rem;
+  }
+
+  :global(.news-categories span) {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-primary), transparent 86%);
+    color: var(--color-primary);
+    padding: 0.16rem 0.48rem;
+    font-size: 0.72rem;
+    font-weight: 900;
+  }
+
+  :global(.news-state) {
+    justify-items: start;
+    text-align: left;
+  }
+
+  @media (min-width: 720px) {
+    :global(.news-app) {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(.news-card) {
+      box-shadow: 0 20px 55px rgb(0 0 0 / 0.28);
+    }
+  }
+</style>
