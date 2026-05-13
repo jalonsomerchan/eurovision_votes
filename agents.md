@@ -86,6 +86,108 @@ Actualiza tests y documentación si el cambio modifica comportamiento, arquitect
 
 Toda issue creada por IA debe ser lo bastante clara como para que otro agente pueda resolverla sin pedir contexto adicional.
 
+Si el usuario pide crear varias issues, cada issue debe ser independiente, accionable y resoluble por otro agente sin depender de contexto externo no incluido en la propia issue.
+
+Si una tarea es grande, dividirla en varias issues o PRs pequeñas, cada una con un objetivo verificable.
+
+## Reglas para trabajar con GitHub API
+
+Cuando un agente IA trabaje con este repositorio mediante GitHub API, debe priorizar cambios pequeños, trazables y fáciles de revisar.
+
+### Antes de modificar código
+
+El agente debe:
+
+1. Identificar la rama base correcta, normalmente `main`.
+2. Revisar la estructura del repositorio antes de proponer cambios.
+3. Leer los ficheros relevantes antes de editarlos.
+4. Comprobar si ya existe una issue, PR o rama relacionada.
+5. Evitar cambios masivos si la tarea puede resolverse con cambios pequeños.
+
+### Ramas y pull requests
+
+- Crear una rama nueva por cada tarea o grupo de tareas relacionadas.
+- Usar nombres de rama descriptivos, por ejemplo `fix-i18n-smoke-tests`, `add-github-api-dashboard` o `improve-mobile-navigation`.
+- No trabajar directamente sobre `main`, salvo que el usuario lo pida expresamente.
+- Abrir una PR con resumen claro de cambios.
+- La PR debe indicar qué se ha cambiado, por qué, qué ficheros principales se han tocado, cómo probarlo y si se han actualizado tests o documentación.
+
+### Commits
+
+- Hacer commits pequeños y coherentes.
+- No mezclar cambios no relacionados en el mismo commit.
+- Usar mensajes de commit claros, en imperativo y con contexto.
+- Evitar commits genéricos como `fix`, `changes`, `update` o `wip`.
+
+### Edición de ficheros
+
+- Leer siempre el fichero actual antes de actualizarlo.
+- No sobrescribir ficheros enteros si basta con un cambio localizado.
+- Conservar estilo, estructura y convenciones existentes.
+- Evitar reordenar código sin necesidad, porque dificulta revisar el diff.
+- No borrar comentarios útiles, documentación o tests salvo que estén obsoletos y se justifique.
+
+### Pull requests creadas mediante GitHub API
+
+Toda PR creada por IA debe incluir:
+
+```md
+## Cambios
+
+- [Cambio principal 1]
+- [Cambio principal 2]
+
+## Motivo
+
+[Explica por qué se hizo el cambio.]
+
+## Cómo probarlo
+
+```sh
+npm ci
+npm test
+npm run build
+```
+
+## Notas
+
+[Indica limitaciones, decisiones técnicas o cosas no verificadas.]
+```
+
+### Búsquedas y contexto
+
+Cuando el agente necesite entender el proyecto, debe buscar primero por:
+
+- nombres de componentes,
+- rutas,
+- funciones,
+- claves i18n,
+- nombres de tests,
+- configuración en `astro.config.mjs`,
+- configuración en `src/config/site.ts`.
+
+No debe asumir que un fichero existe sin comprobarlo.
+
+### Seguridad
+
+- No incluir tokens, secretos, claves API ni credenciales en commits, issues o PRs.
+- No imprimir valores de variables de entorno sensibles.
+- No crear ficheros `.env` reales; usar `.env.example` para documentación.
+- No añadir permisos amplios a workflows de GitHub Actions si no son necesarios.
+- No modificar configuración de despliegue sin explicar el impacto.
+
+### Automatización y CI
+
+- Si se toca código fuente, intentar mantener o actualizar tests.
+- Si se toca i18n, comprobar que todos los JSON siguen alineados.
+- Si se toca routing, comprobar compatibilidad con `base` y GitHub Pages.
+- Si se toca UI, comprobar responsive, dark mode y accesibilidad básica.
+- Si no se pueden ejecutar tests, indicarlo claramente en la PR.
+
+### Criterio general
+
+El objetivo de usar GitHub API no es solo cambiar ficheros, sino dejar un historial claro: issue entendible, rama concreta, commits pequeños, PR revisable y explicación suficiente para continuar el trabajo más tarde.
+
 ## Tamaño y modularidad de ficheros
 
 Los ficheros deben mantenerse lo más pequeños posible sin sacrificar claridad.
