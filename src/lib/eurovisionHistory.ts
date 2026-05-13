@@ -52,6 +52,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const YEAR_RE = /\b(19[5-9]\d|20\d{2})\b/;
 const CONTESTANT_PATH_RE = /(?:^|[/\\])contestants[/\\](\d+)_([a-z]{2}(?:-[a-z]{3})?)(?:[/\\]|$)/i;
 const FINAL_ROUND_PATH_RE = /(?:^|[/\\])data[/\\]senior[/\\](\d{4})[/\\]rounds[/\\]final\.json$/i;
+const historyCache = new Map<Locale, Promise<EurovisionHistoryData>>();
 
 function normalizeKey(key: string) {
   return key.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -283,7 +284,7 @@ function withFinalResult(entry: EurovisionEntry, finalResults: Map<string, Final
   };
 }
 
-export async function getEurovisionHistory(locale: Locale = defaultLocale): Promise<EurovisionHistoryData> {
+async function buildEurovisionHistory(locale: Locale = defaultLocale): Promise<EurovisionHistoryData> {
   if (!existsSync(DATASET_DIR)) {
     return { contests: [], sources: [], generatedAt: new Date().toISOString(), datasetFound: false, locale };
   }
@@ -361,4 +362,13 @@ export async function getEurovisionHistory(locale: Locale = defaultLocale): Prom
     datasetFound: true,
     locale,
   };
+}
+
+export async function getEurovisionHistory(locale: Locale = defaultLocale): Promise<EurovisionHistoryData> {
+  const cached = historyCache.get(locale);
+  if (cached) return cached;
+
+  const promise = buildEurovisionHistory(locale);
+  historyCache.set(locale, promise);
+  return promise;
 }
