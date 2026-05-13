@@ -14,8 +14,8 @@ export const localeLabels: Record<Locale, string> = {
 };
 
 export const siteConfig = {
-  name: 'Eurovision Votes 2026',
-  description: 'Página para votar los países de Eurovision 2026 con guardado local, exportación e importación JSON.',
+  name: 'Eurovision 2026',
+  description: 'Centro de información, votación y estadísticas de Eurovision 2026 con histórico, países, ediciones y resultados del festival.',
   url: import.meta.env.ASTRO_SITE ?? 'https://jalonsomerchan.github.io',
   base: import.meta.env.ASTRO_BASE ?? '/',
   author: 'Jorge Alonso',
