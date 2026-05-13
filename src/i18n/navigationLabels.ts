@@ -2,6 +2,7 @@ import { type Locale } from '../config/site';
 
 type NavigationLabels = {
   dataMenu: string;
+  prediction: string;
   voteStatsCta: string;
 };
 
@@ -20,13 +21,13 @@ export type FooterProject = {
 };
 
 const navigationLabels: Record<Locale, NavigationLabels> = {
-  es: { dataMenu: 'Datos', voteStatsCta: 'Ver estadísticas de votaciones' },
-  en: { dataMenu: 'Data', voteStatsCta: 'View voting statistics' },
-  fr: { dataMenu: 'Données', voteStatsCta: 'Voir les statistiques de vote' },
-  pt: { dataMenu: 'Dados', voteStatsCta: 'Ver estatísticas das votações' },
-  ca: { dataMenu: 'Dades', voteStatsCta: 'Veure estadístiques de votacions' },
-  eu: { dataMenu: 'Datuak', voteStatsCta: 'Ikusi bozketen estatistikak' },
-  gl: { dataMenu: 'Datos', voteStatsCta: 'Ver estatísticas das votacións' },
+  es: { dataMenu: 'Datos', prediction: 'Quiniela', voteStatsCta: 'Ver estadísticas de votaciones' },
+  en: { dataMenu: 'Data', prediction: 'Prediction', voteStatsCta: 'View voting statistics' },
+  fr: { dataMenu: 'Données', prediction: 'Pronostic', voteStatsCta: 'Voir les statistiques de vote' },
+  pt: { dataMenu: 'Dados', prediction: 'Prognóstico', voteStatsCta: 'Ver estatísticas das votações' },
+  ca: { dataMenu: 'Dades', prediction: 'Quiniela', voteStatsCta: 'Veure estadístiques de votacions' },
+  eu: { dataMenu: 'Datuak', prediction: 'Kiniela', voteStatsCta: 'Ikusi bozketen estatistikak' },
+  gl: { dataMenu: 'Datos', prediction: 'Quiniela', voteStatsCta: 'Ver estatísticas das votacións' },
 };
 
 const footerLabels: Record<Locale, FooterLabels> = {

@@ -1,0 +1,16 @@
+---
+import Container from '../components/Container.astro';
+import EurovisionPredictionApp from '../components/EurovisionPredictionApp.astro';
+import { defaultLocale } from '../config/site';
+import { getPredictionLabels } from '../i18n/predictionLabels';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const locale = defaultLocale;
+const labels = getPredictionLabels(locale);
+---
+
+<BaseLayout title={labels.title} description={labels.description} locale={locale}>
+  <Container>
+    <EurovisionPredictionApp locale={locale} />
+  </Container>
+</BaseLayout>

@@ -1,0 +1,24 @@
+---
+import Container from '../../components/Container.astro';
+import EurovisionPredictionApp from '../../components/EurovisionPredictionApp.astro';
+import { defaultLocale, locales, type Locale } from '../../config/site';
+import { getPredictionLabels } from '../../i18n/predictionLabels';
+import { isLocale } from '../../i18n/ui';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export function getStaticPaths() {
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .map((locale) => ({ params: { locale } }));
+}
+
+const localeParam = Astro.params.locale;
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const labels = getPredictionLabels(locale);
+---
+
+<BaseLayout title={labels.title} description={labels.description} locale={locale}>
+  <Container>
+    <EurovisionPredictionApp locale={locale} />
+  </Container>
+</BaseLayout>
