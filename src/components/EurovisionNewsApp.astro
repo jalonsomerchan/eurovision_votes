@@ -1,0 +1,103 @@
+---
+import NewsCard from './NewsCard.astro';
+import { defaultLocale, type Locale } from '../config/site';
+import { getNewsLabels } from '../i18n/newsLabels';
+
+interface NewsItem {
+  title: string;
+  link: string;
+  description: string;
+  pubDate: string;
+  publishedAt: string | null;
+  creator: string;
+  categories: string[];
+  guid: string;
+}
+
+interface Props {
+  error?: string | null;
+  items: NewsItem[];
+  locale?: Locale;
+  sourceUrl: string;
+}
+
+const { error = null, items, locale = defaultLocale, sourceUrl } = Astro.props;
+const labels = getNewsLabels(locale);
+---
+
+<section class="news-app" aria-labelledby="news-title">
+  <header class="hero-card news-hero">
+    <div>
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h1 id="news-title">{labels.title}</h1>
+      <p class="hero-copy">{labels.description}</p>
+    </div>
+    <div class="news-source-card">
+      <strong>{labels.source}</strong>
+      <p>{labels.attribution}</p>
+      <a class="country-link" href={sourceUrl} target="_blank" rel="noopener noreferrer">RSS ESCplus España</a>
+    </div>
+  </header>
+
+  {error && (
+    <div class="empty-state news-state" role="status">
+      <span aria-hidden="true">⚠️</span>
+      <h2>{labels.errorTitle}</h2>
+      <p>{labels.errorDescription}</p>
+    </div>
+  )}
+
+  {!error && items.length === 0 && (
+    <div class="empty-state news-state" role="status">
+      <span aria-hidden="true">📰</span>
+      <h2>{labels.emptyTitle}</h2>
+      <p>{labels.emptyDescription}</p>
+    </div>
+  )}
+
+  {items.length > 0 && (
+    <div class="news-grid">
+      {items.map((item) => <NewsCard item={item} locale={locale} />)}
+    </div>
+  )}
+</section>
+
+<style>
+  :global(.news-app) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  :global(.news-source-card) {
+    z-index: 1;
+    border: 1px solid var(--color-border);
+    border-radius: 1.25rem;
+    background: var(--color-bg);
+    padding: 1rem;
+  }
+
+  :global(.news-source-card p) {
+    margin: 0.35rem 0;
+    color: var(--color-muted);
+    font-weight: 750;
+  }
+
+  :global(.news-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 0.85rem;
+  }
+
+  :global(.news-state) {
+    justify-items: start;
+    text-align: left;
+  }
+
+  @media (min-width: 720px) {
+    :global(.news-app) {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+  }
+</style>
