@@ -13,6 +13,8 @@ const homeUrl = getLocalizedPath('/', locale);
 const historyUrl = getLocalizedPath('/historico/', locale);
 const statsUrl = getLocalizedPath('/stats/', locale);
 const alternateLocales = getAlternateLocales(locale);
+const currentPath = Astro.url.pathname;
+const alternatePath = currentPath.includes('/historico') ? '/historico/' : currentPath.includes('/stats') ? '/stats/' : '/';
 ---
 
 <header class="site-header app-header">
@@ -30,7 +32,7 @@ const alternateLocales = getAlternateLocales(locale);
         <summary>{localeLabels[locale]}</summary>
         <div class="locale-menu__list">
           {alternateLocales.map((alternateLocale) => (
-            <a href={getLocalizedPath('/historico/', alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
+            <a href={getLocalizedPath(alternatePath, alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
           ))}
         </div>
       </details>
@@ -58,7 +60,7 @@ const alternateLocales = getAlternateLocales(locale);
           <strong>Idioma</strong>
           <div>
             {alternateLocales.map((alternateLocale) => (
-              <a href={getLocalizedPath('/historico/', alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
+              <a href={getLocalizedPath(alternatePath, alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
             ))}
           </div>
         </div>
