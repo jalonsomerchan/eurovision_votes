@@ -18,15 +18,22 @@ La quiniela usa `eurovision2026Contests` desde `src/config/eurovision2026.ts`. L
 La lógica de cliente entra por `public/prediction.js` y se divide en módulos pequeños bajo `public/prediction/`:
 
 - `config.js`: lee candidatos y labels desde JSON embebidos por Astro.
-- `storage.js`: carga, guarda y borra la quiniela en `localStorage`.
-- `data.js`: normaliza predicciones, evita duplicados, genera resumen y codifica/decodifica la URL compartible.
-- `render.js`: actualiza selectores, estados y tarjeta accesible.
+- `storage.js`: carga, guarda y borra la quiniela en `localStorage`, incluyendo el nombre del usuario.
+- `data.js`: normaliza predicciones, evita duplicados, permite quinielas parciales, genera resumen y codifica/decodifica la URL compartible.
+- `render.js`: actualiza el selector visual, estados y tarjeta accesible.
+- `image.js`: genera una imagen PNG mediante Canvas nativo.
 
 No añade dependencias y funciona sin Firebase.
 
+## Selección visual
+
+El top se construye tocando primero un puesto y después una tarjeta de país. No es obligatorio completar los 10 puestos: con un ganador o un solo país del top ya se puede compartir la quiniela.
+
 ## Compartir
 
-La predicción se guarda en localStorage y también puede compartirse con el parámetro `?p=`. El valor contiene la predicción codificada en base64/URL-safe mediante APIs nativas del navegador. También se puede copiar un resumen textual accesible.
+La predicción se guarda en localStorage y también puede compartirse con el parámetro `?p=`. Al abrir la URL, la página restaura la quiniela y muestra la tarjeta con el nombre guardado. También se puede copiar un resumen textual accesible o descargar una imagen PNG.
+
+La imagen generada siempre incluye la referencia `eurovision.alon.one`.
 
 ## Accesibilidad e i18n
 
