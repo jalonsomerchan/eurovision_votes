@@ -14,6 +14,12 @@ export function getVoteNodes() {
     settingsModal: $('[data-settings-modal]'),
     nameForm: $('[data-name-form]'),
     nameInput: $('#voter-name-input'),
+    topCardContest: $('[data-top-card-contest]'),
+    topCardCopy: $('[data-top-card-copy]'),
+    topCardDownload: $('[data-top-card-download]'),
+    topCardFeedback: $('[data-top-card-feedback]'),
+    topCardLimits: document.querySelectorAll('[data-top-card-limit]'),
+    topCardPreview: $('[data-top-card-preview]'),
   };
 }
 
