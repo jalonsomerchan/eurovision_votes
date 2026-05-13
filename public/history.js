@@ -15,8 +15,8 @@ const html = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&'
 const formatNumber = (value) => Number.isFinite(value) ? new Intl.NumberFormat(pageLocale).format(value) : '-';
 const formatValue = (value) => value === undefined || value === null || value === '' ? '-' : html(value);
 const normalize = (value) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-const flag = (value) => value ? `<span class="history-flag" aria-hidden="true">${html(value)}</span>` : '';
-const countryLine = (name, flagValue) => `<span class="history-country-line">${flag(flagValue)}<span>${formatValue(name)}</span></span>`;
+const flag = (src, name = '') => src ? `<img class="history-flag" src="${html(src)}" alt="" loading="lazy" decoding="async" width="64" height="64">` : '';
+const countryLine = (name, flagSrc) => `<span class="history-country-line">${flag(flagSrc, name)}<span>${formatValue(name)}</span></span>`;
 
 function entryText(entry) {
   return [entry.country, entry.countryCode, entry.artist, entry.song, entry.points, entry.place, entry.runningOrder].join(' ');
@@ -63,7 +63,7 @@ function renderContest(contest) {
   const host = [contest.hostCity, contest.hostCountry].filter(Boolean).join(', ');
   const winnerLine = [contest.winnerArtist, contest.winnerSong].filter(Boolean).join(' - ');
   const meta = [
-    ['Sede', host ? `${contest.hostFlag || ''} ${host}`.trim() : contest.venue],
+    ['Sede', host ? countryLine(host, contest.hostFlag) : contest.venue],
     ['Recinto', contest.venue],
     ['Participantes', contest.participants ? formatNumber(contest.participants) : '-'],
     ['Fecha', contest.date],
@@ -73,7 +73,7 @@ function renderContest(contest) {
     <header>
       <div>
         <p class="eyebrow">Festival ${html(contest.year)}</p>
-        <h2>${html(contest.year)}${host ? ` · ${flag(contest.hostFlag)}${html(host)}` : ''}</h2>
+        <h2>${html(contest.year)}${host ? ` · <span class="history-host-title">${flag(contest.hostFlag, host)}${html(host)}</span>` : ''}</h2>
       </div>
       <div class="history-winner-pill"><span>Ganador</span><strong>${countryLine(contest.winner, contest.winnerFlag)}</strong></div>
     </header>
@@ -81,9 +81,9 @@ function renderContest(contest) {
       <section class="history-contest-main">
         <h3>${countryLine(contest.winner || 'Sin ganador registrado', contest.winnerFlag)}</h3>
         <p>${winnerLine ? html(winnerLine) : 'Datos de la cancion no disponibles.'}</p>
-        ${contest.winnerPoints ? `<strong>${formatNumber(contest.winnerPoints)} puntos</strong>` : ''}
+        ${Number.isFinite(contest.winnerPoints) ? `<strong>${formatNumber(contest.winnerPoints)} puntos</strong>` : ''}
       </section>
-      <dl class="history-meta-list">${meta.map(([label, value]) => `<div><dt>${html(label)}</dt><dd>${formatValue(value)}</dd></div>`).join('')}</dl>
+      <dl class="history-meta-list">${meta.map(([label, value]) => `<div><dt>${html(label)}</dt><dd>${String(value ?? '')}</dd></div>`).join('')}</dl>
     </div>
     <details class="history-details">
       <summary>Ver participaciones</summary>
