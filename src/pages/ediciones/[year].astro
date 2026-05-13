@@ -13,6 +13,7 @@ export async function getStaticPaths() {
 
 const year = Number(Astro.params.year);
 const t = useTranslations(defaultLocale);
+const availableYears = await listEurovisionEditionYears(defaultLocale);
 const edition = await getEurovisionEdition(year, defaultLocale);
 
 if (!edition) {
@@ -22,6 +23,6 @@ if (!edition) {
 
 <BaseLayout title={`Eurovision ${edition.year}`} description={t('edition.description')} locale={defaultLocale}>
   <Container>
-    <EurovisionEditionApp edition={edition} locale={defaultLocale} />
+    <EurovisionEditionApp edition={edition} locale={defaultLocale} availableYears={availableYears} />
   </Container>
 </BaseLayout>
