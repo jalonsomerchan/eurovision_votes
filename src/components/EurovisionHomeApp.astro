@@ -1,0 +1,221 @@
+---
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import { defaultLocale, type Locale } from '../config/site';
+import type { EurovisionEdition } from '../lib/eurovisionEditions';
+
+interface Props {
+  locale?: Locale;
+  latestEdition: EurovisionEdition;
+}
+
+const { locale = defaultLocale, latestEdition } = Astro.props;
+const t = useTranslations(locale);
+const editionUrl = getLocalizedPath(`/ediciones/${latestEdition.year}/`, locale);
+const voteUrl = getLocalizedPath('/vota/', locale);
+const modules = [
+  { key: 'vote', href: voteUrl, icon: '🗳️' },
+  { key: 'history', href: getLocalizedPath('/historico/', locale), icon: '🏆' },
+  { key: 'countries', href: getLocalizedPath('/paises/', locale), icon: '🌍' },
+  { key: 'editions', href: editionUrl, icon: '🎤' },
+  { key: 'countryPoints', href: getLocalizedPath('/puntos-por-pais/', locale), icon: '🤝' },
+  { key: 'stats', href: getLocalizedPath('/stats/', locale), icon: '📊' },
+];
+---
+
+<section class="home-dashboard" aria-labelledby="home-title">
+  <div class="hero-card home-dashboard-hero">
+    <div>
+      <p class="eyebrow">{t('home.eyebrow')}</p>
+      <h1 id="home-title">{t('home.title')}</h1>
+      <p class="hero-copy">{t('home.description')}</p>
+    </div>
+    <div class="history-actions">
+      <a class="action-button action-button--primary" href={voteUrl}>{t('home.ctaVote')}</a>
+      <a class="action-button" href={editionUrl}>{t('home.ctaLatest')}</a>
+    </div>
+  </div>
+
+  <section class="stats-card home-latest" aria-labelledby="latest-edition-title">
+    <div>
+      <p class="eyebrow">{t('home.latestEyebrow')}</p>
+      <h2 id="latest-edition-title"><a class="country-link edition-link" href={editionUrl}>Eurovision {latestEdition.year}</a></h2>
+      <p>{[latestEdition.hostCity, latestEdition.hostCountry].filter(Boolean).join(', ') || t('edition.noHostData')}</p>
+    </div>
+
+    <div class="home-winner-card">
+      <span>{t('edition.winner')}</span>
+      <strong>
+        {latestEdition.winnerFlag && <img class="history-flag" src={latestEdition.winnerFlag} alt="" width="64" height="64" loading="lazy" decoding="async" />}
+        {latestEdition.winner || t('edition.pendingResults')}
+      </strong>
+      <small>{[latestEdition.winnerArtist, latestEdition.winnerSong].filter(Boolean).join(' - ') || t('home.latestPending')}</small>
+    </div>
+
+    <div class="stats-summary home-latest-kpis" aria-label={t('home.latestStats')}>
+      <div class="stats-kpi"><span>{t('edition.participants')}</span><strong>{latestEdition.participants}</strong></div>
+      <div class="stats-kpi"><span>{t('edition.rounds')}</span><strong>{latestEdition.stats.rounds}</strong></div>
+      <div class="stats-kpi"><span>{t('edition.songs')}</span><strong>{latestEdition.stats.songs}</strong></div>
+    </div>
+  </section>
+
+  <section class="home-modules" aria-labelledby="modules-title">
+    <div class="home-section-heading">
+      <p class="eyebrow">{t('home.modulesEyebrow')}</p>
+      <h2 id="modules-title">{t('home.modulesTitle')}</h2>
+      <p>{t('home.modulesDescription')}</p>
+    </div>
+
+    <div class="home-module-grid">
+      {modules.map((module) => (
+        <a class="home-module-card" href={module.href}>
+          <span aria-hidden="true">{module.icon}</span>
+          <strong>{t(`home.module.${module.key}.title`)}</strong>
+          <p>{t(`home.module.${module.key}.description`)}</p>
+        </a>
+      ))}
+    </div>
+  </section>
+</section>
+
+<style>
+  :global(.home-dashboard) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  :global(.home-latest) {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.home-latest h2) {
+    margin: 0;
+    font-size: clamp(1.8rem, 7vw, 3.4rem);
+    line-height: 1;
+    letter-spacing: -0.06em;
+  }
+
+  :global(.home-latest p) {
+    margin: 0.5rem 0 0;
+    color: var(--color-muted);
+    font-weight: 800;
+  }
+
+  :global(.home-winner-card) {
+    display: grid;
+    gap: 0.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1.25rem;
+    background: var(--color-bg);
+    padding: 1rem;
+  }
+
+  :global(.home-winner-card > span) {
+    color: var(--color-muted);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  :global(.home-winner-card strong) {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: clamp(1.25rem, 5vw, 2rem);
+    line-height: 1.05;
+  }
+
+  :global(.home-winner-card small) {
+    color: var(--color-muted);
+    font-weight: 800;
+  }
+
+  :global(.home-latest-kpis) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  :global(.home-section-heading) {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  :global(.home-section-heading h2),
+  :global(.home-section-heading p) {
+    margin: 0;
+  }
+
+  :global(.home-section-heading h2) {
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+    letter-spacing: -0.05em;
+  }
+
+  :global(.home-section-heading p) {
+    max-width: 48rem;
+    color: var(--color-muted);
+    font-weight: 750;
+  }
+
+  :global(.home-modules) {
+    display: grid;
+    gap: 1rem;
+  }
+
+  :global(.home-module-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  :global(.home-module-card) {
+    display: grid;
+    gap: 0.55rem;
+    min-height: 12rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1.35rem;
+    background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%);
+    color: var(--color-text);
+    padding: 1rem;
+    text-decoration: none;
+    box-shadow: 0 14px 34px rgb(15 23 42 / 0.07);
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  :global(.home-module-card:hover) {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--color-primary), var(--color-border) 30%);
+    box-shadow: 0 18px 42px rgb(15 23 42 / 0.1);
+  }
+
+  :global(.home-module-card > span) {
+    font-size: 2rem;
+  }
+
+  :global(.home-module-card strong) {
+    font-size: 1.2rem;
+    line-height: 1.1;
+  }
+
+  :global(.home-module-card p) {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.95rem;
+    font-weight: 750;
+  }
+
+  @media (min-width: 720px) {
+    :global(.home-dashboard) {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+
+    :global(.home-latest) {
+      grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.65fr);
+      align-items: start;
+    }
+
+    :global(.home-latest-kpis) {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
