@@ -1,0 +1,31 @@
+---
+import EurovisionRankingApp from '../../../components/EurovisionRankingApp.astro';
+import Container from '../../../components/Container.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { defaultLocale, locales, type Locale } from '../../../config/site';
+import { isLocale } from '../../../i18n/ui';
+import { getRankingText } from '../../../i18n/rankingLabels';
+import { getEurovisionRanking, hasRankingSlug, rankingSlugs } from '../../../lib/eurovisionRankings';
+
+export function getStaticPaths() {
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .flatMap((locale) => rankingSlugs.map((slug) => ({ params: { locale, slug } })));
+}
+
+const localeParam = Astro.params.locale;
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const slug = Astro.params.slug;
+if (!hasRankingSlug(slug)) {
+  return Astro.redirect('/404/');
+}
+
+const ranking = await getEurovisionRanking(slug, locale);
+const text = getRankingText(slug, locale);
+---
+
+<BaseLayout title={text.title} description={text.description} locale={locale}>
+  <Container>
+    <EurovisionRankingApp ranking={ranking} locale={locale} />
+  </Container>
+</BaseLayout>
