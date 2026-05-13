@@ -23,8 +23,14 @@ const numberFormatter = new Intl.NumberFormat(pageLocale);
 const html = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char]);
 const normalize = (value) => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const formatNumber = (value) => Number.isFinite(value) ? numberFormatter.format(value) : '-';
+const localizedPath = (path) => `${pageLocale === 'es' ? '' : `/${pageLocale}`}${path}`;
+const countryUrl = (code) => code ? localizedPath(`/paises/${String(code).toLowerCase()}/`) : '';
 const flag = (src) => src ? `<img class="history-flag" src="${html(src)}" alt="" loading="lazy" decoding="async" width="64" height="64">` : '';
-const countryLine = (country, src) => `<span class="history-country-line">${flag(src)}<span>${html(country)}</span></span>`;
+const countryLine = (country, src, code) => {
+  const content = `${flag(src)}<span>${html(country)}</span>`;
+  const url = countryUrl(code);
+  return url ? `<a class="history-country-line country-link" href="${html(url)}">${content}</a>` : `<span class="history-country-line">${content}</span>`;
+};
 
 function selectedSource() {
   const selectedCode = selectNode?.value || sources[0]?.countryCode;
@@ -54,7 +60,7 @@ function render() {
   const targets = filteredTargets(source);
   const rows = targets.map((target, index) => `<tr>
     <td data-label="#">${index + 1}</td>
-    <td data-label="${html(text.country)}"><strong>${countryLine(target.country, target.flag)}</strong></td>
+    <td data-label="${html(text.country)}"><strong>${countryLine(target.country, target.flag, target.countryCode)}</strong></td>
     <td data-label="${html(text.points)}"><strong>${formatNumber(target.totalPoints)}</strong></td>
     <td data-label="${html(text.votes)}">${formatNumber(target.voteCount)}</td>
     <td data-label="${html(text.rounds)}">${formatNumber(target.rounds)}</td>
@@ -63,7 +69,7 @@ function render() {
   </tr>`).join('');
 
   resultNode.innerHTML = `<article class="stats-card">
-    <p class="country-points-source"><span class="eyebrow">${html(text.points)}</span><strong>${countryLine(source.country, source.flag)}</strong><small>${formatNumber(source.totalGiven)} ${html(text.points.toLowerCase())}</small></p>
+    <p class="country-points-source"><span class="eyebrow">${html(text.points)}</span><strong>${countryLine(source.country, source.flag, source.countryCode)}</strong><small>${formatNumber(source.totalGiven)} ${html(text.points.toLowerCase())}</small></p>
     <div class="stats-table-wrap country-points-table-wrap">
       <table class="stats-table country-points-table">
         <thead><tr><th>#</th><th>${html(text.country)}</th><th>${html(text.points)}</th><th>${html(text.votes)}</th><th>${html(text.rounds)}</th><th>${html(text.average)}</th><th>${html(text.years)}</th></tr></thead>
