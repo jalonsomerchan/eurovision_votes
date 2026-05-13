@@ -12,6 +12,7 @@ const { profile, locale = defaultLocale } = Astro.props;
 const t = useTranslations(locale);
 const historyUrl = getLocalizedPath('/historico/', locale);
 const pointsUrl = getLocalizedPath('/puntos-por-pais/', locale);
+const editionUrl = (year: number) => getLocalizedPath(`/ediciones/${year}/`, locale);
 const chartEntries = profile.history
   .filter((entry) => typeof entry.place === 'number')
   .sort((a, b) => a.year - b.year)
@@ -88,7 +89,7 @@ const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(
           ))}
         </svg>
         <div class="country-chart-years">
-          {points.map((point) => <span>{point.entry.year}</span>)}
+          {points.map((point) => <a class="country-link edition-link" href={editionUrl(point.entry.year)}>{point.entry.year}</a>)}
         </div>
       </div>
     ) : (
@@ -115,7 +116,7 @@ const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(
           <tbody>
             {profile.history.map((entry) => (
               <tr>
-                <td data-label={t('countryProfile.year')}>{entry.year}</td>
+                <td data-label={t('countryProfile.year')}><a class="country-link edition-link" href={editionUrl(entry.year)}>{entry.year}</a></td>
                 <td data-label={t('countryProfile.song')}><strong>{entry.song || '-'}</strong></td>
                 <td data-label={t('countryProfile.artist')}>{entry.artist || '-'}</td>
                 <td data-label={t('countryProfile.place')}>{entry.place ?? '-'}</td>
