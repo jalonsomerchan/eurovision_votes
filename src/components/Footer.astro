@@ -1,10 +1,45 @@
 ---
 import Container from './Container.astro';
+import { type Locale, siteConfig } from '../config/site';
+import { footerGames, footerTools, formatProjectLabel, getFooterLabels } from '../i18n/navigationLabels';
 
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const labels = getFooterLabels(locale);
+const projectGroups = [
+  { title: labels.tools, projects: footerTools },
+  { title: labels.games, projects: footerGames },
+];
 ---
 
-<footer class="border-t border-[var(--color-border)]">
-  <Container class="py-6 text-sm text-[var(--color-muted)]">
-    <p>Eurovision Votes 2026 por AlonSoftware. Más en <a class="font-bold text-[var(--color-primary)]" href="https://proyectos.alon.one">proyectos.alon.one</a></p>
+<footer class="site-footer">
+  <Container class="site-footer__inner">
+    <div class="site-footer__brand">
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h2>{labels.title}</h2>
+      <p>{labels.copy}</p>
+      <strong>{siteConfig.name}</strong>
+    </div>
+
+    <div class="site-footer__projects" aria-label={labels.title}>
+      {projectGroups.map((group) => (
+        <section class="site-footer__group" aria-labelledby={`footer-${group.title.toLowerCase().replaceAll(' ', '-')}`}>
+          <h3 id={`footer-${group.title.toLowerCase().replaceAll(' ', '-')}`}>{group.title}</h3>
+          <ul>
+            {group.projects.map((project) => (
+              <li>
+                <a href={project.href} target="_blank" rel="noopener noreferrer" aria-label={formatProjectLabel(labels.openProject, project.name)}>
+                  <span>{project.name}</span>
+                  <small>{new URL(project.href).hostname}</small>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
   </Container>
 </footer>
