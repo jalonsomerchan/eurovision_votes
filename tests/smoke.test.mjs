@@ -21,6 +21,8 @@ describe('project smoke checks', () => {
       'astro.config.mjs',
       'src/pages/index.astro',
       'src/pages/[locale]/index.astro',
+      'src/pages/vota.astro',
+      'src/pages/[locale]/vota.astro',
       'src/pages/404.astro',
       'src/pages/manifest.webmanifest.ts',
       'src/pages/robots.txt.ts',
@@ -87,13 +89,15 @@ describe('project smoke checks', () => {
     });
   });
 
-  it('includes the Eurovision voting app', () => {
+  it('includes the Eurovision homepage and voting app', () => {
     const home = readText('src/pages/index.astro');
+    const votePage = readText('src/pages/vota.astro');
     const app = readText('src/components/EurovisionVoteApp.astro');
     const voteScript = readText('public/vote.js');
     const contestConfig = readText('src/config/eurovision2026.ts');
 
-    assert.match(home, /EurovisionVoteApp/);
+    assert.match(home, /EurovisionHomeApp/);
+    assert.match(votePage, /EurovisionVoteApp/);
     assert.match(app, /vote\.js/);
     assert.match(voteScript, /localStorage/);
     assert.match(app, /Exportar JSON/);
