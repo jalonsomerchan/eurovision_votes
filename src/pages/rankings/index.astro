@@ -1,0 +1,17 @@
+---
+import RankingsIndexApp from '../../components/RankingsIndexApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { getRankingLabels } from '../../i18n/rankingLabels';
+import { listEurovisionRankings } from '../../lib/eurovisionRankings';
+
+const labels = getRankingLabels(defaultLocale);
+const rankings = await listEurovisionRankings(defaultLocale);
+---
+
+<BaseLayout title={labels.indexTitle} description={labels.indexDescription} locale={defaultLocale}>
+  <Container>
+    <RankingsIndexApp rankings={rankings} locale={defaultLocale} />
+  </Container>
+</BaseLayout>

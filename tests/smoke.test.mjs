@@ -27,6 +27,10 @@ describe('project smoke checks', () => {
       'src/pages/[locale]/stats.astro',
       'src/pages/noticias/index.astro',
       'src/pages/[locale]/noticias/index.astro',
+      'src/pages/rankings/index.astro',
+      'src/pages/[locale]/rankings/index.astro',
+      'src/pages/rankings/[slug].astro',
+      'src/pages/[locale]/rankings/[slug].astro',
       'src/pages/paises/[countryCode].astro',
       'src/pages/[locale]/paises/[countryCode].astro',
       'src/pages/comparador-paises/index.astro',
@@ -40,6 +44,7 @@ describe('project smoke checks', () => {
       'src/i18n/featureLabels.ts',
       'src/i18n/statsLabels.ts',
       'src/i18n/newsLabels.ts',
+      'src/i18n/rankingLabels.ts',
       'src/i18n/countryComparisonLabels.ts',
       'src/i18n/countryProfileSeoLabels.ts',
       'src/i18n/translations/es.json',
@@ -132,6 +137,35 @@ describe('project smoke checks', () => {
     assert.match(contestConfig, /Semifinal 1/);
     assert.match(contestConfig, /Semifinal 2/);
     assert.match(contestConfig, /Final/);
+  });
+
+  it('includes evergreen Eurovision rankings', () => {
+    const rankingsIndex = readText('src/pages/rankings/index.astro');
+    const localizedRankingsIndex = readText('src/pages/[locale]/rankings/index.astro');
+    const rankingPage = readText('src/pages/rankings/[slug].astro');
+    const localizedRankingPage = readText('src/pages/[locale]/rankings/[slug].astro');
+    const rankingApp = readText('src/components/EurovisionRankingApp.astro');
+    const rankingsIndexApp = readText('src/components/RankingsIndexApp.astro');
+    const rankingTable = readText('src/components/RankingTable.astro');
+    const rankingHelpers = readText('src/lib/eurovisionRankings.ts');
+    const rankingLabels = readText('src/i18n/rankingLabels.ts');
+    const header = readText('src/components/Header.astro');
+    const home = readText('src/components/EurovisionHomeApp.astro');
+
+    assert.match(rankingsIndex, /listEurovisionRankings/);
+    assert.match(localizedRankingsIndex, /getStaticPaths/);
+    assert.match(rankingPage, /rankingSlugs/);
+    assert.match(localizedRankingPage, /rankingSlugs/);
+    assert.match(rankingApp, /limitationsTitle/);
+    assert.match(rankingsIndexApp, /rankings-grid/);
+    assert.match(rankingTable, /caption/);
+    assert.match(rankingTable, /data-label/);
+    assert.match(rankingHelpers, /mas-victorias/);
+    assert.match(rankingHelpers, /ediciones-mas-participantes/);
+    assert.match(rankingLabels, /Countries with the most Eurovision wins/);
+    assert.match(rankingLabels, /Países com mais vitórias/);
+    assert.match(header, /rankingsUrl/);
+    assert.match(home, /rankingLabels/);
   });
 
   it('includes the ESCplus news page', () => {
@@ -231,6 +265,7 @@ describe('project smoke checks', () => {
     const readme = readText('README.md');
 
     assert.match(readme, /\S/, 'README.md should not be empty');
+    assert.match(readme, /\/rankings\//, 'README.md should document rankings route');
     assert.match(readme, /\/noticias\//, 'README.md should document news route');
     assert.match(readme, /\/paises\/\{codigo\}\//, 'README.md should document country profile routes');
     assert.equal(existsSync(join(root, 'agents.md')), true, 'agents.md should exist');

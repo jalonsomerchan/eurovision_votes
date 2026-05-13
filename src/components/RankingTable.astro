@@ -1,0 +1,121 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { getRankingLabels, getRankingText } from '../i18n/rankingLabels';
+import type { RankingData } from '../lib/eurovisionRankings';
+
+interface Props {
+  ranking: RankingData;
+  locale?: Locale;
+}
+
+const { ranking, locale = defaultLocale } = Astro.props;
+const labels = getRankingLabels(locale);
+const text = getRankingText(ranking.slug, locale);
+---
+
+<div class="stats-table-wrap ranking-table-wrap">
+  <table class="stats-table ranking-table">
+    <caption class="visually-hidden">{text.title}</caption>
+    <thead>
+      <tr>
+        <th scope="col">{labels.position}</th>
+        <th scope="col">{labels.item}</th>
+        <th scope="col">{text.valueLabel}</th>
+        <th scope="col">{text.detailLabel}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {ranking.rows.map((row, index) => (
+        <tr>
+          <td data-label={labels.position}>{row.rank ?? index + 1}</td>
+          <td data-label={labels.item}>
+            <span class="ranking-main-cell">
+              {row.flag && <img class="history-flag" src={row.flag} alt="" loading="lazy" decoding="async" width="64" height="64" />}
+              {row.href ? <a class="country-link" href={row.href}>{row.label}</a> : <strong>{row.label}</strong>}
+            </span>
+          </td>
+          <td data-label={text.valueLabel}><strong>{row.value}</strong></td>
+          <td data-label={text.detailLabel}>{row.detail || '—'}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  :global(.ranking-table) {
+    min-width: 42rem;
+  }
+
+  :global(.ranking-main-cell) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  :global(.ranking-main-cell .history-flag) {
+    width: 2rem;
+    height: 1.4rem;
+  }
+
+  @media (max-width: 719px) {
+    :global(.ranking-table-wrap) {
+      border: 0;
+      overflow: visible;
+    }
+
+    :global(.ranking-table) {
+      min-width: 0;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    :global(.ranking-table thead) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    :global(.ranking-table),
+    :global(.ranking-table tbody),
+    :global(.ranking-table tr),
+    :global(.ranking-table td) {
+      display: block;
+      width: 100%;
+    }
+
+    :global(.ranking-table tr) {
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: 1rem;
+      background: var(--color-bg);
+      overflow: hidden;
+    }
+
+    :global(.ranking-table td) {
+      display: grid;
+      grid-template-columns: minmax(7rem, 0.42fr) minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.75rem;
+      text-align: left;
+    }
+
+    :global(.ranking-table td:last-child) {
+      border-bottom: 0;
+    }
+
+    :global(.ranking-table td::before) {
+      content: attr(data-label);
+      color: var(--color-muted);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+  }
+</style>
