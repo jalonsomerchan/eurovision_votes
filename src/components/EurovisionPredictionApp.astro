@@ -12,7 +12,7 @@ const labels = getPredictionLabels(locale);
 const candidates = eurovision2026Contests.flatMap((contest) => contest.songs).filter((song, index, songs) => (
   songs.findIndex((item) => item.flag === song.flag && item.country === song.country) === index
 ));
-const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513-1`;
+const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513-2`;
 ---
 
 <section class="prediction-app" aria-labelledby="prediction-title">
@@ -26,6 +26,8 @@ const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513
       <p class="hero-copy">{labels.copy}</p>
     </div>
     <div class="user-card" aria-live="polite">
+      <label class="field-label" for="prediction-name">{labels.nameLabel}</label>
+      <input id="prediction-name" class="text-input" type="text" maxlength="40" autocomplete="name" placeholder={labels.namePlaceholder} data-prediction-name />
       <span class="status-label">{labels.saveStatus}</span>
       <strong data-prediction-status>{labels.saved}</strong>
     </div>
@@ -47,6 +49,7 @@ const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513
       <div class="prediction-actions">
         <button class="action-button action-button--primary" type="button" data-prediction-copy-link>{labels.copyLink}</button>
         <button class="action-button" type="button" data-prediction-copy-summary>{labels.copySummary}</button>
+        <button class="action-button" type="button" data-prediction-image>{labels.downloadImage}</button>
         <button class="action-button action-button--danger" type="button" data-prediction-reset>{labels.reset}</button>
       </div>
       <p class="feedback" role="status" aria-live="polite" data-prediction-feedback></p>
@@ -59,17 +62,30 @@ const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513
         <h2 id="prediction-top-title">{labels.topTitle}</h2>
         <p>{labels.topCopy}</p>
       </div>
+      <strong class="prediction-active-slot" data-prediction-active-slot>{labels.selectedSlot.replaceAll('{position}', '1')}</strong>
     </div>
-    <div class="prediction-top-list" data-prediction-top-list>
+    <div class="prediction-slot-list" role="list" aria-label={labels.topTitle}>
       {Array.from({ length: 10 }, (_, index) => (
-        <label class="prediction-position">
-          <span>{labels.positionLabel.replaceAll('{position}', String(index + 1))}</span>
-          <select class="text-input" data-prediction-position={index + 1}>
-            <option value="">{labels.emptyOption}</option>
-            {candidates.map((song) => <option value={song.flag}>{song.country} — {song.artist}</option>)}
-          </select>
-        </label>
+        <button class="prediction-slot" type="button" data-prediction-slot={index + 1} aria-pressed={index === 0 ? 'true' : 'false'}>
+          <span>{index + 1}</span>
+          <strong>{labels.emptyOption}</strong>
+        </button>
       ))}
+    </div>
+    <div class="prediction-picker" aria-labelledby="prediction-picker-title">
+      <div>
+        <h3 id="prediction-picker-title">{labels.pickTitle}</h3>
+        <p>{labels.pickCopy}</p>
+      </div>
+      <div class="prediction-country-grid" data-prediction-country-grid>
+        {candidates.map((song) => (
+          <button class="prediction-country-card" type="button" data-prediction-country={song.flag}>
+            <img width="48" height="36" loading="lazy" alt={labels.flagAlt.replaceAll('{country}', song.country)} src={`https://flagsapi.com/${song.flag}/flat/64.png`} />
+            <span>{song.country}</span>
+            <small>{song.artist}</small>
+          </button>
+        ))}
+      </div>
     </div>
   </section>
 
