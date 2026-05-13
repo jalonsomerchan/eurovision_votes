@@ -4,6 +4,7 @@ import { eurovision2026Contests as contests } from '../config/eurovision2026';
 import { getVoteLabels } from '../i18n/featureLabels';
 import { getLocalizedPath } from '../i18n/ui';
 import { getNavigationLabels } from '../i18n/navigationLabels';
+import { getTopCardLabels } from '../i18n/topCardLabels';
 
 interface Props {
   locale?: Locale;
@@ -12,6 +13,7 @@ interface Props {
 const { locale = defaultLocale } = Astro.props;
 const labels = getVoteLabels(locale);
 const navLabels = getNavigationLabels(locale);
+const topCardLabels = getTopCardLabels(locale);
 const statsUrl = getLocalizedPath('/stats/', locale);
 const firebaseConfig = {
   apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY ?? '',
@@ -21,13 +23,14 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
   appId: import.meta.env.PUBLIC_FIREBASE_APP_ID ?? '',
 };
-const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-2`;
+const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-3`;
 ---
 
 <section class="eurovision-vote-app" aria-labelledby="vote-title">
   <script type="application/json" id="eurovision-contests" set:html={JSON.stringify(contests)}></script>
   <script type="application/json" id="firebase-config" set:html={JSON.stringify(firebaseConfig)}></script>
   <script type="application/json" id="vote-labels" set:html={JSON.stringify(labels)}></script>
+  <script type="application/json" id="top-card-labels" set:html={JSON.stringify(topCardLabels)}></script>
 
   <div class="hero-card">
     <div>
@@ -53,6 +56,37 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-2`;
   </div>
 
   <p class="feedback" role="status" aria-live="polite" data-feedback></p>
+
+  <section class="top-card-generator" aria-labelledby="top-card-title">
+    <div class="top-card-generator__head">
+      <div>
+        <p class="eyebrow">{topCardLabels.eyebrow}</p>
+        <h2 id="top-card-title">{topCardLabels.title}</h2>
+        <p>{topCardLabels.copy}</p>
+      </div>
+      <div class="top-card-generator__controls" aria-label={topCardLabels.title}>
+        <label>
+          <span>{topCardLabels.galaLabel}</span>
+          <select class="text-input" data-top-card-contest>
+            {contests.map((contest) => <option value={contest.id}>{contest.name}</option>)}
+          </select>
+        </label>
+        <fieldset>
+          <legend>{topCardLabels.limitLegend}</legend>
+          <label><input type="radio" name="top-card-limit" value="5" checked data-top-card-limit /> {topCardLabels.top5}</label>
+          <label><input type="radio" name="top-card-limit" value="10" data-top-card-limit /> {topCardLabels.top10}</label>
+        </fieldset>
+      </div>
+    </div>
+
+    <div class="top-card-generator__preview" aria-label={topCardLabels.previewLabel} data-top-card-preview></div>
+    <p class="feedback" role="status" aria-live="polite" data-top-card-feedback></p>
+    <div class="top-card-generator__actions">
+      <button class="action-button" type="button" data-top-card-copy>{topCardLabels.copyText}</button>
+      <button class="action-button action-button--primary" type="button" data-top-card-download>{topCardLabels.downloadImage}</button>
+    </div>
+  </section>
+
   <div class="song-list" data-song-list></div>
 </section>
 

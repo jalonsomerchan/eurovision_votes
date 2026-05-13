@@ -43,6 +43,7 @@ describe('project smoke checks', () => {
       'src/i18n/ui.ts',
       'src/i18n/featureLabels.ts',
       'src/i18n/statsLabels.ts',
+      'src/i18n/topCardLabels.ts',
       'src/i18n/newsLabels.ts',
       'src/i18n/rankingLabels.ts',
       'src/i18n/countryComparisonLabels.ts',
@@ -150,6 +151,9 @@ describe('project smoke checks', () => {
       'public/vote/dom.js',
       'public/vote/render.js',
       'public/vote/storage.js',
+      'public/vote/top-card-canvas.js',
+      'public/vote/top-card-data.js',
+      'public/vote/top-card-render.js',
     ].forEach((path) => {
       assert.equal(existsSync(join(root, path)), true, `${path} should exist`);
     });
@@ -160,6 +164,34 @@ describe('project smoke checks', () => {
     assert.match(readText('public/vote/actions.js'), /importVotes/);
     assert.match(readText('public/vote/render.js'), /createRenderer/);
     assert.match(readText('public/vote/storage.js'), /localStorage/);
+  });
+
+  it('includes the shareable personal top card generator', () => {
+    const voteApp = readText('src/components/EurovisionVoteApp.astro');
+    const voteScript = readText('public/vote.js');
+    const topCardLabels = readText('src/i18n/topCardLabels.ts');
+    const topCardData = readText('public/vote/top-card-data.js');
+    const topCardCanvas = readText('public/vote/top-card-canvas.js');
+    const topCardRender = readText('public/vote/top-card-render.js');
+    const layout = readText('src/layouts/BaseLayout.astro');
+    const styles = readText('public/top-card.css');
+
+    assert.match(voteApp, /top-card-labels/);
+    assert.match(voteApp, /data-top-card-contest/);
+    assert.match(voteApp, /data-top-card-copy/);
+    assert.match(voteApp, /data-top-card-download/);
+    assert.match(voteScript, /downloadTopCardImage/);
+    assert.match(voteScript, /renderTopCardState/);
+    assert.match(topCardLabels, /getTopCardLabels/);
+    assert.match(topCardLabels, /Generate your personal top/);
+    assert.match(topCardLabels, /Xera o teu top persoal/);
+    assert.match(topCardData, /getRankedTopEntries/);
+    assert.match(topCardData, /formatTopCardText/);
+    assert.match(topCardRender, /visually-hidden/);
+    assert.match(topCardCanvas, /document\.createElement\('canvas'\)/);
+    assert.match(topCardCanvas, /toDataURL\('image\/png'\)/);
+    assert.match(layout, /top-card\.css/);
+    assert.match(styles, /top-card-generator/);
   });
 
   it('restricts historical dataset parsing to senior Eurovision only', () => {
@@ -306,6 +338,7 @@ describe('project smoke checks', () => {
     assert.match(readme, /\/rankings\//, 'README.md should document rankings route');
     assert.match(readme, /\/noticias\//, 'README.md should document news route');
     assert.match(readme, /\/paises\/\{codigo\}\//, 'README.md should document country profile routes');
+    assert.match(readme, /top-card-canvas\.js/, 'README.md should document shareable top card modules');
     assert.equal(existsSync(join(root, 'agents.md')), true, 'agents.md should exist');
     assert.equal(existsSync(join(root, 'docs/design-system.md')), true, 'docs/design-system.md should exist');
   });
