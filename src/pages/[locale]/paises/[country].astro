@@ -1,0 +1,31 @@
+---
+import EurovisionCountryProfileApp from '../../../components/EurovisionCountryProfileApp.astro';
+import Container from '../../../components/Container.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { defaultLocale, locales, type Locale } from '../../../config/site';
+import { isLocale, useTranslations } from '../../../i18n/ui';
+import { getEurovisionCountryProfile, listEurovisionCountryCodes } from '../../../lib/eurovisionCountryProfiles';
+
+export async function getStaticPaths() {
+  const countries = await listEurovisionCountryCodes(defaultLocale);
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .flatMap((locale) => countries.map((country) => ({ params: { locale, country: country.toLowerCase() } })));
+}
+
+const localeParam = Astro.params.locale;
+const countryParam = Astro.params.country ?? '';
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const t = useTranslations(locale);
+const profile = await getEurovisionCountryProfile(countryParam, locale);
+
+if (!profile) {
+  return Astro.redirect('/404/');
+}
+---
+
+<BaseLayout title={`${profile.country} - ${t('countryProfile.titleSuffix')}`} description={t('countryProfile.description')} locale={locale}>
+  <Container>
+    <EurovisionCountryProfileApp profile={profile} locale={locale} />
+  </Container>
+</BaseLayout>
