@@ -25,6 +25,8 @@ describe('project smoke checks', () => {
       'src/pages/[locale]/vota.astro',
       'src/pages/stats.astro',
       'src/pages/[locale]/stats.astro',
+      'src/pages/comparador-paises/index.astro',
+      'src/pages/[locale]/comparador-paises/index.astro',
       'src/pages/404.astro',
       'src/pages/manifest.webmanifest.ts',
       'src/pages/robots.txt.ts',
@@ -33,6 +35,7 @@ describe('project smoke checks', () => {
       'src/i18n/ui.ts',
       'src/i18n/featureLabels.ts',
       'src/i18n/statsLabels.ts',
+      'src/i18n/countryComparisonLabels.ts',
       'src/i18n/translations/es.json',
       'src/i18n/translations/en.json',
       'src/styles/global.css',
@@ -123,6 +126,29 @@ describe('project smoke checks', () => {
     assert.match(contestConfig, /Semifinal 1/);
     assert.match(contestConfig, /Semifinal 2/);
     assert.match(contestConfig, /Final/);
+  });
+
+  it('includes the Eurovision country comparator', () => {
+    const comparatorPage = readText('src/pages/comparador-paises/index.astro');
+    const localizedComparatorPage = readText('src/pages/[locale]/comparador-paises/index.astro');
+    const comparatorApp = readText('src/components/EurovisionCountryComparatorApp.astro');
+    const comparatorHelpers = readText('src/lib/countryComparison.ts');
+    const comparatorLabels = readText('src/i18n/countryComparisonLabels.ts');
+    const comparatorScript = readText('public/country-comparator.js');
+    const countryIndex = readText('src/components/EurovisionCountryIndexApp.astro');
+    const header = readText('src/components/Header.astro');
+
+    assert.match(comparatorPage, /listCountryComparisons/);
+    assert.match(localizedComparatorPage, /getStaticPaths/);
+    assert.match(comparatorApp, /data-country-comparator-select/);
+    assert.match(comparatorApp, /country-comparator\.js/);
+    assert.match(comparatorHelpers, /resultsByDecade/);
+    assert.match(comparatorHelpers, /lastParticipation/);
+    assert.match(comparatorLabels, /Comparador de países/);
+    assert.match(comparatorLabels, /Eurovision country comparator/);
+    assert.match(comparatorScript, /selectedOptions/);
+    assert.match(countryIndex, /comparador-paises/);
+    assert.match(header, /comparatorPathMatch/);
   });
 
   it('includes GitHub workflows for CI and Pages', () => {
