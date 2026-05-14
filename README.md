@@ -260,3 +260,27 @@ ASTRO_BASE=/
 ```
 
 ## CI
+
+`.github/workflows/ci.yml` ejecuta en pull requests:
+
+```sh
+npm ci
+npm test
+npm run build
+```
+
+Los tests son intencionadamente suaves: comprueban que la estructura mínima existe, que los scripts básicos están disponibles y que los workflows no desaparecen.
+
+## Configuración principal
+
+La configuración editable del sitio está en:
+
+```ts
+src/config/site.ts
+```
+
+Ahí puedes cambiar nombre, descripción, idiomas, autor y URL base del proyecto.
+
+## Notas
+
+Esta plantilla intenta ser útil sin ser pesada. Evita añadir dependencias de desarrollo obligatorias para que los proyectos derivados arranquen rápido y no fallen por configuración innecesaria.
