@@ -51,6 +51,7 @@ describe('Eurovision country map', () => {
     assert.match(component, /aria-labelledby="country-map-title"/);
     assert.match(component, /data-map-metric/);
     assert.match(component, /data-map-viewport/);
+    assert.match(component, /touch-action: none/);
     assert.match(component, /data-map-layer/);
     assert.match(component, /data-map-zoom-in/);
     assert.match(component, /data-map-zoom-out/);
@@ -77,7 +78,6 @@ describe('Eurovision country map', () => {
     assert.match(engine, /wheel/);
     assert.match(engine, /zoomIn/);
     assert.match(engine, /zoomOut/);
-    assert.match(engine, /touch-action/);
     assert.doesNotMatch(script + engine, /fetch\(/);
     assert.doesNotMatch(script + engine, /mapbox|leaflet|openstreetmap/i);
   });
