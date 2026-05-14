@@ -1,4 +1,22 @@
-import { createVectorMapEngine } from './vector-map-engine.js?v=20260514-1';
+const GEOJSON_URL = 'https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json';
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png';
+const TILE_ATTRIBUTION = '&copy; OpenStreetMap contributors &copy; CARTO';
+
+const ISO2_TO_ISO3 = {
+  AL: 'ALB', AD: 'AND', AM: 'ARM', AU: 'AUS', AT: 'AUT', AZ: 'AZE', BA: 'BIH', BE: 'BEL', BG: 'BGR', BY: 'BLR', CH: 'CHE', CY: 'CYP', CZ: 'CZE', DE: 'DEU', DK: 'DNK', EE: 'EST', ES: 'ESP', FI: 'FIN', FR: 'FRA', GB: 'GBR', GE: 'GEO', GR: 'GRC', HR: 'HRV', HU: 'HUN', IE: 'IRL', IL: 'ISR', IS: 'ISL', IT: 'ITA', LT: 'LTU', LU: 'LUX', LV: 'LVA', MA: 'MAR', MC: 'MCO', MD: 'MDA', ME: 'MNE', MK: 'MKD', MT: 'MLT', NL: 'NLD', NO: 'NOR', PL: 'POL', PT: 'PRT', RO: 'ROU', RS: 'SRB', RU: 'RUS', SM: 'SMR', SE: 'SWE', SI: 'SVN', SK: 'SVK', TR: 'TUR', UA: 'UKR', XK: 'XKX', YU: 'SRB',
+};
+
+const COUNTRY_NAME_ALIASES = {
+  BA: ['Bosnia and Herzegovina'],
+  CZ: ['Czech Republic', 'Czechia'],
+  GB: ['United Kingdom'],
+  MD: ['Moldova', 'Republic of Moldova'],
+  MK: ['Macedonia', 'North Macedonia'],
+  RU: ['Russia', 'Russian Federation'],
+  TR: ['Turkey', 'Türkiye'],
+  XK: ['Kosovo'],
+  YU: ['Serbia', 'Yugoslavia'],
+};
 
 function readJson(root, selector, fallback) {
   try {
@@ -53,50 +71,162 @@ function renderSummary(node, country, labels) {
   `;
 }
 
-document.querySelectorAll('[data-country-map]').forEach((root) => {
+function featureMatchesCountry(feature, country) {
+  const props = feature.properties || {};
+  const iso3 = ISO2_TO_ISO3[country.countryCode];
+  const featureIds = [feature.id, props.iso_a3, props.ISO_A3, props.adm0_a3].filter(Boolean).map(String);
+  if (iso3 && featureIds.includes(iso3)) return true;
+
+  const names = [country.country, ...(COUNTRY_NAME_ALIASES[country.countryCode] || [])].map((name) => String(name).toLowerCase());
+  const featureNames = [props.name, props.NAME, props.admin, props.ADMIN].filter(Boolean).map((name) => String(name).toLowerCase());
+  return featureNames.some((name) => names.includes(name));
+}
+
+function findCountryFeature(features, country) {
+  return features.find((feature) => featureMatchesCountry(feature, country));
+}
+
+function getPrimaryColor(root) {
+  return getComputedStyle(root).getPropertyValue('--color-primary').trim() || '#7c3aed';
+}
+
+function buildFeatureCollection(features) {
+  return { type: 'FeatureCollection', features };
+}
+
+function waitForLeaflet() {
+  return new Promise((resolve) => {
+    if (window.L) {
+      resolve(window.L);
+      return;
+    }
+    window.addEventListener('leaflet:ready', () => resolve(window.L), { once: true });
+  });
+}
+
+async function loadWorldFeatures() {
+  const response = await fetch(GEOJSON_URL, { mode: 'cors' });
+  if (!response.ok) throw new Error(`Unable to load world GeoJSON: ${response.status}`);
+  const data = await response.json();
+  return Array.isArray(data.features) ? data.features : [];
+}
+
+async function initCountryMap(root) {
   const countries = readJson(root, '[data-map-countries]', []);
   const labels = readJson(root, '[data-map-labels]', {});
   const metricSelect = root.querySelector('[data-map-metric]');
-  const countryShapes = [...root.querySelectorAll('[data-map-country]')];
+  const mapNode = root.querySelector('[data-map-leaflet]');
   const summary = root.querySelector('[data-map-summary]');
-  const viewport = root.querySelector('[data-map-viewport]');
-  const layer = root.querySelector('[data-map-layer]');
+  const status = root.querySelector('[data-map-status]');
 
-  if (!Array.isArray(countries) || !metricSelect || !countryShapes.length || !viewport || !layer) return;
-  const map = createVectorMapEngine({ viewport, layer });
+  if (!Array.isArray(countries) || !countries.length || !metricSelect || !mapNode) return;
 
-  function updateShapes() {
+  const L = await waitForLeaflet();
+  const map = L.map(mapNode, {
+    attributionControl: true,
+    boxZoom: true,
+    doubleClickZoom: true,
+    dragging: true,
+    keyboard: true,
+    maxBounds: [[24, -32], [73, 50]],
+    maxBoundsViscosity: 0.8,
+    maxZoom: 7,
+    minZoom: 3,
+    scrollWheelZoom: false,
+    tap: true,
+    touchZoom: true,
+    zoomControl: false,
+  }).setView([54, 14], 4);
+
+  L.tileLayer(TILE_URL, {
+    attribution: TILE_ATTRIBUTION,
+    maxZoom: 19,
+    subdomains: 'abcd',
+  }).addTo(map);
+
+  const primary = getPrimaryColor(root);
+  const layersByCountry = new Map();
+  let selectedCode = '';
+
+  function updateMetric() {
     const metric = metricSelect.value;
     const max = Math.max(...countries.map((country) => metricValue(country, metric)), 1);
-
-    countryShapes.forEach((shape) => {
-      const country = countries.find((item) => item.countryCode === shape.dataset.countryCode);
+    layersByCountry.forEach((layer, code) => {
+      const country = countries.find((item) => item.countryCode === code);
       if (!country) return;
       const weight = Math.max(0.12, metricValue(country, metric) / max);
-      shape.style.setProperty('--map-weight', weight.toFixed(3));
-      shape.setAttribute('aria-label', pointLabel(country, metric, labels));
+      layer.setStyle({
+        color: code === selectedCode ? '#111827' : '#ffffff',
+        fillColor: code === selectedCode ? '#f59e0b' : primary,
+        fillOpacity: 0.2 + weight * 0.68,
+        opacity: 0.98,
+        weight: code === selectedCode ? 2.4 : 1,
+      });
+      layer.getElement?.()?.setAttribute('aria-label', pointLabel(country, metric, labels));
     });
   }
 
-  function selectCountry(shape) {
-    const country = countries.find((item) => item.countryCode === shape.dataset.countryCode);
+  function selectCountry(code) {
+    selectedCode = code;
+    const country = countries.find((item) => item.countryCode === code);
     if (!country) return;
-    countryShapes.forEach((item) => item.classList.toggle('is-selected', item === shape));
     renderSummary(summary, country, labels);
+    updateMetric();
   }
 
-  countryShapes.forEach((shape) => {
-    shape.addEventListener('click', () => selectCountry(shape));
-    shape.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      event.preventDefault();
-      selectCountry(shape);
-    });
-  });
+  try {
+    const worldFeatures = await loadWorldFeatures();
+    const mapFeatures = countries
+      .map((country) => {
+        const feature = findCountryFeature(worldFeatures, country);
+        return feature ? { ...feature, properties: { ...(feature.properties || {}), countryCode: country.countryCode } } : null;
+      })
+      .filter(Boolean);
 
-  root.querySelector('[data-map-zoom-in]')?.addEventListener('click', map.zoomIn);
-  root.querySelector('[data-map-zoom-out]')?.addEventListener('click', map.zoomOut);
-  root.querySelector('[data-map-reset]')?.addEventListener('click', map.reset);
-  metricSelect.addEventListener('change', updateShapes);
-  updateShapes();
+    const geoJsonLayer = L.geoJSON(buildFeatureCollection(mapFeatures), {
+      style: () => ({ color: '#ffffff', fillColor: primary, fillOpacity: 0.35, opacity: 0.98, weight: 1 }),
+      onEachFeature(feature, layer) {
+        const code = feature.properties?.countryCode;
+        const country = countries.find((item) => item.countryCode === code);
+        if (!country) return;
+        layersByCountry.set(code, layer);
+        layer.bindTooltip(country.country, { direction: 'top', sticky: true });
+        layer.on('click', () => selectCountry(code));
+        layer.on('keypress', (event) => {
+          if (event.originalEvent?.key !== 'Enter' && event.originalEvent?.key !== ' ') return;
+          event.originalEvent.preventDefault();
+          selectCountry(code);
+        });
+      },
+    }).addTo(map);
+
+    map.fitBounds(geoJsonLayer.getBounds(), { padding: [22, 22] });
+    updateMetric();
+
+    setTimeout(() => {
+      layersByCountry.forEach((layer, code) => {
+        const country = countries.find((item) => item.countryCode === code);
+        const element = layer.getElement?.();
+        if (!country || !element) return;
+        element.classList.add('country-map__country');
+        element.setAttribute('tabindex', '0');
+        element.setAttribute('role', 'button');
+        element.setAttribute('aria-label', pointLabel(country, metricSelect.value, labels));
+      });
+    }, 0);
+
+    if (status) status.textContent = '';
+  } catch (error) {
+    console.error(error);
+    if (status) status.textContent = labels.mapLoadError || '';
+  }
+
+  root.querySelector('[data-map-zoom-in]')?.addEventListener('click', () => map.zoomIn());
+  root.querySelector('[data-map-zoom-out]')?.addEventListener('click', () => map.zoomOut());
+  root.querySelector('[data-map-reset]')?.addEventListener('click', () => map.setView([54, 14], 4));
+  metricSelect.addEventListener('change', updateMetric);
+}
+
+document.querySelectorAll('[data-country-map]').forEach((root) => {
+  initCountryMap(root);
 });
