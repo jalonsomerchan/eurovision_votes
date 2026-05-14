@@ -117,8 +117,8 @@ const assetBase = siteConfig.base.endsWith('/') ? siteConfig.base : `${siteConfi
   :global(.country-map__leaflet .leaflet-container), :global(.country-map__leaflet.leaflet-container) { background: color-mix(in srgb, var(--color-bg), var(--color-primary) 7%); color: var(--color-text); font: inherit; }
   :global(.country-map__leaflet .leaflet-control-attribution) { background: color-mix(in srgb, var(--color-bg), transparent 12%); color: var(--color-muted); font-size: 0.68rem; }
   :global(.country-map__leaflet .leaflet-control-attribution a) { color: var(--color-primary); }
-  :global(.country-map__country) { cursor: pointer; transition: filter 160ms ease; }
-  :global(.country-map__country:hover), :global(.country-map__country.is-selected) { filter: drop-shadow(0 0 0.55rem color-mix(in srgb, var(--color-primary), transparent 45%)); }
+  :global(.country-map__marker) { cursor: pointer; transition: filter 160ms ease; }
+  :global(.country-map__marker:hover), :global(.country-map__marker.is-selected) { filter: drop-shadow(0 0 0.55rem color-mix(in srgb, var(--color-primary), transparent 45%)); }
   :global(.country-map__status) { min-height: 1.1rem; margin: 0; color: var(--color-muted); font-size: 0.88rem; }
   :global(.country-map-summary) { display: grid; align-content: start; gap: 1rem; padding: 1rem; }
   :global(.country-map-summary h2), :global(.country-map-summary p) { margin: 0; }
