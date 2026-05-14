@@ -1,21 +1,29 @@
-import { createVoteActions } from './vote/actions.js';
-import { createCloudApi, initCloud } from './vote/cloud.js';
-import { isSemi, getContest, getSemiStatus } from './vote/contest.js';
-import { deviceKey, readInitialData, storageKey, voterKey } from './vote/config.js';
-import { $, createUi, getVoteNodes } from './vote/dom.js';
-import { createRenderer } from './vote/render.js';
-import { downloadTopCardImage } from './vote/top-card-canvas.js';
-import { getRankedTopEntries } from './vote/top-card-data.js';
-import { getOrCreateDeviceId, loadJson, saveJson } from './vote/storage.js';
+import { createVoteActions } from './vote/actions.js?v=20260514-6';
+import { createCloudApi, initCloud } from './vote/cloud.js?v=20260514-6';
+import { isSemi, getContest, getSemiStatus } from './vote/contest.js?v=20260514-6';
+import { deviceKey, readInitialData, storageKey, voterKey } from './vote/config.js?v=20260514-6';
+import { $, createUi, getVoteNodes } from './vote/dom.js?v=20260514-6';
+import { createRenderer } from './vote/render.js?v=20260514-6';
+import { buildTopCardImage, downloadTopCardImagePayload, shareTopCardImagePayload } from './vote/top-card-canvas.js?v=20260514-6';
+import { getRankedTopEntries } from './vote/top-card-data.js?v=20260514-6';
+import { getOrCreateDeviceId, loadJson, saveJson } from './vote/storage.js?v=20260514-6';
 
 const { contests, firebaseConfig, shareLabels, t, topCardLabels } = readInitialData();
 const nodes = getVoteNodes();
 const ui = createUi(nodes);
 const deviceId = getOrCreateDeviceId(deviceKey);
+const voteImageNodes = {
+  modal: $('[data-vote-image-modal]'),
+  preview: $('[data-vote-image-preview]'),
+  close: $('[data-vote-image-close]'),
+  share: $('[data-vote-image-share]'),
+  download: $('[data-vote-image-download]'),
+};
 
 let activeContestId = contests[0]?.id || 'semi-1';
 let allVoters = [];
 let control = { semifinals: {}, final: { positions: {} } };
+let imagePayload = null;
 let saveTimeoutId;
 let shareFeedbackTimeoutId;
 let voter = loadJson(voterKey, null);
@@ -57,6 +65,28 @@ function showShareFeedback(message) {
   shareFeedbackTimeoutId = window.setTimeout(() => {
     nodes.shareFeedback.textContent = '';
   }, 5000);
+}
+
+function openImageModal() {
+  if (voteImageNodes.modal?.showModal) {
+    voteImageNodes.modal.showModal();
+    return;
+  }
+  voteImageNodes.modal?.setAttribute('open', 'open');
+}
+
+function closeImageModal() {
+  if (voteImageNodes.modal?.close) {
+    voteImageNodes.modal.close();
+    return;
+  }
+  voteImageNodes.modal?.removeAttribute('open');
+}
+
+function clearImagePayload() {
+  if (imagePayload?.url) URL.revokeObjectURL(imagePayload.url);
+  imagePayload = null;
+  voteImageNodes.preview?.removeAttribute('src');
 }
 
 function renderVoteUi() {
@@ -124,6 +154,8 @@ nodes.tabs?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-contest-id]');
   if (!button) return;
   activeContestId = button.dataset.contestId;
+  clearImagePayload();
+  closeImageModal();
   renderVoteUi();
 });
 
@@ -133,20 +165,49 @@ nodes.songList?.addEventListener('click', (event) => {
   const contestVotes = votes[activeContestId] || {};
   contestVotes[button.dataset.songKey] = Number(button.dataset.score);
   votes = { ...votes, [activeContestId]: contestVotes };
+  clearImagePayload();
   saveLocalVotes();
   renderVoteUi();
   queueCloudSave();
 });
 
-nodes.shareImage?.addEventListener('click', () => {
+nodes.shareImage?.addEventListener('click', async () => {
   const state = renderTopCardState();
   if (!state.entries.length) {
     showShareFeedback(shareLabels.imageEmpty || topCardLabels.emptyCopy);
     return;
   }
 
-  const success = downloadTopCardImage(state);
-  showShareFeedback(success ? (shareLabels.imageReady || topCardLabels.downloaded) : topCardLabels.downloadError);
+  clearImagePayload();
+  imagePayload = await buildTopCardImage(state);
+  if (!imagePayload) {
+    showShareFeedback(shareLabels.imageError || topCardLabels.downloadError);
+    return;
+  }
+
+  if (voteImageNodes.preview) voteImageNodes.preview.src = imagePayload.url;
+  openImageModal();
+  showShareFeedback(shareLabels.imageReady || topCardLabels.downloaded);
+});
+
+voteImageNodes.close?.addEventListener('click', closeImageModal);
+voteImageNodes.modal?.addEventListener('click', (event) => {
+  if (event.target === voteImageNodes.modal) closeImageModal();
+});
+voteImageNodes.download?.addEventListener('click', () => {
+  if (!imagePayload) return;
+  downloadTopCardImagePayload(imagePayload);
+  showShareFeedback(shareLabels.imageDownloaded || topCardLabels.downloaded);
+});
+voteImageNodes.share?.addEventListener('click', async () => {
+  if (!imagePayload) return;
+  try {
+    const shared = await shareTopCardImagePayload(imagePayload, shareLabels);
+    showShareFeedback(shared ? shareLabels.imageShared : shareLabels.shareUnavailable);
+    if (shared) closeImageModal();
+  } catch {
+    showShareFeedback(shareLabels.shareUnavailable);
+  }
 });
 
 $('[data-open-settings]')?.addEventListener('click', () => ui.openModal(nodes.settingsModal));
