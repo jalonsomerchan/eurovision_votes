@@ -1,0 +1,26 @@
+---
+import EurovisionGlossaryTermApp from '../../components/EurovisionGlossaryTermApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { findGlossaryTermBySlug, getGlossaryStaticPaths } from '../../config/eurovisionGlossary';
+import { getGlossaryLabels } from '../../i18n/glossaryLabels';
+
+export function getStaticPaths() {
+  return getGlossaryStaticPaths(defaultLocale);
+}
+
+const term = findGlossaryTermBySlug(Astro.params.slug, defaultLocale);
+if (!term) {
+  return Astro.redirect('/404/');
+}
+
+const labels = getGlossaryLabels(defaultLocale);
+const title = `${term.term} · ${labels.indexTitle}`;
+---
+
+<BaseLayout title={title} description={term.shortDefinition} locale={defaultLocale}>
+  <Container>
+    <EurovisionGlossaryTermApp term={term} locale={defaultLocale} />
+  </Container>
+</BaseLayout>
