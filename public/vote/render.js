@@ -9,6 +9,11 @@ function countryLink(song) {
   return `<a class="country-link" href="${countryProfileUrl(song.flag)}">${escapeHtml(song.country)}</a>`;
 }
 
+function votedCountForSongs(contestVotes, songs) {
+  const songKeys = new Set(songs.map(getSongKey));
+  return Object.entries(contestVotes || {}).filter(([key, value]) => songKeys.has(key) && Number.isFinite(value)).length;
+}
+
 export function createRenderer({ contests, getState, nodes, t }) {
   function renderVoter() {
     const { voter } = getState();
@@ -22,7 +27,7 @@ export function createRenderer({ contests, getState, nodes, t }) {
       const songs = getSongsForContest(contests, control, contest);
       const selected = contest.id === activeContestId;
       const disabled = songs.length === 0;
-      const totalVotes = Object.keys(votes[contest.id] || {}).length;
+      const totalVotes = votedCountForSongs(votes[contest.id], songs);
       const status = isSemi(contest.id) ? getSemiStatus(control, contest.id) : 'open';
       const label = disabled
         ? t('pending', 'Pendiente')
@@ -39,9 +44,9 @@ export function createRenderer({ contests, getState, nodes, t }) {
   function renderSummary(contest) {
     const { control, votes } = getState();
     const songs = getSongsForContest(contests, control, contest);
-    const scores = Object.values(votes[contest.id] || {}).filter(Number.isFinite);
+    const scoresLength = votedCountForSongs(votes[contest.id], songs);
     if (nodes.activeName) nodes.activeName.textContent = contest.name;
-    if (nodes.votedCount) nodes.votedCount.textContent = `${scores.length}/${songs.length}`;
+    if (nodes.votedCount) nodes.votedCount.textContent = `${scoresLength}/${songs.length}`;
   }
 
   function renderSongs() {

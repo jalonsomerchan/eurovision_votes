@@ -3,13 +3,13 @@ import EurovisionVoteApp from '../components/EurovisionVoteApp.astro';
 import Container from '../components/Container.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { defaultLocale } from '../config/site';
-import { useTranslations } from '../i18n/ui';
+import { getVotePageSeoLabels } from '../i18n/votePageSeoLabels';
 
 const locale = defaultLocale;
-const t = useTranslations(locale);
+const seo = getVotePageSeoLabels(locale);
 ---
 
-<BaseLayout title={t('vote.title')} description={t('vote.description')} locale={locale}>
+<BaseLayout title={seo.title} description={seo.description} locale={locale}>
   <Container>
     <EurovisionVoteApp locale={locale} />
   </Container>

@@ -1,15 +1,14 @@
 import { createVoteActions } from './vote/actions.js';
 import { createCloudApi, initCloud } from './vote/cloud.js';
-import { isSemi, getSemiStatus } from './vote/contest.js';
+import { isSemi, getContest, getSemiStatus } from './vote/contest.js';
 import { deviceKey, readInitialData, storageKey, voterKey } from './vote/config.js';
 import { $, createUi, getVoteNodes } from './vote/dom.js';
 import { createRenderer } from './vote/render.js';
 import { downloadTopCardImage } from './vote/top-card-canvas.js';
-import { formatTopCardText, getRankedTopEntries, getTopCardContest, getTopCardLimit } from './vote/top-card-data.js';
-import { renderTopCard, showTopCardFeedback } from './vote/top-card-render.js';
+import { getRankedTopEntries } from './vote/top-card-data.js';
 import { getOrCreateDeviceId, loadJson, saveJson } from './vote/storage.js';
 
-const { contests, firebaseConfig, t, topCardLabels } = readInitialData();
+const { contests, firebaseConfig, shareLabels, t, topCardLabels } = readInitialData();
 const nodes = getVoteNodes();
 const ui = createUi(nodes);
 const deviceId = getOrCreateDeviceId(deviceKey);
@@ -18,6 +17,7 @@ let activeContestId = contests[0]?.id || 'semi-1';
 let allVoters = [];
 let control = { semifinals: {}, final: { positions: {} } };
 let saveTimeoutId;
+let shareFeedbackTimeoutId;
 let voter = loadJson(voterKey, null);
 let votes = loadJson(storageKey, {});
 
@@ -42,21 +42,25 @@ function getState() {
   };
 }
 
-function getTopCardState() {
-  const contest = getTopCardContest(contests, nodes);
-  const limit = getTopCardLimit(nodes);
+function renderTopCardState() {
+  const contest = getContest(contests, activeContestId);
+  const limit = 10;
   const entries = getRankedTopEntries({ contests, contest, control, limit, votes });
 
   return { contest, entries, labels: topCardLabels, limit };
 }
 
-function renderTopCardState() {
-  return renderTopCard({ ...getTopCardState(), nodes });
+function showShareFeedback(message) {
+  if (!nodes.shareFeedback) return;
+  nodes.shareFeedback.textContent = message;
+  window.clearTimeout(shareFeedbackTimeoutId);
+  shareFeedbackTimeoutId = window.setTimeout(() => {
+    nodes.shareFeedback.textContent = '';
+  }, 5000);
 }
 
 function renderVoteUi() {
   renderer.renderSongs();
-  renderTopCardState();
 }
 
 const renderer = createRenderer({ contests, getState, nodes, t });
@@ -120,7 +124,6 @@ nodes.tabs?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-contest-id]');
   if (!button) return;
   activeContestId = button.dataset.contestId;
-  if (nodes.topCardContest) nodes.topCardContest.value = activeContestId;
   renderVoteUi();
 });
 
@@ -135,27 +138,15 @@ nodes.songList?.addEventListener('click', (event) => {
   queueCloudSave();
 });
 
-nodes.topCardContest?.addEventListener('change', renderTopCardState);
-nodes.topCardLimits?.forEach((input) => input.addEventListener('change', renderTopCardState));
-nodes.topCardCopy?.addEventListener('click', async () => {
-  const state = getTopCardState();
-  const text = formatTopCardText({ contestName: state.contest.name, entries: state.entries, labels: state.labels, limit: state.limit });
+nodes.shareImage?.addEventListener('click', () => {
+  const state = renderTopCardState();
   if (!state.entries.length) {
-    showTopCardFeedback(nodes, state.labels.emptyCopy);
+    showShareFeedback(shareLabels.imageEmpty || topCardLabels.emptyCopy);
     return;
   }
 
-  try {
-    await navigator.clipboard.writeText(text);
-    showTopCardFeedback(nodes, state.labels.copied);
-  } catch {
-    window.prompt(state.labels.copyError, text);
-  }
-});
-nodes.topCardDownload?.addEventListener('click', () => {
-  const state = getTopCardState();
   const success = downloadTopCardImage(state);
-  showTopCardFeedback(nodes, success ? state.labels.downloaded : state.labels.downloadError);
+  showShareFeedback(success ? (shareLabels.imageReady || topCardLabels.downloaded) : topCardLabels.downloadError);
 });
 
 $('[data-open-settings]')?.addEventListener('click', () => ui.openModal(nodes.settingsModal));
@@ -188,7 +179,6 @@ nodes.importInput?.addEventListener('change', (event) => actions.importVotes(eve
 $('[data-reset]')?.addEventListener('click', () => actions.resetVotes(queueCloudSave));
 
 renderer.renderVoter();
-if (nodes.topCardContest) nodes.topCardContest.value = activeContestId;
 renderVoteUi();
 cloud.startRealtimeListeners();
 cloud.loadCloudData();

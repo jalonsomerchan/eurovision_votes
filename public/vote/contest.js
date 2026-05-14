@@ -10,6 +10,10 @@ export function isSemi(contestId) {
   return contestId === 'semi-1' || contestId === 'semi-2';
 }
 
+export function isVotableSong(contestId, song) {
+  return !isSemi(contestId) || !song.directFinalist;
+}
+
 export function getSemiState(control, contestId) {
   return control?.semifinals?.[contestId] || { qualifiers: [], status: 'pending', closed: false };
 }
@@ -25,7 +29,9 @@ export function getFinalPositions(control) {
 }
 
 export function getSongsForContest(contests, control, contest) {
-  if (contest.id !== 'final' || contest.songs.length) return contest.songs;
+  if (contest.id !== 'final' || contest.songs.length) {
+    return contest.songs.filter((song) => isVotableSong(contest.id, song));
+  }
 
   const qualified = [];
   contests.filter((item) => isSemi(item.id)).forEach((semi) => {
