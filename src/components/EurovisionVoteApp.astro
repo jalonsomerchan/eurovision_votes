@@ -25,7 +25,7 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
   appId: import.meta.env.PUBLIC_FIREBASE_APP_ID ?? '',
 };
-const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260514-6`;
+const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260514-7`;
 ---
 
 <section class="eurovision-vote-app" aria-labelledby="vote-title">
@@ -82,10 +82,13 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260514-6`;
         <h2 id="vote-image-modal-title">{shareLabels.previewTitle}</h2>
         <button class="action-button" type="button" data-vote-image-close>{shareLabels.closePreview}</button>
       </div>
-      <img class="vote-image-modal__image" alt={shareLabels.previewTitle} data-vote-image-preview />
-      <div class="vote-share-card__actions">
-        <button class="action-button action-button--primary" type="button" data-vote-image-share>{shareLabels.shareImage}</button>
-        <button class="action-button" type="button" data-vote-image-download>{shareLabels.downloadImage}</button>
+      <div class="vote-image-gallery" data-vote-image-gallery></div>
+      <div class="vote-image-modal__selected" data-vote-image-selected hidden>
+        <img class="vote-image-modal__image" alt={shareLabels.previewTitle} data-vote-image-preview />
+        <div class="vote-share-card__actions">
+          <button class="action-button action-button--primary" type="button" data-vote-image-share>{shareLabels.shareImage}</button>
+          <button class="action-button" type="button" data-vote-image-download>{shareLabels.downloadImage}</button>
+        </div>
       </div>
     </div>
   </dialog>
@@ -130,12 +133,19 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260514-6`;
   :global(.vote-share-card h2) { font-size: clamp(1.45rem, 5vw, 2.25rem); line-height: 1.05; letter-spacing: -0.05em; }
   :global(.vote-share-card p:not(.eyebrow):not(.feedback)) { color: var(--color-muted); font-weight: 750; }
   :global(.vote-share-card__actions) { display: grid; gap: 0.65rem; }
-  :global(.vote-image-modal) { width: min(92vw, 42rem); border: 1px solid var(--color-border); border-radius: 1.4rem; padding: 0; background: var(--color-bg); color: var(--color-text); }
+  :global(.vote-image-modal) { width: min(94vw, 64rem); border: 1px solid var(--color-border); border-radius: 1.4rem; padding: 0; background: var(--color-bg); color: var(--color-text); }
   :global(.vote-image-modal::backdrop) { background: rgb(10 6 24 / 0.72); }
   :global(.vote-image-modal__panel) { display: grid; gap: 1rem; padding: 1rem; }
   :global(.vote-image-modal__head) { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
   :global(.vote-image-modal__head h2) { margin: 0; font-size: 1.2rem; }
+  :global(.vote-image-modal__selected) { display: grid; gap: 0.8rem; }
+  :global(.vote-image-modal__selected[hidden]) { display: none; }
   :global(.vote-image-modal__image) { width: 100%; height: auto; border-radius: 1rem; background: #160b2e; }
+  :global(.vote-image-gallery) { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 0.85rem; max-height: min(70vh, 42rem); overflow: auto; padding-right: 0.2rem; }
+  :global(.vote-image-option) { display: grid; gap: 0.55rem; border: 1px solid var(--color-border); border-radius: 1rem; background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%); padding: 0.7rem; }
+  :global(.vote-image-option img) { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 0.75rem; background: #160b2e; }
+  :global(.vote-image-option h3) { margin: 0; font-size: 1rem; line-height: 1.15; }
+  :global(.vote-image-option .vote-share-card__actions) { display: grid; grid-template-columns: 1fr; }
   @media (min-width: 720px) {
     :global(.vote-hero) { grid-template-columns: 1fr; }
     :global(.vote-hero__grid) { grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.48fr); align-items: end; }
@@ -143,6 +153,7 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260514-6`;
     :global(.vote-share-card__actions) { display: flex; flex-wrap: wrap; justify-content: end; }
     :global(.vote-share-card .feedback) { grid-column: 1 / -1; }
     :global(.vote-image-modal__panel) { padding: 1.2rem; }
+    :global(.vote-image-option .vote-share-card__actions) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (prefers-color-scheme: dark) {
     :global(.vote-share-card) { box-shadow: 0 20px 55px rgb(0 0 0 / 0.28); }
