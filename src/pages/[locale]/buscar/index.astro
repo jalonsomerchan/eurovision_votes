@@ -1,0 +1,26 @@
+---
+import GlobalSearchApp from '../../../components/GlobalSearchApp.astro';
+import Container from '../../../components/Container.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { defaultLocale, locales, type Locale } from '../../../config/site';
+import { isLocale } from '../../../i18n/ui';
+import { getSearchLabels } from '../../../i18n/searchLabels';
+import { buildSearchIndex } from '../../../lib/searchIndex';
+
+export function getStaticPaths() {
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .map((locale) => ({ params: { locale } }));
+}
+
+const localeParam = Astro.params.locale;
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const labels = getSearchLabels(locale);
+const index = await buildSearchIndex(locale);
+---
+
+<BaseLayout title={labels.title} description={labels.description} locale={locale}>
+  <Container>
+    <GlobalSearchApp index={index} locale={locale} />
+  </Container>
+</BaseLayout>
