@@ -17,9 +17,7 @@ function fitText(ctx, text, maxWidth) {
   return `${next}…`;
 }
 
-export function downloadTopCardImage({ contest, entries, labels, limit }) {
-  if (!entries.length) return false;
-
+function drawTopCard({ contest, entries, labels, limit }) {
   const canvas = document.createElement('canvas');
   const scale = Math.min(window.devicePixelRatio || 1, 2);
   const width = 1080;
@@ -28,7 +26,7 @@ export function downloadTopCardImage({ contest, entries, labels, limit }) {
   canvas.width = width * scale;
   canvas.height = height * scale;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return false;
+  if (!ctx) return null;
 
   ctx.scale(scale, scale);
   ctx.fillStyle = '#160b2e';
@@ -71,8 +69,46 @@ export function downloadTopCardImage({ contest, entries, labels, limit }) {
     ctx.fillText(labels.scoreLabel.replaceAll('{score}', entry.score), 805, y + 40);
   });
 
+  return canvas;
+}
+
+export async function buildTopCardImage(payload) {
+  if (!payload.entries.length) return null;
+
+  const canvas = drawTopCard(payload);
+  if (!canvas) return null;
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  if (!blob) return null;
+
+  const fileName = `eurovision-2026-top-${payload.contest.id}-${payload.limit}.png`;
+  return { blob, fileName, url: URL.createObjectURL(blob) };
+}
+
+export function downloadTopCardImagePayload(payload) {
   const link = document.createElement('a');
-  link.download = `eurovision-2026-top-${contest.id}-${limit}.png`;
+  link.download = payload.fileName;
+  link.href = payload.url;
+  link.click();
+}
+
+export async function shareTopCardImagePayload(payload, labels) {
+  if (!navigator.share) return false;
+  const file = new File([payload.blob], payload.fileName, { type: 'image/png' });
+  const shareData = { files: [file], title: labels.previewTitle, text: labels.copy };
+  if (navigator.canShare && !navigator.canShare(shareData)) return false;
+  await navigator.share(shareData);
+  return true;
+}
+
+export function downloadTopCardImage(payload) {
+  if (!payload.entries.length) return false;
+
+  const canvas = drawTopCard(payload);
+  if (!canvas) return false;
+
+  const link = document.createElement('a');
+  link.download = `eurovision-2026-top-${payload.contest.id}-${payload.limit}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
   return true;
