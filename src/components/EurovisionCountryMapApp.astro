@@ -1,5 +1,5 @@
 ---
-import { defaultLocale, type Locale } from '../config/site';
+import { defaultLocale, siteConfig, type Locale } from '../config/site';
 import { getMapLabels } from '../i18n/mapLabels';
 import { mapMetrics, type EurovisionMapCountry, type MapMetric } from '../lib/eurovisionMapData';
 
@@ -11,7 +11,15 @@ interface Props {
 const { countries, locale = defaultLocale } = Astro.props;
 const labels = getMapLabels(locale);
 const initialMetric: MapMetric = 'participations';
+const assetBase = siteConfig.base.endsWith('/') ? siteConfig.base : `${siteConfig.base}/`;
 ---
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIINfQPBd8LOZK9XFK7x4IrxCkE2x3jYkWQ="
+  crossorigin=""
+/>
 
 <section class="country-map-app" data-country-map aria-labelledby="country-map-title">
   <script type="application/json" data-map-countries set:html={JSON.stringify(countries)}></script>
@@ -38,6 +46,7 @@ const initialMetric: MapMetric = 'participations';
         <button type="button" data-map-reset>{labels.resetMap}</button>
       </div>
       <div class="country-map__leaflet" data-map-leaflet aria-label={labels.mapLabel}></div>
+      <p class="country-map__status" data-map-status aria-live="polite"></p>
     </figure>
 
     <aside class="country-map-summary" aria-labelledby="country-map-summary-title" data-map-summary>
@@ -84,7 +93,13 @@ const initialMetric: MapMetric = 'participations';
   </section>
 </section>
 
-<script src="../scripts/eurovisionCountryMap.ts"></script>
+<script
+  is:inline
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+<script is:inline type="module" src={`${assetBase}eurovision-map.js`}></script>
 
 <style>
   :global(.country-map-app) { display: grid; gap: 1rem; padding: 1.25rem 0 3rem; }
@@ -98,11 +113,13 @@ const initialMetric: MapMetric = 'participations';
   :global(.country-map) { display: grid; gap: 0.75rem; margin: 0; padding: 1rem; overflow: hidden; }
   :global(.country-map__controls) { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   :global(.country-map__controls button) { cursor: pointer; min-height: 2.6rem; padding: 0.55rem 0.8rem; }
-  :global(.country-map__leaflet) { min-height: 24rem; border-radius: 1.1rem; overflow: hidden; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--color-primary), transparent 78%), transparent 34%), linear-gradient(135deg, color-mix(in srgb, var(--color-bg), var(--color-primary) 9%), color-mix(in srgb, var(--color-bg), var(--color-secondary, var(--color-primary)) 13%)); }
-  :global(.country-map__leaflet .leaflet-container), :global(.country-map__leaflet.leaflet-container) { background: transparent; color: var(--color-text); font: inherit; }
-  :global(.country-map__leaflet .leaflet-control-attribution) { display: none; }
+  :global(.country-map__leaflet) { min-height: 24rem; border-radius: 1.1rem; overflow: hidden; background: color-mix(in srgb, var(--color-bg), var(--color-primary) 7%); }
+  :global(.country-map__leaflet .leaflet-container), :global(.country-map__leaflet.leaflet-container) { background: color-mix(in srgb, var(--color-bg), var(--color-primary) 7%); color: var(--color-text); font: inherit; }
+  :global(.country-map__leaflet .leaflet-control-attribution) { background: color-mix(in srgb, var(--color-bg), transparent 12%); color: var(--color-muted); font-size: 0.68rem; }
+  :global(.country-map__leaflet .leaflet-control-attribution a) { color: var(--color-primary); }
   :global(.country-map__country) { cursor: pointer; transition: filter 160ms ease; }
   :global(.country-map__country:hover), :global(.country-map__country.is-selected) { filter: drop-shadow(0 0 0.55rem color-mix(in srgb, var(--color-primary), transparent 45%)); }
+  :global(.country-map__status) { min-height: 1.1rem; margin: 0; color: var(--color-muted); font-size: 0.88rem; }
   :global(.country-map-summary) { display: grid; align-content: start; gap: 1rem; padding: 1rem; }
   :global(.country-map-summary h2), :global(.country-map-summary p) { margin: 0; }
   :global(.country-map-summary h2) { font-size: clamp(1.3rem, 5vw, 2.1rem); line-height: 1.05; letter-spacing: -0.04em; }
