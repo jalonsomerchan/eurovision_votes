@@ -19,7 +19,7 @@ La lógica de cliente entra por `public/prediction.js` y se divide en módulos p
 
 - `config.js`: lee candidatos y labels desde JSON embebidos por Astro.
 - `storage.js`: carga, guarda y borra la quiniela en `localStorage`, incluyendo el nombre del usuario.
-- `data.js`: normaliza predicciones, evita duplicados, permite quinielas parciales, genera resumen y codifica/decodifica la URL compartible.
+- `data.js`: normaliza el top, evita duplicados, permite quinielas parciales, genera resumen y codifica/decodifica la URL compartible.
 - `render.js`: actualiza el selector visual, estados y tarjeta accesible.
 - `image.js`: genera una imagen PNG mediante Canvas nativo, devuelve un `Blob` previsualizable y permite descarga o Web Share API.
 
@@ -27,7 +27,7 @@ No añade dependencias y funciona sin Firebase.
 
 ## Selección visual
 
-El top se construye tocando primero un puesto y después una tarjeta de país. No es obligatorio completar los 10 puestos: con un ganador o un solo país del top ya se puede compartir la quiniela.
+El top se construye tocando primero un puesto y después una tarjeta de país. El puesto 1 actúa como ganador previsto, así que no hay selector separado de ganador. No es obligatorio completar los 10 puestos: con un solo país del top ya se puede compartir la quiniela.
 
 El botón de reinicio se muestra junto a la explicación del top para que el usuario pueda empezar de cero justo donde está seleccionando puestos.
 

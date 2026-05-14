@@ -41,8 +41,7 @@ function drawRoundedCard(ctx, x, y, width, height, radius) {
 
 export async function buildPredictionImage({ candidates, labels, prediction }) {
   const entries = prediction.top.map((flag) => getCandidate(candidates, flag)).filter(Boolean);
-  const winner = getCandidate(candidates, prediction.winner);
-  if (!entries.length && !winner) return null;
+  if (!entries.length) return null;
 
   const canvas = document.createElement('canvas');
   const measureCtx = canvas.getContext('2d');
@@ -56,10 +55,9 @@ export async function buildPredictionImage({ candidates, labels, prediction }) {
   measureCtx.font = '900 58px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
   const titleLines = wrapText(measureCtx, title, 880).slice(0, 3);
   const titleHeight = titleLines.length * 68;
-  const winnerHeight = winner ? 112 : 0;
-  const entriesHeight = Math.max(entries.length, 1) * rowHeight;
+  const entriesHeight = entries.length * rowHeight;
   const bottomPadding = 145;
-  const height = 120 + titleHeight + winnerHeight + 88 + entriesHeight + bottomPadding;
+  const height = 120 + titleHeight + 88 + entriesHeight + bottomPadding;
 
   canvas.width = width * scale;
   canvas.height = height * scale;
@@ -87,16 +85,6 @@ export async function buildPredictionImage({ candidates, labels, prediction }) {
   });
 
   let y = 170 + titleHeight;
-
-  if (winner) {
-    ctx.fillStyle = 'rgba(255,255,255,0.12)';
-    drawRoundedCard(ctx, 70, y, 940, 84, 26);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '900 28px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-    ctx.fillText(`${labels.winnerTitle}: ${flagEmoji(winner.flag)} ${fitText(ctx, winner.country, 540)}`, 105, y + 52);
-    y += 116;
-  }
-
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 34px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
   ctx.fillText(labels.topSummary, 70, y + 22);

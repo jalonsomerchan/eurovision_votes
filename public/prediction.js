@@ -7,8 +7,8 @@ import { clearPrediction, loadPrediction, savePrediction } from './prediction/st
 const { candidates, labels } = readInitialPredictionData();
 const nodes = {
   name: document.querySelector('[data-prediction-name]'),
-  winner: document.querySelector('[data-prediction-winner]'),
   slots: document.querySelectorAll('[data-prediction-slot]'),
+  countryGrid: document.querySelector('[data-prediction-country-grid]'),
   countryCards: document.querySelectorAll('[data-prediction-country]'),
   activeSlot: document.querySelector('[data-prediction-active-slot]'),
   status: document.querySelector('[data-prediction-status]'),
@@ -97,11 +97,6 @@ nodes.name?.addEventListener('input', () => {
   sync();
 });
 
-nodes.winner?.addEventListener('change', () => {
-  prediction = { ...prediction, winner: nodes.winner.value };
-  sync();
-});
-
 nodes.slots.forEach((slot) => {
   slot.addEventListener('click', () => {
     activeSlot = Number(slot.dataset.predictionSlot) || 1;
@@ -109,16 +104,15 @@ nodes.slots.forEach((slot) => {
   });
 });
 
-nodes.countryCards.forEach((card) => {
-  card.addEventListener('click', () => {
-    if (card.disabled) return;
-    const nextTop = [...prediction.top];
-    const flag = card.dataset.predictionCountry;
-    nextTop[activeSlot - 1] = nextTop[activeSlot - 1] === flag ? '' : flag;
-    prediction = { ...prediction, top: nextTop };
-    activeSlot = Math.min(activeSlot + 1, 10);
-    sync();
-  });
+nodes.countryGrid?.addEventListener('click', (event) => {
+  const card = event.target.closest('[data-prediction-country]');
+  if (!card || card.disabled) return;
+  const nextTop = [...prediction.top];
+  const flag = card.dataset.predictionCountry;
+  nextTop[activeSlot - 1] = nextTop[activeSlot - 1] === flag ? '' : flag;
+  prediction = { ...prediction, top: nextTop };
+  activeSlot = Math.min(activeSlot + 1, 10);
+  sync();
 });
 
 nodes.copySummary?.addEventListener('click', () => {
@@ -159,7 +153,7 @@ nodes.modal?.addEventListener('click', (event) => {
 nodes.reset?.addEventListener('click', () => {
   if (!window.confirm(labels.resetConfirm)) return;
   clearPrediction(predictionStorageKey);
-  prediction = { name: '', winner: '', top: [] };
+  prediction = { name: '', top: [] };
   activeSlot = 1;
   if (imagePayload?.url) URL.revokeObjectURL(imagePayload.url);
   imagePayload = null;
