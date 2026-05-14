@@ -1,7 +1,7 @@
 ---
-import { defaultLocale, type Locale } from '../config/site';
+import { defaultLocale, siteConfig, type Locale } from '../config/site';
 import { getMapLabels } from '../i18n/mapLabels';
-import { mapMetrics, valueForMapMetric, type EurovisionMapCountry, type MapMetric } from '../lib/eurovisionMapData';
+import { mapMetrics, type EurovisionMapCountry, type MapMetric } from '../lib/eurovisionMapData';
 
 interface Props {
   countries: EurovisionMapCountry[];
@@ -11,27 +11,15 @@ interface Props {
 const { countries, locale = defaultLocale } = Astro.props;
 const labels = getMapLabels(locale);
 const initialMetric: MapMetric = 'participations';
-const maxValue = Math.max(...countries.map((country) => valueForMapMetric(country, initialMetric)), 1);
-const mapScriptUrl = `${import.meta.env.BASE_URL}eurovision-map.js?v=20260514-2`;
-
-function displayValue(country: EurovisionMapCountry, metric: MapMetric) {
-  const value = metric === 'participations'
-    ? country.participations
-    : metric === 'wins'
-      ? country.wins
-      : metric === 'bestPlace'
-        ? country.bestPlace
-        : metric === 'lastParticipation'
-          ? country.lastParticipation
-          : country.debut;
-  return value ?? labels.unavailable;
-}
-
-function visualWeight(country: EurovisionMapCountry) {
-  const value = valueForMapMetric(country, initialMetric);
-  return Math.max(0.12, value / maxValue).toFixed(3);
-}
+const assetBase = siteConfig.base.endsWith('/') ? siteConfig.base : `${siteConfig.base}/`;
 ---
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIINfQPBd8LOZK9XFK7x4IrxCkE2x3jYkWQ="
+  crossorigin=""
+/>
 
 <section class="country-map-app" data-country-map aria-labelledby="country-map-title">
   <script type="application/json" data-map-countries set:html={JSON.stringify(countries)}></script>
@@ -57,42 +45,8 @@ function visualWeight(country: EurovisionMapCountry) {
         <button type="button" data-map-zoom-out>{labels.zoomOut}</button>
         <button type="button" data-map-reset>{labels.resetMap}</button>
       </div>
-      <div class="country-map__viewport" data-map-viewport>
-        <svg class="country-map__svg" viewBox="0 0 100 100" role="img" aria-label={labels.mapLabel} data-map-svg>
-          <defs>
-            <radialGradient id="country-map-glow" cx="50%" cy="45%" r="65%">
-              <stop offset="0%" stop-color="currentColor" stop-opacity="0.26" />
-              <stop offset="100%" stop-color="currentColor" stop-opacity="0" />
-            </radialGradient>
-          </defs>
-          <rect class="country-map__sea" width="100" height="100" rx="4" />
-          <ellipse class="country-map__glow" cx="50" cy="47" rx="46" ry="35" />
-          <g class="country-map__layer" data-map-layer>
-            <path class="country-map__land country-map__land--north" d="M35 18 C46 8 60 13 67 24 C61 35 44 35 34 28 Z" aria-hidden="true" />
-            <path class="country-map__land country-map__land--west" d="M16 46 C23 35 39 36 46 49 C40 63 25 69 14 59 Z" aria-hidden="true" />
-            <path class="country-map__land country-map__land--east" d="M49 43 C62 30 80 34 88 48 C82 63 65 71 50 60 Z" aria-hidden="true" />
-            {countries.map((country) => {
-              const value = displayValue(country, initialMetric);
-              const ariaLabel = labels.pointLabel
-                .replaceAll('{country}', country.country)
-                .replaceAll('{metric}', labels.metrics[initialMetric])
-                .replaceAll('{value}', String(value));
-              return (
-                <path
-                  class="country-map__country"
-                  tabindex="0"
-                  role="button"
-                  aria-label={ariaLabel}
-                  data-country-code={country.countryCode}
-                  data-map-country
-                  data-map-weight={visualWeight(country)}
-                  d={country.path}
-                />
-              );
-            })}
-          </g>
-        </svg>
-      </div>
+      <div class="country-map__leaflet" data-map-leaflet aria-label={labels.mapLabel}></div>
+      <p class="country-map__status" data-map-status aria-live="polite"></p>
     </figure>
 
     <aside class="country-map-summary" aria-labelledby="country-map-summary-title" data-map-summary>
@@ -139,7 +93,13 @@ function visualWeight(country: EurovisionMapCountry) {
   </section>
 </section>
 
-<script type="module" src={mapScriptUrl}></script>
+<script
+  is:inline
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+<script is:inline type="module" src={`${assetBase}eurovision-map.js`}></script>
 
 <style>
   :global(.country-map-app) { display: grid; gap: 1rem; padding: 1.25rem 0 3rem; }
@@ -148,20 +108,18 @@ function visualWeight(country: EurovisionMapCountry) {
   :global(.country-map-toolbar) { display: grid; gap: 0.5rem; padding: 1rem; }
   :global(.country-map-toolbar label) { font-weight: 950; }
   :global(.country-map-toolbar select), :global(.country-map__controls button) { min-height: 3rem; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-bg); color: var(--color-text); padding: 0.75rem 0.95rem; font: inherit; font-weight: 800; }
-  :global(.country-map-toolbar select:focus), :global(.country-map__controls button:focus-visible), :global(.country-map__country:focus-visible), :global(.country-map-summary a:focus-visible), :global(.country-map-table a:focus-visible) { outline: 3px solid color-mix(in srgb, var(--color-primary), transparent 65%); outline-offset: 3px; }
+  :global(.country-map-toolbar select:focus), :global(.country-map__controls button:focus-visible), :global(.country-map-summary a:focus-visible), :global(.country-map-table a:focus-visible), :global(.country-map__leaflet .leaflet-interactive:focus-visible) { outline: 3px solid color-mix(in srgb, var(--color-primary), transparent 65%); outline-offset: 3px; }
   :global(.country-map-layout) { display: grid; gap: 1rem; }
   :global(.country-map) { display: grid; gap: 0.75rem; margin: 0; padding: 1rem; overflow: hidden; }
   :global(.country-map__controls) { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   :global(.country-map__controls button) { cursor: pointer; min-height: 2.6rem; padding: 0.55rem 0.8rem; }
-  :global(.country-map__viewport) { position: relative; min-height: 22rem; border-radius: 1.1rem; overflow: hidden; touch-action: none; background: linear-gradient(135deg, color-mix(in srgb, var(--color-bg), var(--color-primary) 9%), color-mix(in srgb, var(--color-bg), var(--color-secondary, var(--color-primary)) 13%)); cursor: grab; }
-  :global(.country-map__viewport.is-dragging) { cursor: grabbing; }
-  :global(.country-map__svg) { display: block; width: 100%; height: 100%; min-height: 22rem; color: var(--color-primary); user-select: none; }
-  :global(.country-map__sea) { fill: color-mix(in srgb, var(--color-bg), var(--color-primary) 6%); }
-  :global(.country-map__glow) { fill: url(#country-map-glow); }
-  :global(.country-map__layer) { transform-box: fill-box; transform-origin: center; transition: transform 110ms ease-out; }
-  :global(.country-map__land) { fill: color-mix(in srgb, var(--color-bg), var(--color-primary) 15%); stroke: color-mix(in srgb, var(--color-primary), transparent 60%); stroke-width: 0.28; opacity: 0.75; }
-  :global(.country-map__country) { fill: color-mix(in srgb, var(--color-primary), var(--color-bg) calc((1 - var(--map-weight, 0.25)) * 62%)); stroke: var(--color-bg); stroke-width: 0.22; vector-effect: non-scaling-stroke; cursor: pointer; transition: fill 160ms ease, filter 160ms ease, transform 160ms ease; }
-  :global(.country-map__country:hover), :global(.country-map__country.is-selected) { fill: color-mix(in srgb, var(--color-primary), #f59e0b 35%); filter: drop-shadow(0 0 0.55rem color-mix(in srgb, var(--color-primary), transparent 45%)); }
+  :global(.country-map__leaflet) { min-height: 24rem; border-radius: 1.1rem; overflow: hidden; background: color-mix(in srgb, var(--color-bg), var(--color-primary) 7%); }
+  :global(.country-map__leaflet .leaflet-container), :global(.country-map__leaflet.leaflet-container) { background: color-mix(in srgb, var(--color-bg), var(--color-primary) 7%); color: var(--color-text); font: inherit; }
+  :global(.country-map__leaflet .leaflet-control-attribution) { background: color-mix(in srgb, var(--color-bg), transparent 12%); color: var(--color-muted); font-size: 0.68rem; }
+  :global(.country-map__leaflet .leaflet-control-attribution a) { color: var(--color-primary); }
+  :global(.country-map__country) { cursor: pointer; transition: filter 160ms ease; }
+  :global(.country-map__country:hover), :global(.country-map__country.is-selected) { filter: drop-shadow(0 0 0.55rem color-mix(in srgb, var(--color-primary), transparent 45%)); }
+  :global(.country-map__status) { min-height: 1.1rem; margin: 0; color: var(--color-muted); font-size: 0.88rem; }
   :global(.country-map-summary) { display: grid; align-content: start; gap: 1rem; padding: 1rem; }
   :global(.country-map-summary h2), :global(.country-map-summary p) { margin: 0; }
   :global(.country-map-summary h2) { font-size: clamp(1.3rem, 5vw, 2.1rem); line-height: 1.05; letter-spacing: -0.04em; }
@@ -182,7 +140,7 @@ function visualWeight(country: EurovisionMapCountry) {
     :global(.country-map-app) { gap: 1.25rem; padding-block: 2rem 4rem; }
     :global(.country-map-toolbar) { grid-template-columns: auto minmax(16rem, 0.35fr); align-items: center; }
     :global(.country-map-layout) { grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr); align-items: stretch; }
-    :global(.country-map__viewport), :global(.country-map__svg) { min-height: 34rem; }
+    :global(.country-map__leaflet) { min-height: 36rem; }
   }
   @media (prefers-color-scheme: dark) {
     :global(.country-map-toolbar), :global(.country-map), :global(.country-map-summary), :global(.country-map-table) { box-shadow: 0 18px 44px rgb(0 0 0 / 0.28); }
