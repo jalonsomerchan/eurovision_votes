@@ -63,14 +63,19 @@ describe('Eurovision country map', () => {
     assert.match(component, /scope="row"/);
   });
 
-  it('uses Leaflet with external geometry and base tiles', () => {
+  it('uses Leaflet with CARTO light and dark base tiles', () => {
     const script = readText('public/eurovision-map.js');
     const pkg = readText('package.json');
 
     assert.match(script, /GEOJSON_URL/);
     assert.match(script, /cdn\.jsdelivr\.net/);
-    assert.match(script, /TILE_URL/);
+    assert.match(script, /CARTO_TILES/);
+    assert.match(script, /light_all/);
+    assert.match(script, /dark_all/);
     assert.match(script, /basemaps\.cartocdn\.com/);
+    assert.match(script, /getCurrentTheme/);
+    assert.match(script, /watchThemeChanges/);
+    assert.match(script, /tileLayer\.setUrl/);
     assert.match(script, /waitForLeaflet/);
     assert.match(script, /L\.map/);
     assert.match(script, /L\.tileLayer/);

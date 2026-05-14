@@ -1,5 +1,8 @@
 const GEOJSON_URL = 'https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json';
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png';
+const CARTO_TILES = {
+  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+};
 const TILE_ATTRIBUTION = '&copy; OpenStreetMap contributors &copy; CARTO';
 
 const ISO2_TO_ISO3 = {
@@ -90,6 +93,36 @@ function getPrimaryColor(root) {
   return getComputedStyle(root).getPropertyValue('--color-primary').trim() || '#7c3aed';
 }
 
+function getCurrentTheme() {
+  const htmlTheme = document.documentElement.dataset.theme || document.documentElement.className;
+  if (/dark/i.test(htmlTheme)) return 'dark';
+  if (/light/i.test(htmlTheme)) return 'light';
+
+  const colorScheme = getComputedStyle(document.documentElement).colorScheme;
+  if (colorScheme.includes('dark')) return 'dark';
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function getTileUrl() {
+  return CARTO_TILES[getCurrentTheme()] || CARTO_TILES.light;
+}
+
+function watchThemeChanges(onChange) {
+  let currentTheme = getCurrentTheme();
+  const update = () => {
+    const nextTheme = getCurrentTheme();
+    if (nextTheme === currentTheme) return;
+    currentTheme = nextTheme;
+    onChange(nextTheme);
+  };
+
+  window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', update);
+  new MutationObserver(update).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class', 'data-theme', 'style'],
+  });
+}
+
 function buildFeatureCollection(features) {
   return { type: 'FeatureCollection', features };
 }
@@ -138,11 +171,12 @@ async function initCountryMap(root) {
     zoomControl: false,
   }).setView([54, 14], 4);
 
-  L.tileLayer(TILE_URL, {
+  const tileLayer = L.tileLayer(getTileUrl(), {
     attribution: TILE_ATTRIBUTION,
     maxZoom: 19,
     subdomains: 'abcd',
   }).addTo(map);
+  watchThemeChanges(() => tileLayer.setUrl(getTileUrl()));
 
   const primary = getPrimaryColor(root);
   const layersByCountry = new Map();
