@@ -4,6 +4,7 @@ type NavigationLabels = {
   dataMenu: string;
   eurovision2026: string;
   festival2026: string;
+  glossary: string;
   historicalMenu: string;
   prediction: string;
   voteStatsCta: string;
@@ -28,6 +29,7 @@ const navigationLabels: Record<Locale, NavigationLabels> = {
     dataMenu: 'Datos',
     eurovision2026: 'Eurovision 2026',
     festival2026: 'Festival',
+    glossary: 'Glosario',
     historicalMenu: 'Histórico',
     prediction: 'Quiniela',
     voteStatsCta: 'Estadísticas de votaciones',
@@ -36,6 +38,7 @@ const navigationLabels: Record<Locale, NavigationLabels> = {
     dataMenu: 'Data',
     eurovision2026: 'Eurovision 2026',
     festival2026: 'Festival',
+    glossary: 'Glossary',
     historicalMenu: 'History',
     prediction: 'Prediction',
     voteStatsCta: 'Voting statistics',
@@ -44,6 +47,7 @@ const navigationLabels: Record<Locale, NavigationLabels> = {
     dataMenu: 'Données',
     eurovision2026: 'Eurovision 2026',
     festival2026: 'Festival',
+    glossary: 'Glossaire',
     historicalMenu: 'Historique',
     prediction: 'Pronostic',
     voteStatsCta: 'Statistiques de vote',
@@ -52,6 +56,7 @@ const navigationLabels: Record<Locale, NavigationLabels> = {
     dataMenu: 'Dados',
     eurovision2026: 'Eurovision 2026',
     festival2026: 'Festival',
+    glossary: 'Glossário',
     historicalMenu: 'Histórico',
     prediction: 'Prognóstico',
     voteStatsCta: 'Estatísticas das votações',
@@ -60,6 +65,7 @@ const navigationLabels: Record<Locale, NavigationLabels> = {
     dataMenu: 'Dades',
     eurovision2026: 'Eurovision 2026',
     festival2026: 'Festival',
+    glossary: 'Glossari',
     historicalMenu: 'Històric',
     prediction: 'Quiniela',
     voteStatsCta: 'Estadístiques de votacions',
@@ -68,6 +74,7 @@ const navigationLabels: Record<Locale, NavigationLabels> = {
     dataMenu: 'Datuak',
     eurovision2026: 'Eurovision 2026',
     festival2026: 'Jaialdia',
+    glossary: 'Glosarioa',
     historicalMenu: 'Historikoa',
     prediction: 'Kiniela',
     voteStatsCta: 'Bozketen estatistikak',
@@ -76,6 +83,7 @@ const navigationLabels: Record<Locale, NavigationLabels> = {
     dataMenu: 'Datos',
     eurovision2026: 'Eurovision 2026',
     festival2026: 'Festival',
+    glossary: 'Glosario',
     historicalMenu: 'Histórico',
     prediction: 'Quiniela',
     voteStatsCta: 'Estatísticas das votacións',

@@ -1,0 +1,107 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { type GlossaryTerm } from '../config/eurovisionGlossary';
+import { getGlossaryLabels } from '../i18n/glossaryLabels';
+import { getGlossaryTermPath } from '../lib/glossaryRoutes';
+
+interface Props {
+  terms: GlossaryTerm[];
+  locale?: Locale;
+}
+
+const { terms, locale = defaultLocale } = Astro.props;
+const labels = getGlossaryLabels(locale);
+---
+
+<section class="glossary-app" aria-labelledby="glossary-title">
+  <header class="hero-card glossary-hero">
+    <div>
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h1 id="glossary-title">{labels.indexTitle}</h1>
+      <p class="hero-copy">{labels.indexIntro}</p>
+    </div>
+  </header>
+
+  <div class="glossary-grid" aria-label={labels.termsListLabel}>
+    {terms.map((term) => (
+      <article class="glossary-card">
+        <span>{labels.termLabel}</span>
+        <h2>
+          <a href={getGlossaryTermPath(term.id, locale)}>{term.term}</a>
+        </h2>
+        <p>{term.shortDefinition}</p>
+        <em>{labels.viewTerm}</em>
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  :global(.glossary-app) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  :global(.glossary-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.85rem;
+  }
+
+  :global(.glossary-card) {
+    display: grid;
+    gap: 0.55rem;
+    min-height: 12rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1.35rem;
+    background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%);
+    padding: 1rem;
+    box-shadow: 0 14px 34px rgb(15 23 42 / 0.07);
+  }
+
+  :global(.glossary-card span),
+  :global(.glossary-card em) {
+    color: var(--color-muted);
+    font-size: 0.76rem;
+    font-style: normal;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  :global(.glossary-card h2) {
+    margin: 0;
+    font-size: 1.25rem;
+    line-height: 1.1;
+  }
+
+  :global(.glossary-card a) {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  :global(.glossary-card a:hover) {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  :global(.glossary-card p) {
+    margin: 0;
+    color: var(--color-muted);
+    font-weight: 750;
+  }
+
+  :global(.glossary-card em) {
+    align-self: end;
+    color: var(--color-primary);
+  }
+
+  @media (min-width: 720px) {
+    :global(.glossary-app) {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+  }
+</style>

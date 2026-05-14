@@ -1,12 +1,14 @@
 ---
 import Container from './Container.astro';
 import { localeLabels, siteConfig, type Locale } from '../config/site';
+import { findGlossaryTermBySlug } from '../config/eurovisionGlossary';
 import { getAlternateLocales, getLocalizedPath, useTranslations } from '../i18n/ui';
 import { getMapLabels } from '../i18n/mapLabels';
 import { getNewsLabels } from '../i18n/newsLabels';
 import { getNavigationLabels } from '../i18n/navigationLabels';
 import { getRankingLabels } from '../i18n/rankingLabels';
 import { getTimelineLabels } from '../i18n/timelineLabels';
+import { getGlossaryIndexPath, getGlossaryTermPath } from '../lib/glossaryRoutes';
 
 interface Props {
   locale: Locale;
@@ -31,11 +33,14 @@ const timelineUrl = getLocalizedPath('/linea-tiempo/', locale);
 const newsUrl = getLocalizedPath('/noticias/', locale);
 const rankingsUrl = getLocalizedPath('/rankings/', locale);
 const countryPointsUrl = getLocalizedPath('/puntos-por-pais/', locale);
+const glossaryUrl = getGlossaryIndexPath(locale);
 const alternateLocales = getAlternateLocales(locale);
 const currentPath = Astro.url.pathname;
 const countryPathMatch = currentPath.match(/\/paises(?:\/([a-z0-9-]+))?\/?$/i);
 const editionPathMatch = currentPath.match(/\/ediciones(?:\/(\d{4}))?\/?$/i);
 const rankingPathMatch = currentPath.match(/\/rankings(?:\/([a-z0-9-]+))?\/?$/i);
+const glossaryPathMatch = currentPath.match(/\/glosario(?:\/([a-z0-9-]+))?\/?$/i);
+const glossaryTerm = findGlossaryTermBySlug(glossaryPathMatch?.[1], locale);
 const comparatorPathMatch = currentPath.match(/\/comparador-paises\/?$/i);
 const alternatePath = currentPath.includes('/mapa-paises')
   ? '/mapa-paises/'
@@ -49,19 +54,23 @@ const alternatePath = currentPath.includes('/mapa-paises')
           ? '/puntos-por-pais/'
           : currentPath.includes('/noticias')
             ? '/noticias/'
-            : rankingPathMatch
-              ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
-              : comparatorPathMatch
-                ? '/comparador-paises/'
-                : editionPathMatch
-                  ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
-                  : countryPathMatch
-                    ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
-                    : currentPath.includes('/historico')
-                      ? '/historico/'
-                      : currentPath.includes('/stats')
-                        ? '/stats/'
-                        : '/';
+            : glossaryPathMatch
+              ? `/glosario/${glossaryTerm ? `${glossaryTerm.slug}/` : ''}`
+              : rankingPathMatch
+                ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
+                : comparatorPathMatch
+                  ? '/comparador-paises/'
+                  : editionPathMatch
+                    ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
+                    : countryPathMatch
+                      ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
+                      : currentPath.includes('/historico')
+                        ? '/historico/'
+                        : currentPath.includes('/stats')
+                          ? '/stats/'
+                          : '/';
+const getAlternatePath = (alternateLocale: Locale) =>
+  glossaryTerm ? getGlossaryTermPath(glossaryTerm.id, alternateLocale) : getLocalizedPath(alternatePath, alternateLocale);
 const eurovision2026Links = [
   { href: festival2026Url, label: navLabels.festival2026 },
   { href: voteUrl, label: t('nav.vote') },
@@ -75,6 +84,7 @@ const historicalLinks = [
   { href: rankingsUrl, label: rankingLabels.ranking },
   { href: timelineUrl, label: timelineLabels.title },
   { href: countryPointsUrl, label: t('nav.pointsByCountry') },
+  { href: glossaryUrl, label: navLabels.glossary },
 ];
 ---
 
@@ -104,7 +114,7 @@ const historicalLinks = [
         <summary>{t('nav.language')}</summary>
         <div class="locale-menu__list">
           {alternateLocales.map((alternateLocale) => (
-            <a href={getLocalizedPath(alternatePath, alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
+            <a href={getAlternatePath(alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
           ))}
         </div>
       </details>
@@ -143,7 +153,7 @@ const historicalLinks = [
           <strong>{t('nav.language')}</strong>
           <div>
             {alternateLocales.map((alternateLocale) => (
-              <a href={getLocalizedPath(alternatePath, alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
+              <a href={getAlternatePath(alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
             ))}
           </div>
         </div>

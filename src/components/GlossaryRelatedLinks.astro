@@ -1,0 +1,28 @@
+---
+import { type Locale } from '../config/site';
+import type { GlossaryRelatedKey } from '../config/eurovisionGlossary';
+import { getGlossaryLabels } from '../i18n/glossaryLabels';
+import { getGlossaryRelatedPath } from '../lib/glossaryRoutes';
+
+interface Props {
+  related: GlossaryRelatedKey[];
+  locale: Locale;
+}
+
+const { related, locale } = Astro.props;
+const labels = getGlossaryLabels(locale);
+---
+
+<section class="glossary-related" aria-labelledby="glossary-related-title">
+  <header>
+    <h2 id="glossary-related-title">{labels.relatedTitle}</h2>
+    <p>{labels.relatedDescription}</p>
+  </header>
+  <ul>
+    {related.map((key) => (
+      <li>
+        <a href={getGlossaryRelatedPath(key, locale)}>{labels.related[key]}</a>
+      </li>
+    ))}
+  </ul>
+</section>
