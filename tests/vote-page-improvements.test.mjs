@@ -16,6 +16,9 @@ describe('vote page improvements', () => {
     assert.match(app, /vote-share-card/);
     assert.match(app, /data-share-vote-image/);
     assert.match(app, /data-share-votes/);
+    assert.match(app, /data-vote-image-modal/);
+    assert.match(app, /data-vote-image-share/);
+    assert.match(app, /data-vote-image-download/);
     assert.match(app, /getVoteShareLabels/);
     assert.match(app, /<div class="song-list" data-song-list><\/div>\n\n  <section class="vote-share-card"/);
     assert.doesNotMatch(app, /top-card-generator__preview/);
@@ -34,27 +37,42 @@ describe('vote page improvements', () => {
     assert.match(seoLabels, /Vote Eurovision 2026: semi-finals and final/);
     assert.match(shareLabels, /Comparte tu resultado/);
     assert.match(shareLabels, /Share your result/);
+    assert.match(shareLabels, /shareImage/);
+    assert.match(shareLabels, /shareUnavailable/);
     ['es', 'en', 'fr', 'pt', 'ca', 'eu', 'gl'].forEach((locale) => {
       assert.match(seoLabels, new RegExp(`${locale}: \\{`));
       assert.match(shareLabels, new RegExp(`${locale}: \\{`));
     });
   });
 
-  it('counts only votable semi-final songs and keeps image/link sharing actions', () => {
+  it('counts only votable semi-final songs and busts cached vote modules', () => {
     const contest = readText('public/vote/contest.js');
     const render = readText('public/vote/render.js');
     const script = readText('public/vote.js');
-    const dom = readText('public/vote/dom.js');
 
     assert.match(contest, /isVotableSong/);
     assert.match(contest, /!song\.directFinalist/);
     assert.match(render, /votedCountForSongs/);
     assert.match(render, /songKeys\.has\(key\)/);
-    assert.match(script, /renderTopCardState/);
-    assert.match(script, /downloadTopCardImage/);
-    assert.match(script, /shareLabels\.imageEmpty/);
-    assert.match(dom, /shareImage/);
-    assert.match(dom, /shareFeedback/);
+    assert.match(script, /contest\.js\?v=20260514-6/);
+    assert.match(script, /render\.js\?v=20260514-6/);
+    assert.match(script, /top-card-canvas\.js\?v=20260514-6/);
+  });
+
+  it('generates shareable image payloads instead of direct-only downloads', () => {
+    const script = readText('public/vote.js');
+    const canvas = readText('public/vote/top-card-canvas.js');
+
+    assert.match(script, /buildTopCardImage/);
+    assert.match(script, /shareTopCardImagePayload/);
+    assert.match(script, /downloadTopCardImagePayload/);
+    assert.match(script, /showModal/);
+    assert.match(script, /data-vote-image-preview/);
+    assert.match(canvas, /canvas\.toBlob/);
+    assert.match(canvas, /URL\.createObjectURL/);
+    assert.match(canvas, /new File/);
+    assert.match(canvas, /navigator\.share/);
+    assert.match(canvas, /navigator\.canShare/);
   });
 
   it('keeps the corrected direct finalist smoke test available', () => {
