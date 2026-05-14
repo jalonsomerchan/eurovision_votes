@@ -5,6 +5,7 @@ import { getVoteLabels } from '../i18n/featureLabels';
 import { getLocalizedPath } from '../i18n/ui';
 import { getNavigationLabels } from '../i18n/navigationLabels';
 import { getTopCardLabels } from '../i18n/topCardLabels';
+import { getVoteShareLabels } from '../i18n/voteShareLabels';
 
 interface Props {
   locale?: Locale;
@@ -14,6 +15,7 @@ const { locale = defaultLocale } = Astro.props;
 const labels = getVoteLabels(locale);
 const navLabels = getNavigationLabels(locale);
 const topCardLabels = getTopCardLabels(locale);
+const shareLabels = getVoteShareLabels(locale);
 const statsUrl = getLocalizedPath('/stats/', locale);
 const firebaseConfig = {
   apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY ?? '',
@@ -23,7 +25,7 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
   appId: import.meta.env.PUBLIC_FIREBASE_APP_ID ?? '',
 };
-const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-3`;
+const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260514-4`;
 ---
 
 <section class="eurovision-vote-app" aria-labelledby="vote-title">
@@ -31,21 +33,23 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-3`;
   <script type="application/json" id="firebase-config" set:html={JSON.stringify(firebaseConfig)}></script>
   <script type="application/json" id="vote-labels" set:html={JSON.stringify(labels)}></script>
   <script type="application/json" id="top-card-labels" set:html={JSON.stringify(topCardLabels)}></script>
+  <script type="application/json" id="vote-share-labels" set:html={JSON.stringify(shareLabels)}></script>
 
-  <div class="hero-card">
-    <div>
-      <p class="eyebrow">{labels.eyebrow}</p>
-      <h1 id="vote-title">{labels.heading}</h1>
-      <p class="hero-copy">{labels.copy}</p>
-      <a class="action-button action-button--primary vote-stats-link" href={statsUrl}>{navLabels.voteStatsCta}</a>
+  <header class="hero-card vote-hero">
+    <p class="eyebrow">{labels.eyebrow}</p>
+    <h1 id="vote-title">{labels.heading}</h1>
+    <div class="vote-hero__grid">
+      <div>
+        <p class="hero-copy">{labels.copy}</p>
+        <a class="action-button action-button--primary vote-stats-link" href={statsUrl}>{navLabels.voteStatsCta}</a>
+      </div>
+      <div class="user-card">
+        <span class="status-label">{labels.profile}</span>
+        <strong data-voter-name>{labels.guest}</strong>
+        <button class="mini-button" type="button" data-open-name>{labels.changeName}</button>
+      </div>
     </div>
-    <div class="user-card">
-      <span class="status-label">{labels.profile}</span>
-      <strong data-voter-name>{labels.guest}</strong>
-      <button class="mini-button" type="button" data-open-name>{labels.changeName}</button>
-      <button class="mini-button" type="button" data-share-votes>{labels.shareVotes}</button>
-    </div>
-  </div>
+  </header>
 
   <div class="tabs" role="tablist" aria-label={labels.tabsLabel} data-tabs></div>
 
@@ -57,37 +61,20 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-3`;
 
   <p class="feedback" role="status" aria-live="polite" data-feedback></p>
 
-  <section class="top-card-generator" aria-labelledby="top-card-title">
-    <div class="top-card-generator__head">
-      <div>
-        <p class="eyebrow">{topCardLabels.eyebrow}</p>
-        <h2 id="top-card-title">{topCardLabels.title}</h2>
-        <p>{topCardLabels.copy}</p>
-      </div>
-      <div class="top-card-generator__controls" aria-label={topCardLabels.title}>
-        <label>
-          <span>{topCardLabels.galaLabel}</span>
-          <select class="text-input" data-top-card-contest>
-            {contests.map((contest) => <option value={contest.id}>{contest.name}</option>)}
-          </select>
-        </label>
-        <fieldset>
-          <legend>{topCardLabels.limitLegend}</legend>
-          <label><input type="radio" name="top-card-limit" value="5" checked data-top-card-limit /> {topCardLabels.top5}</label>
-          <label><input type="radio" name="top-card-limit" value="10" data-top-card-limit /> {topCardLabels.top10}</label>
-        </fieldset>
-      </div>
-    </div>
-
-    <div class="top-card-generator__preview" aria-label={topCardLabels.previewLabel} data-top-card-preview></div>
-    <p class="feedback" role="status" aria-live="polite" data-top-card-feedback></p>
-    <div class="top-card-generator__actions">
-      <button class="action-button" type="button" data-top-card-copy>{topCardLabels.copyText}</button>
-      <button class="action-button action-button--primary" type="button" data-top-card-download>{topCardLabels.downloadImage}</button>
-    </div>
-  </section>
-
   <div class="song-list" data-song-list></div>
+
+  <section class="vote-share-card" aria-labelledby="vote-share-title">
+    <div>
+      <p class="eyebrow">{shareLabels.eyebrow}</p>
+      <h2 id="vote-share-title">{shareLabels.title}</h2>
+      <p>{shareLabels.copy}</p>
+    </div>
+    <div class="vote-share-card__actions">
+      <button class="action-button action-button--primary" type="button" data-share-vote-image>{shareLabels.imageAction}</button>
+      <button class="action-button" type="button" data-share-votes>{shareLabels.linkAction}</button>
+    </div>
+    <p class="feedback" role="status" aria-live="polite" data-vote-share-feedback></p>
+  </section>
 </section>
 
 <div class="app-modal" data-name-modal hidden>
@@ -118,3 +105,25 @@ const voteScriptUrl = `${import.meta.env.BASE_URL}vote.js?v=20260513-3`;
 </div>
 
 <script type="module" src={voteScriptUrl}></script>
+
+<style>
+  :global(.vote-hero) { align-items: stretch; }
+  :global(.vote-hero h1) { max-width: 15ch; }
+  :global(.vote-hero__grid) { z-index: 1; display: grid; gap: 1rem; }
+  :global(.vote-hero__grid .hero-copy) { margin-top: 0; }
+  :global(.vote-share-card) { display: grid; gap: 1rem; border: 1px solid color-mix(in srgb, var(--color-border), transparent 12%); border-radius: 1.75rem; padding: 1rem; background: color-mix(in srgb, var(--color-bg), var(--color-primary) 4%); box-shadow: 0 20px 55px rgb(15 23 42 / 0.08); }
+  :global(.vote-share-card h2), :global(.vote-share-card p) { margin: 0; }
+  :global(.vote-share-card h2) { font-size: clamp(1.45rem, 5vw, 2.25rem); line-height: 1.05; letter-spacing: -0.05em; }
+  :global(.vote-share-card p:not(.eyebrow):not(.feedback)) { color: var(--color-muted); font-weight: 750; }
+  :global(.vote-share-card__actions) { display: grid; gap: 0.65rem; }
+  @media (min-width: 720px) {
+    :global(.vote-hero) { grid-template-columns: 1fr; }
+    :global(.vote-hero__grid) { grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.48fr); align-items: end; }
+    :global(.vote-share-card) { grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 1.2rem; }
+    :global(.vote-share-card__actions) { display: flex; flex-wrap: wrap; justify-content: end; }
+    :global(.vote-share-card .feedback) { grid-column: 1 / -1; }
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(.vote-share-card) { box-shadow: 0 20px 55px rgb(0 0 0 / 0.28); }
+  }
+</style>
