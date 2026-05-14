@@ -2,6 +2,9 @@ import { type Locale } from '../config/site';
 
 type NavigationLabels = {
   dataMenu: string;
+  eurovision2026: string;
+  festival2026: string;
+  historicalMenu: string;
   prediction: string;
   voteStatsCta: string;
 };
@@ -21,13 +24,62 @@ export type FooterProject = {
 };
 
 const navigationLabels: Record<Locale, NavigationLabels> = {
-  es: { dataMenu: 'Datos', prediction: 'Quiniela', voteStatsCta: 'Ver estadísticas de votaciones' },
-  en: { dataMenu: 'Data', prediction: 'Prediction', voteStatsCta: 'View voting statistics' },
-  fr: { dataMenu: 'Données', prediction: 'Pronostic', voteStatsCta: 'Voir les statistiques de vote' },
-  pt: { dataMenu: 'Dados', prediction: 'Prognóstico', voteStatsCta: 'Ver estatísticas das votações' },
-  ca: { dataMenu: 'Dades', prediction: 'Quiniela', voteStatsCta: 'Veure estadístiques de votacions' },
-  eu: { dataMenu: 'Datuak', prediction: 'Kiniela', voteStatsCta: 'Ikusi bozketen estatistikak' },
-  gl: { dataMenu: 'Datos', prediction: 'Quiniela', voteStatsCta: 'Ver estatísticas das votacións' },
+  es: {
+    dataMenu: 'Datos',
+    eurovision2026: 'Eurovision 2026',
+    festival2026: 'Festival',
+    historicalMenu: 'Histórico',
+    prediction: 'Quiniela',
+    voteStatsCta: 'Estadísticas de votaciones',
+  },
+  en: {
+    dataMenu: 'Data',
+    eurovision2026: 'Eurovision 2026',
+    festival2026: 'Festival',
+    historicalMenu: 'History',
+    prediction: 'Prediction',
+    voteStatsCta: 'Voting statistics',
+  },
+  fr: {
+    dataMenu: 'Données',
+    eurovision2026: 'Eurovision 2026',
+    festival2026: 'Festival',
+    historicalMenu: 'Historique',
+    prediction: 'Pronostic',
+    voteStatsCta: 'Statistiques de vote',
+  },
+  pt: {
+    dataMenu: 'Dados',
+    eurovision2026: 'Eurovision 2026',
+    festival2026: 'Festival',
+    historicalMenu: 'Histórico',
+    prediction: 'Prognóstico',
+    voteStatsCta: 'Estatísticas das votações',
+  },
+  ca: {
+    dataMenu: 'Dades',
+    eurovision2026: 'Eurovision 2026',
+    festival2026: 'Festival',
+    historicalMenu: 'Històric',
+    prediction: 'Quiniela',
+    voteStatsCta: 'Estadístiques de votacions',
+  },
+  eu: {
+    dataMenu: 'Datuak',
+    eurovision2026: 'Eurovision 2026',
+    festival2026: 'Jaialdia',
+    historicalMenu: 'Historikoa',
+    prediction: 'Kiniela',
+    voteStatsCta: 'Bozketen estatistikak',
+  },
+  gl: {
+    dataMenu: 'Datos',
+    eurovision2026: 'Eurovision 2026',
+    festival2026: 'Festival',
+    historicalMenu: 'Histórico',
+    prediction: 'Quiniela',
+    voteStatsCta: 'Estatísticas das votacións',
+  },
 };
 
 const footerLabels: Record<Locale, FooterLabels> = {
