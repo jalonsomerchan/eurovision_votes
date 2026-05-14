@@ -25,11 +25,14 @@ describe('Eurovision country map', () => {
     assert.equal(existsSync(join(root, 'public/vector-map-engine.js')), false);
   });
 
-  it('derives map data from existing historical country profiles and localized links', () => {
+  it('derives marker map data from existing historical country profiles and localized links', () => {
     const helper = readText('src/lib/eurovisionMapData.ts');
 
     assert.match(helper, /listEurovisionCountryProfiles/);
     assert.match(helper, /getEurovisionCountryProfile/);
+    assert.match(helper, /countryCoordinates/);
+    assert.match(helper, /latitude/);
+    assert.match(helper, /longitude/);
     assert.match(helper, /mapMetrics/);
     assert.match(helper, /participations/);
     assert.match(helper, /wins/);
@@ -58,17 +61,16 @@ describe('Eurovision country map', () => {
     assert.match(component, /data-map-zoom-out/);
     assert.match(component, /data-map-reset/);
     assert.match(component, /data-map-summary/);
+    assert.match(component, /country-map__marker/);
     assert.match(component, /<table>/);
     assert.match(component, /scope="col"/);
     assert.match(component, /scope="row"/);
   });
 
-  it('uses Leaflet with CARTO light and dark base tiles', () => {
+  it('uses Leaflet with a full world map and interactive country markers', () => {
     const script = readText('public/eurovision-map.js');
     const pkg = readText('package.json');
 
-    assert.match(script, /GEOJSON_URL/);
-    assert.match(script, /cdn\.jsdelivr\.net/);
     assert.match(script, /CARTO_TILES/);
     assert.match(script, /light_all/);
     assert.match(script, /dark_all/);
@@ -79,10 +81,13 @@ describe('Eurovision country map', () => {
     assert.match(script, /waitForLeaflet/);
     assert.match(script, /L\.map/);
     assert.match(script, /L\.tileLayer/);
-    assert.match(script, /L\.geoJSON/);
-    assert.match(script, /featureMatchesCountry/);
-    assert.match(script, /ISO2_TO_ISO3/);
+    assert.match(script, /L\.circleMarker/);
+    assert.match(script, /markerRadius/);
+    assert.match(script, /markersByCountry/);
     assert.match(script, /renderSummary/);
+    assert.doesNotMatch(script, /GEOJSON_URL/);
+    assert.doesNotMatch(script, /L\.geoJSON/);
+    assert.doesNotMatch(script, /featureMatchesCountry/);
     assert.doesNotMatch(pkg, /"leaflet"/);
   });
 
