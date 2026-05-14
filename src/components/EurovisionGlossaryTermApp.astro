@@ -1,0 +1,163 @@
+---
+import { type Locale } from '../config/site';
+import { type GlossaryTerm } from '../config/eurovisionGlossary';
+import { getGlossaryLabels } from '../i18n/glossaryLabels';
+import { getGlossaryIndexPath } from '../lib/glossaryRoutes';
+import GlossaryRelatedLinks from './GlossaryRelatedLinks.astro';
+
+interface Props {
+  term: GlossaryTerm;
+  locale: Locale;
+}
+
+const { term, locale } = Astro.props;
+const labels = getGlossaryLabels(locale);
+---
+
+<article class="glossary-term" aria-labelledby="glossary-term-title">
+  <header class="hero-card glossary-term__hero">
+    <div>
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h1 id="glossary-term-title">{term.term}</h1>
+      <p class="hero-copy">{term.shortDefinition}</p>
+    </div>
+  </header>
+
+  <div class="glossary-term__body">
+    <section class="glossary-definition" aria-labelledby="glossary-definition-title">
+      <p class="eyebrow">{labels.definitionLabel}</p>
+      <h2 id="glossary-definition-title">{term.term}</h2>
+      <p>{term.definition}</p>
+      {term.note && (
+        <aside class="glossary-note" aria-label={labels.technicalNote}>
+          <strong>{labels.technicalNote}</strong>
+          <p>{term.note}</p>
+        </aside>
+      )}
+      {term.synonyms?.length ? (
+        <div class="glossary-synonyms">
+          <strong>{labels.synonymsLabel}</strong>
+          <ul>
+            {term.synonyms.map((synonym) => <li>{synonym}</li>)}
+          </ul>
+        </div>
+      ) : null}
+    </section>
+
+    <aside class="glossary-term__side">
+      <a class="action-button" href={getGlossaryIndexPath(locale)}>{labels.backToGlossary}</a>
+      <GlossaryRelatedLinks related={term.related} locale={locale} />
+    </aside>
+  </div>
+</article>
+
+<style>
+  :global(.glossary-term) {
+    display: grid;
+    gap: 1rem;
+    padding: 1.25rem 0 3rem;
+  }
+
+  :global(.glossary-term__body) {
+    display: grid;
+    gap: 1rem;
+  }
+
+  :global(.glossary-definition),
+  :global(.glossary-related) {
+    border: 1px solid var(--color-border);
+    border-radius: 1.5rem;
+    background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%);
+    padding: 1rem;
+    box-shadow: 0 14px 34px rgb(15 23 42 / 0.07);
+  }
+
+  :global(.glossary-definition h2),
+  :global(.glossary-related h2),
+  :global(.glossary-definition p),
+  :global(.glossary-related p) {
+    margin: 0;
+  }
+
+  :global(.glossary-definition h2),
+  :global(.glossary-related h2) {
+    font-size: clamp(1.35rem, 4vw, 2rem);
+    letter-spacing: -0.04em;
+  }
+
+  :global(.glossary-definition > p),
+  :global(.glossary-related p) {
+    margin-top: 0.55rem;
+    color: var(--color-muted);
+    font-size: 1.03rem;
+  }
+
+  :global(.glossary-note) {
+    margin-top: 1rem;
+    border: 1px solid color-mix(in srgb, var(--color-primary), var(--color-border) 45%);
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--color-primary), transparent 88%);
+    padding: 0.85rem;
+  }
+
+  :global(.glossary-note p) {
+    margin-top: 0.25rem;
+    color: var(--color-muted);
+  }
+
+  :global(.glossary-synonyms) {
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 1rem;
+  }
+
+  :global(.glossary-synonyms ul),
+  :global(.glossary-related ul) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  :global(.glossary-synonyms li),
+  :global(.glossary-related a) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg);
+    padding: 0.35rem 0.75rem;
+    color: var(--color-text);
+    font-weight: 850;
+    text-decoration: none;
+  }
+
+  :global(.glossary-related header) {
+    margin-bottom: 0.85rem;
+  }
+
+  :global(.glossary-related a:hover) {
+    border-color: color-mix(in srgb, var(--color-primary), var(--color-border) 30%);
+    color: var(--color-primary);
+  }
+
+  :global(.glossary-term__side) {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+  }
+
+  @media (min-width: 820px) {
+    :global(.glossary-term) {
+      gap: 1.35rem;
+      padding-block: 2rem 4rem;
+    }
+
+    :global(.glossary-term__body) {
+      grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.45fr);
+    }
+  }
+</style>
