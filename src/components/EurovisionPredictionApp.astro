@@ -12,7 +12,7 @@ const labels = getPredictionLabels(locale);
 const candidates = eurovision2026Contests.flatMap((contest) => contest.songs).filter((song, index, songs) => (
   songs.findIndex((item) => item.flag === song.flag && item.country === song.country) === index
 ));
-const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260514-1`;
+const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260514-2`;
 ---
 
 <section class="prediction-app" aria-labelledby="prediction-title">
@@ -25,24 +25,11 @@ const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260514
       <h1 id="prediction-title">{labels.heading}</h1>
       <p class="hero-copy">{labels.copy}</p>
     </div>
-    <div class="user-card" aria-live="polite">
+    <div class="user-card prediction-name-card">
       <label class="field-label" for="prediction-name">{labels.nameLabel}</label>
       <input id="prediction-name" class="text-input" type="text" maxlength="40" autocomplete="name" placeholder={labels.namePlaceholder} data-prediction-name />
-      <span class="status-label">{labels.saveStatus}</span>
-      <strong data-prediction-status>{labels.saved}</strong>
     </div>
   </header>
-
-  <section class="prediction-panel" aria-labelledby="prediction-share-title">
-    <h2 id="prediction-share-title">{labels.shareTitle}</h2>
-    <p>{labels.shareCopy}</p>
-    <div class="prediction-actions">
-      <button class="action-button action-button--primary" type="button" data-prediction-copy-link>{labels.copyLink}</button>
-      <button class="action-button" type="button" data-prediction-copy-summary>{labels.copySummary}</button>
-      <button class="action-button" type="button" data-prediction-preview-image>{labels.previewImage}</button>
-    </div>
-    <p class="feedback" role="status" aria-live="polite" data-prediction-feedback></p>
-  </section>
 
   <section class="prediction-panel" aria-labelledby="prediction-top-title">
     <div class="prediction-panel__head">
@@ -76,6 +63,17 @@ const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260514
         ))}
       </div>
     </div>
+  </section>
+
+  <section class="prediction-panel" aria-labelledby="prediction-share-title">
+    <h2 id="prediction-share-title">{labels.shareTitle}</h2>
+    <p>{labels.shareCopy}</p>
+    <div class="prediction-actions">
+      <button class="action-button action-button--primary" type="button" data-prediction-copy-link>{labels.copyLink}</button>
+      <button class="action-button" type="button" data-prediction-copy-summary>{labels.copySummary}</button>
+      <button class="action-button" type="button" data-prediction-preview-image>{labels.previewImage}</button>
+    </div>
+    <p class="feedback" role="status" aria-live="polite" data-prediction-feedback></p>
   </section>
 
   <section class="prediction-preview" aria-live="polite" data-prediction-preview></section>
