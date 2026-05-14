@@ -28,11 +28,16 @@ describe('Eurovision prediction utility', () => {
     const labels = readText('src/i18n/predictionLabels.ts');
     const header = readText('src/components/Header.astro');
     const navigationLabels = readText('src/i18n/navigationLabels.ts');
+    const topPanelPosition = app.indexOf('id="prediction-top-title"');
+    const sharePanelPosition = app.indexOf('id="prediction-share-title"');
+    const previewPosition = app.indexOf('data-prediction-preview');
 
     assert.match(app, /eurovision2026Contests/);
     assert.match(app, /prediction-candidates/);
     assert.match(app, /prediction-labels/);
     assert.match(app, /data-prediction-name/);
+    assert.doesNotMatch(app, /data-prediction-status/);
+    assert.doesNotMatch(app, /labels\.saveStatus|labels\.saved/);
     assert.doesNotMatch(app, /data-prediction-winner/);
     assert.match(app, /data-prediction-slot/);
     assert.match(app, /data-prediction-country/);
@@ -42,6 +47,8 @@ describe('Eurovision prediction utility', () => {
     assert.match(app, /data-prediction-modal-image/);
     assert.match(app, /data-prediction-download-image/);
     assert.match(app, /data-prediction-share-image/);
+    assert.ok(topPanelPosition > -1 && sharePanelPosition > topPanelPosition, 'share panel should be after the top picker');
+    assert.ok(previewPosition > sharePanelPosition, 'final preview should be after sharing actions');
     assert.match(labels, /getPredictionLabels/);
     assert.match(labels, /Quiniela Eurovision 2026/);
     assert.match(labels, /Eurovision 2026 prediction/);
@@ -107,6 +114,9 @@ describe('Eurovision prediction utility', () => {
     assert.match(styles, /prediction-country-card/);
     assert.match(styles, /prediction-inline-reset/);
     assert.match(styles, /prediction-modal/);
+    assert.match(styles, /prediction-name-card/);
+    assert.match(styles, /prediction-hero h1/);
+    assert.doesNotMatch(styles, /prediction-winner-card/);
     assert.match(layout, /prediction\.css/);
     assert.match(docs, /eurovision\.alon\.one/);
     assert.match(docs, /Web Share API/);
