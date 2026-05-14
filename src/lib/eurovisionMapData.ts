@@ -16,7 +16,8 @@ export interface EurovisionMapCountry {
   debut: number | null;
   x: number;
   y: number;
-  path: string;
+  width: number;
+  height: number;
   href: string;
   compareHref: string;
   rankingsHref: string;
@@ -39,23 +40,6 @@ function countryComparatorHref(countryCode: string, locale: Locale) {
   return `${getLocalizedPath('/comparador-paises/', locale)}?countries=${countryCode.toLowerCase()}`;
 }
 
-function countryPath(countryCode: string, x: number, y: number) {
-  const [width, height] = countryShapeScale[countryCode] ?? [3.2, 2.7];
-  const left = x - width / 2;
-  const top = y - height / 2;
-  const notch = Math.min(width, height) * 0.22;
-
-  return [
-    `M ${left + notch} ${top}`,
-    `L ${left + width - notch} ${top + notch * 0.12}`,
-    `L ${left + width} ${top + height * 0.44}`,
-    `L ${left + width - notch * 0.42} ${top + height}`,
-    `L ${left + notch * 0.4} ${top + height - notch * 0.15}`,
-    `L ${left} ${top + height * 0.5}`,
-    'Z',
-  ].join(' ');
-}
-
 export function valueForMapMetric(country: EurovisionMapCountry, metric: MapMetric) {
   if (metric === 'participations') return country.participations;
   if (metric === 'wins') return country.wins;
@@ -72,6 +56,7 @@ export async function getEurovisionMapCountries(locale: Locale = defaultLocale):
     .filter((profile): profile is NonNullable<typeof profile> => Boolean(profile))
     .map((profile, index, all) => {
       const position = countryPositions[profile.countryCode] ?? fallbackPosition(index, all.length);
+      const shape = countryShapeScale[profile.countryCode] ?? [3.2, 2.7];
       return {
         countryCode: profile.countryCode,
         country: profile.country,
@@ -83,7 +68,8 @@ export async function getEurovisionMapCountries(locale: Locale = defaultLocale):
         debut: profile.firstYear,
         x: position[0],
         y: position[1],
-        path: countryPath(profile.countryCode, position[0], position[1]),
+        width: shape[0],
+        height: shape[1],
         href: getLocalizedPath(`/paises/${profile.countryCode.toLowerCase()}/`, locale),
         compareHref: countryComparatorHref(profile.countryCode, locale),
         rankingsHref: getLocalizedPath('/rankings/', locale),
