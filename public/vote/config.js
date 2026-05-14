@@ -28,6 +28,7 @@ export function readInitialData() {
   const firebaseConfig = readJsonScript('firebase-config', {});
   const labels = readJsonScript('vote-labels', {});
   const topCardLabels = readJsonScript('top-card-labels', {});
+  const shareLabels = readJsonScript('vote-share-labels', {});
 
-  return { contests, firebaseConfig, labels, t: createTranslator(labels), topCardLabels };
+  return { contests, firebaseConfig, labels, shareLabels, t: createTranslator(labels), topCardLabels };
 }
