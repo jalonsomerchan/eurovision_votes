@@ -17,12 +17,12 @@ function fitText(ctx, text, maxWidth) {
   return `${next}…`;
 }
 
-function drawTopCard({ contest, entries, labels, limit }) {
+function drawVoteShareCard({ contest, entries, labels, title }) {
   const canvas = document.createElement('canvas');
   const scale = Math.min(window.devicePixelRatio || 1, 2);
   const width = 1080;
   const rowHeight = 84;
-  const height = 270 + entries.length * rowHeight;
+  const height = 300 + entries.length * rowHeight;
   canvas.width = width * scale;
   canvas.height = height * scale;
   const ctx = canvas.getContext('2d');
@@ -42,10 +42,10 @@ function drawTopCard({ contest, entries, labels, limit }) {
   ctx.font = '900 34px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
   ctx.fillText(labels.eyebrow, 70, 82);
   ctx.font = '900 58px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-  ctx.fillText(fitText(ctx, labels.summaryTitle.replaceAll('{limit}', `Top ${limit}`).replaceAll('{contest}', contest.name), 840), 70, 150);
+  ctx.fillText(fitText(ctx, title, 840), 70, 150);
   ctx.fillStyle = '#d8ccff';
   ctx.font = '700 26px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-  ctx.fillText(labels.generatedWith, 70, 205);
+  ctx.fillText(fitText(ctx, contest.name, 820), 70, 205);
 
   entries.forEach((entry, index) => {
     const y = 250 + index * rowHeight;
@@ -69,20 +69,38 @@ function drawTopCard({ contest, entries, labels, limit }) {
     ctx.fillText(labels.scoreLabel.replaceAll('{score}', entry.score), 805, y + 40);
   });
 
+  ctx.fillStyle = '#d8ccff';
+  ctx.font = '800 24px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+  ctx.fillText(labels.generatedWith, 70, height - 42);
+
   return canvas;
+}
+
+function legacyTitle({ contest, labels, limit }) {
+  return labels.summaryTitle.replaceAll('{limit}', `Top ${limit}`).replaceAll('{contest}', contest.name);
+}
+
+function drawTopCard(payload) {
+  return drawVoteShareCard({ ...payload, title: legacyTitle(payload) });
+}
+
+async function canvasPayload(canvas, fileName) {
+  if (!canvas) return null;
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  if (!blob) return null;
+  return { blob, fileName, url: URL.createObjectURL(blob) };
+}
+
+export async function buildVoteShareImage(variant) {
+  const canvas = drawVoteShareCard(variant);
+  const safeId = String(variant.id || 'votes').replace(/[^a-z0-9-]/gi, '-').toLowerCase();
+  return canvasPayload(canvas, `eurovision-2026-${variant.contest.id}-${safeId}.png`);
 }
 
 export async function buildTopCardImage(payload) {
   if (!payload.entries.length) return null;
-
-  const canvas = drawTopCard(payload);
-  if (!canvas) return null;
-
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-  if (!blob) return null;
-
   const fileName = `eurovision-2026-top-${payload.contest.id}-${payload.limit}.png`;
-  return { blob, fileName, url: URL.createObjectURL(blob) };
+  return canvasPayload(drawTopCard(payload), fileName);
 }
 
 export function downloadTopCardImagePayload(payload) {
