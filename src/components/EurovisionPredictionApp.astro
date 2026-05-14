@@ -12,7 +12,7 @@ const labels = getPredictionLabels(locale);
 const candidates = eurovision2026Contests.flatMap((contest) => contest.songs).filter((song, index, songs) => (
   songs.findIndex((item) => item.flag === song.flag && item.country === song.country) === index
 ));
-const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513-2`;
+const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513-3`;
 ---
 
 <section class="prediction-app" aria-labelledby="prediction-title">
@@ -49,8 +49,7 @@ const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513
       <div class="prediction-actions">
         <button class="action-button action-button--primary" type="button" data-prediction-copy-link>{labels.copyLink}</button>
         <button class="action-button" type="button" data-prediction-copy-summary>{labels.copySummary}</button>
-        <button class="action-button" type="button" data-prediction-image>{labels.downloadImage}</button>
-        <button class="action-button action-button--danger" type="button" data-prediction-reset>{labels.reset}</button>
+        <button class="action-button" type="button" data-prediction-preview-image>{labels.previewImage}</button>
       </div>
       <p class="feedback" role="status" aria-live="polite" data-prediction-feedback></p>
     </section>
@@ -61,6 +60,7 @@ const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513
       <div>
         <h2 id="prediction-top-title">{labels.topTitle}</h2>
         <p>{labels.topCopy}</p>
+        <button class="action-button action-button--danger prediction-inline-reset" type="button" data-prediction-reset>{labels.reset}</button>
       </div>
       <strong class="prediction-active-slot" data-prediction-active-slot>{labels.selectedSlot.replaceAll('{position}', '1')}</strong>
     </div>
@@ -90,6 +90,20 @@ const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513
   </section>
 
   <section class="prediction-preview" aria-live="polite" data-prediction-preview></section>
+
+  <dialog class="prediction-modal" data-prediction-modal aria-labelledby="prediction-modal-title">
+    <div class="prediction-modal__panel">
+      <div class="prediction-modal__head">
+        <h3 id="prediction-modal-title">{labels.previewTitle}</h3>
+        <button class="action-button" type="button" data-prediction-close-modal>{labels.closePreview}</button>
+      </div>
+      <img class="prediction-modal__image" alt={labels.previewTitle} data-prediction-modal-image />
+      <div class="prediction-actions">
+        <button class="action-button action-button--primary" type="button" data-prediction-share-image>{labels.shareImage}</button>
+        <button class="action-button" type="button" data-prediction-download-image>{labels.downloadImage}</button>
+      </div>
+    </div>
+  </dialog>
 </section>
 
 <script type="module" src={predictionScriptUrl}></script>

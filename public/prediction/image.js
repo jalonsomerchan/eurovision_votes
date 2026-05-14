@@ -1,5 +1,30 @@
 import { getCandidate } from './data.js';
 
+function flagEmoji(countryCode) {
+  const code = String(countryCode || '').toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return '🏳️';
+  return Array.from(code).map((letter) => String.fromCodePoint(127397 + letter.charCodeAt(0))).join('');
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = '';
+
+  words.forEach((word) => {
+    const next = current ? `${current} ${word}` : word;
+    if (ctx.measureText(next).width <= maxWidth) {
+      current = next;
+      return;
+    }
+    if (current) lines.push(current);
+    current = word;
+  });
+
+  if (current) lines.push(current);
+  return lines;
+}
+
 function fitText(ctx, text, maxWidth) {
   const value = String(text || '');
   if (ctx.measureText(value).width <= maxWidth) return value;
@@ -8,79 +33,115 @@ function fitText(ctx, text, maxWidth) {
   return `${next}…`;
 }
 
-function flagEmoji(countryCode) {
-  const code = String(countryCode || '').toUpperCase();
-  if (!/^[A-Z]{2}$/.test(code)) return '🏳️';
-  return Array.from(code).map((letter) => String.fromCodePoint(127397 + letter.charCodeAt(0))).join('');
+function drawRoundedCard(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, radius);
+  ctx.fill();
 }
 
-export function downloadPredictionImage({ candidates, labels, prediction }) {
+export async function buildPredictionImage({ candidates, labels, prediction }) {
   const entries = prediction.top.map((flag) => getCandidate(candidates, flag)).filter(Boolean);
   const winner = getCandidate(candidates, prediction.winner);
-  if (!entries.length && !winner) return false;
+  if (!entries.length && !winner) return null;
 
   const canvas = document.createElement('canvas');
-  const scale = Math.min(window.devicePixelRatio || 1, 2);
+  const measureCtx = canvas.getContext('2d');
+  if (!measureCtx) return null;
+
   const width = 1080;
-  const rowHeight = 82;
-  const height = 360 + Math.max(entries.length, 1) * rowHeight;
+  const scale = Math.min(window.devicePixelRatio || 1, 2);
+  const rowHeight = 86;
+  const title = prediction.name ? labels.byName.replaceAll('{name}', prediction.name) : labels.summaryTitle;
+
+  measureCtx.font = '900 58px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+  const titleLines = wrapText(measureCtx, title, 880).slice(0, 3);
+  const titleHeight = titleLines.length * 68;
+  const winnerHeight = winner ? 112 : 0;
+  const entriesHeight = Math.max(entries.length, 1) * rowHeight;
+  const bottomPadding = 145;
+  const height = 120 + titleHeight + winnerHeight + 88 + entriesHeight + bottomPadding;
+
   canvas.width = width * scale;
   canvas.height = height * scale;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return false;
+  if (!ctx) return null;
 
   ctx.scale(scale, scale);
   ctx.fillStyle = '#150b2e';
   ctx.fillRect(0, 0, width, height);
+
   ctx.fillStyle = '#7c3aed';
-  ctx.globalAlpha = 0.28;
+  ctx.globalAlpha = 0.22;
   ctx.beginPath();
-  ctx.arc(930, 80, 260, 0, Math.PI * 2);
+  ctx.arc(920, 95, 300, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalAlpha = 1;
 
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 34px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-  ctx.fillText(labels.eyebrow, 70, 80);
-  ctx.font = '900 60px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-  const title = prediction.name ? labels.byName.replaceAll('{name}', prediction.name) : labels.summaryTitle;
-  ctx.fillText(fitText(ctx, title, 860), 70, 150);
+  ctx.fillText(labels.eyebrow, 70, 82);
 
-  ctx.fillStyle = '#d8ccff';
-  ctx.font = '800 28px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-  ctx.fillText(labels.credit, 70, height - 55);
+  ctx.font = '900 58px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+  titleLines.forEach((line, index) => {
+    ctx.fillText(line, 70, 155 + index * 68);
+  });
+
+  let y = 170 + titleHeight;
 
   if (winner) {
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
-    ctx.beginPath();
-    ctx.roundRect(70, 195, 940, 82, 26);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '900 27px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-    ctx.fillText(`${labels.winnerTitle}: ${flagEmoji(winner.flag)} ${winner.country}`, 105, 245);
-  }
-
-  ctx.font = '900 30px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(labels.topSummary, 70, 325);
-
-  entries.forEach((entry, index) => {
-    const y = 350 + index * rowHeight;
-    ctx.fillStyle = 'rgba(255,255,255,0.1)';
-    ctx.beginPath();
-    ctx.roundRect(70, y, 940, 62, 22);
-    ctx.fill();
+    drawRoundedCard(ctx, 70, y, 940, 84, 26);
     ctx.fillStyle = '#ffffff';
     ctx.font = '900 28px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-    ctx.fillText(`${index + 1}. ${flagEmoji(entry.flag)} ${fitText(ctx, entry.country, 330)}`, 105, y + 39);
+    ctx.fillText(`${labels.winnerTitle}: ${flagEmoji(winner.flag)} ${fitText(ctx, winner.country, 540)}`, 105, y + 52);
+    y += 116;
+  }
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 34px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+  ctx.fillText(labels.topSummary, 70, y + 22);
+  y += 50;
+
+  entries.forEach((entry, index) => {
+    ctx.fillStyle = 'rgba(255,255,255,0.11)';
+    drawRoundedCard(ctx, 70, y, 940, 64, 22);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 28px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+    ctx.fillText(`${index + 1}. ${flagEmoji(entry.flag)} ${fitText(ctx, entry.country, 340)}`, 105, y + 41);
+
     ctx.fillStyle = '#d8ccff';
     ctx.font = '700 21px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-    ctx.fillText(fitText(ctx, `${entry.artist} — ${entry.song}`, 500), 455, y + 39);
+    ctx.fillText(fitText(ctx, `${entry.artist} — ${entry.song}`, 500), 455, y + 41);
+    y += rowHeight;
   });
 
+  ctx.fillStyle = '#bda8ff';
+  ctx.font = '800 28px system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+  ctx.fillText(labels.credit, 70, height - 62);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  if (!blob) return null;
+
+  return {
+    blob,
+    fileName: 'quiniela-eurovision-2026.png',
+    url: URL.createObjectURL(blob),
+  };
+}
+
+export function downloadPredictionImage(payload) {
   const link = document.createElement('a');
-  link.download = 'quiniela-eurovision-2026.png';
-  link.href = canvas.toDataURL('image/png');
+  link.download = payload.fileName;
+  link.href = payload.url;
   link.click();
+}
+
+export async function sharePredictionImage(payload, labels) {
+  if (!navigator.share) return false;
+  const file = new File([payload.blob], payload.fileName, { type: 'image/png' });
+  const shareData = { files: [file], title: labels.summaryTitle, text: labels.credit };
+  if (navigator.canShare && !navigator.canShare(shareData)) return false;
+  await navigator.share(shareData);
   return true;
 }

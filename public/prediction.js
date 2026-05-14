@@ -1,6 +1,6 @@
 import { predictionStorageKey, readInitialPredictionData } from './prediction/config.js';
 import { buildPredictionSummary, decodePrediction, encodePrediction, normalizePrediction, predictionHasContent } from './prediction/data.js';
-import { downloadPredictionImage } from './prediction/image.js';
+import { buildPredictionImage, downloadPredictionImage, sharePredictionImage } from './prediction/image.js';
 import { renderPrediction, showFeedback } from './prediction/render.js';
 import { clearPrediction, loadPrediction, savePrediction } from './prediction/storage.js';
 
@@ -16,11 +16,17 @@ const nodes = {
   feedback: document.querySelector('[data-prediction-feedback]'),
   copySummary: document.querySelector('[data-prediction-copy-summary]'),
   copyLink: document.querySelector('[data-prediction-copy-link]'),
-  image: document.querySelector('[data-prediction-image]'),
+  previewImage: document.querySelector('[data-prediction-preview-image]'),
   reset: document.querySelector('[data-prediction-reset]'),
+  modal: document.querySelector('[data-prediction-modal]'),
+  modalImage: document.querySelector('[data-prediction-modal-image]'),
+  closeModal: document.querySelector('[data-prediction-close-modal]'),
+  shareImage: document.querySelector('[data-prediction-share-image]'),
+  downloadImage: document.querySelector('[data-prediction-download-image]'),
 };
 
 let activeSlot = 1;
+let imagePayload = null;
 let prediction = normalizePrediction(loadPrediction(predictionStorageKey));
 const sharedPrediction = new URLSearchParams(window.location.search).get('p');
 const decodedPrediction = sharedPrediction ? decodePrediction(sharedPrediction) : null;
@@ -55,6 +61,35 @@ function ensureShareable() {
   if (predictionHasContent(prediction)) return true;
   showFeedback(nodes, labels.missingPrediction);
   return false;
+}
+
+function openModal() {
+  if (nodes.modal?.showModal) {
+    nodes.modal.showModal();
+    return;
+  }
+  nodes.modal?.setAttribute('open', 'open');
+}
+
+function closeModal() {
+  if (nodes.modal?.close) {
+    nodes.modal.close();
+    return;
+  }
+  nodes.modal?.removeAttribute('open');
+}
+
+async function prepareImagePreview() {
+  if (!ensureShareable()) return;
+  const nextPayload = await buildPredictionImage({ candidates, labels, prediction });
+  if (!nextPayload) {
+    showFeedback(nodes, labels.imageError);
+    return;
+  }
+  if (imagePayload?.url) URL.revokeObjectURL(imagePayload.url);
+  imagePayload = nextPayload;
+  if (nodes.modalImage) nodes.modalImage.src = imagePayload.url;
+  openModal();
 }
 
 nodes.name?.addEventListener('input', () => {
@@ -96,10 +131,29 @@ nodes.copyLink?.addEventListener('click', () => {
   copyText(currentShareUrl(), labels.linkCopied);
 });
 
-nodes.image?.addEventListener('click', () => {
-  if (!ensureShareable()) return;
-  const success = downloadPredictionImage({ candidates, labels, prediction });
-  showFeedback(nodes, success ? labels.imageDownloaded : labels.imageError);
+nodes.previewImage?.addEventListener('click', prepareImagePreview);
+
+nodes.downloadImage?.addEventListener('click', () => {
+  if (!imagePayload) return;
+  downloadPredictionImage(imagePayload);
+  showFeedback(nodes, labels.imageDownloaded);
+  closeModal();
+});
+
+nodes.shareImage?.addEventListener('click', async () => {
+  if (!imagePayload) return;
+  try {
+    const ok = await sharePredictionImage(imagePayload, labels);
+    showFeedback(nodes, ok ? labels.imageShared : labels.shareUnavailable);
+    if (ok) closeModal();
+  } catch {
+    showFeedback(nodes, labels.shareUnavailable);
+  }
+});
+
+nodes.closeModal?.addEventListener('click', closeModal);
+nodes.modal?.addEventListener('click', (event) => {
+  if (event.target === nodes.modal) closeModal();
 });
 
 nodes.reset?.addEventListener('click', () => {
@@ -107,6 +161,10 @@ nodes.reset?.addEventListener('click', () => {
   clearPrediction(predictionStorageKey);
   prediction = { name: '', winner: '', top: [] };
   activeSlot = 1;
+  if (imagePayload?.url) URL.revokeObjectURL(imagePayload.url);
+  imagePayload = null;
+  nodes.modalImage?.removeAttribute('src');
+  closeModal();
   sync();
   showFeedback(nodes, labels.resetDone);
 });
