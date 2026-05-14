@@ -3,6 +3,8 @@ import { defaultLocale, type Locale } from '../config/site';
 import { getLocalizedPath } from '../i18n/ui';
 import { getTimelineLabels, getTimelineTypeLabels } from '../i18n/timelineLabels';
 import type { EurovisionTimeline } from '../lib/eurovisionTimeline';
+import TimelineEntryCard from './TimelineEntryCard.astro';
+import TimelineFilterPanel from './TimelineFilterPanel.astro';
 
 interface Props {
   timeline: EurovisionTimeline;
@@ -12,11 +14,6 @@ interface Props {
 const { timeline, locale = defaultLocale } = Astro.props;
 const labels = getTimelineLabels(locale);
 const typeLabels = getTimelineTypeLabels(locale);
-const relatedLinks = [
-  { href: getLocalizedPath('/rankings/', locale), label: labels.rankingsLink },
-  { href: getLocalizedPath('/paises/', locale), label: labels.countriesLink },
-  { href: getLocalizedPath('/comparador-paises/', locale), label: labels.comparatorLink },
-];
 ---
 
 <section class="timeline-page" data-timeline aria-labelledby="timeline-title">
@@ -29,51 +26,7 @@ const relatedLinks = [
   </header>
 
   <div class="timeline-layout">
-    <aside class="timeline-panel" aria-labelledby="timeline-filters-title">
-      <form class="timeline-filters" data-timeline-form>
-        <h2 id="timeline-filters-title">{labels.filtersTitle}</h2>
-
-        <label>
-          <span>{labels.decade}</span>
-          <select data-timeline-filter="decade">
-            <option value="">{labels.allDecades}</option>
-            {timeline.filters.decades.map((option) => <option value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-
-        <label>
-          <span>{labels.hostCountry}</span>
-          <select data-timeline-filter="host">
-            <option value="">{labels.allHosts}</option>
-            {timeline.filters.hosts.map((option) => <option value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-
-        <label>
-          <span>{labels.winner}</span>
-          <select data-timeline-filter="winner">
-            <option value="">{labels.allWinners}</option>
-            {timeline.filters.winners.map((option) => <option value={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-
-        <label>
-          <span>{labels.milestoneType}</span>
-          <select data-timeline-filter="type">
-            <option value="">{labels.allTypes}</option>
-            {timeline.filters.types.map((type) => <option value={type}>{typeLabels[type]}</option>)}
-          </select>
-        </label>
-
-        <button type="button" data-timeline-reset>{labels.reset}</button>
-        <p class="timeline-status" data-timeline-status data-template={labels.resultsStatus} aria-live="polite"></p>
-      </form>
-
-      <nav class="timeline-related" aria-labelledby="timeline-related-title">
-        <h2 id="timeline-related-title">{labels.relatedTitle}</h2>
-        {relatedLinks.map((link) => <a href={link.href}>{link.label}</a>)}
-      </nav>
-    </aside>
+    <TimelineFilterPanel timeline={timeline} locale={locale} />
 
     <div class="timeline-results">
       <div class="timeline-empty" data-timeline-empty hidden>
@@ -82,77 +35,7 @@ const relatedLinks = [
       </div>
 
       <ol class="timeline-list">
-        {timeline.entries.map((entry) => (
-          <li
-            class="timeline-item"
-            data-timeline-entry
-            data-decade={entry.decade}
-            data-host={entry.hostCountryCode || ''}
-            data-winner={entry.winnerCode || ''}
-            data-types={entry.types.join(' ')}
-          >
-            <article class="timeline-card">
-              <div class="timeline-card__year">
-                <span>{entry.year}</span>
-                <em>{entry.decade}</em>
-              </div>
-              <div class="timeline-card__body">
-                <div class="timeline-card__head">
-                  <p>{labels.edition}</p>
-                  <h2>{entry.title}</h2>
-                </div>
-
-                <dl class="timeline-facts">
-                  {entry.hostCountry && (
-                    <div>
-                      <dt>{labels.host}</dt>
-                      <dd>
-                        {entry.hostHref ? <a href={entry.hostHref}>{entry.hostCountry}</a> : entry.hostCountry}
-                        {entry.hostCity ? ` · ${entry.hostCity}` : ''}
-                      </dd>
-                    </div>
-                  )}
-                  {entry.venue && (
-                    <div>
-                      <dt>{labels.venue}</dt>
-                      <dd>{entry.venue}</dd>
-                    </div>
-                  )}
-                  {entry.winner && (
-                    <div>
-                      <dt>{labels.winnerLabel}</dt>
-                      <dd>{entry.winnerHref ? <a href={entry.winnerHref}>{entry.winner}</a> : entry.winner}</dd>
-                    </div>
-                  )}
-                  {entry.participants > 0 && (
-                    <div>
-                      <dt>{labels.participants}</dt>
-                      <dd>{entry.participants}</dd>
-                    </div>
-                  )}
-                </dl>
-
-                {entry.milestones.length > 0 && (
-                  <div class="timeline-milestones" aria-label={labels.milestones}>
-                    {entry.milestones.map((milestone) => (
-                      <section>
-                        <span>{typeLabels[milestone.type]}</span>
-                        <h3>{milestone.title}</h3>
-                        <p>{milestone.description}</p>
-                      </section>
-                    ))}
-                  </div>
-                )}
-
-                <div class="timeline-actions">
-                  <a href={entry.editionHref}>{labels.viewEdition}</a>
-                  {entry.hostHref && <a href={entry.hostHref}>{labels.viewHostCountry}</a>}
-                  {entry.winnerHref && <a href={entry.winnerHref}>{labels.viewWinnerCountry}</a>}
-                </div>
-              </div>
-            </article>
-          </li>
-        ))}
+        {timeline.entries.map((entry) => <TimelineEntryCard entry={entry} locale={locale} />)}
       </ol>
     </div>
   </div>
