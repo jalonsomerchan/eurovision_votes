@@ -42,7 +42,7 @@ function getState() {
   };
 }
 
-function getActiveTopCardState() {
+function renderTopCardState() {
   const contest = getContest(contests, activeContestId);
   const limit = 10;
   const entries = getRankedTopEntries({ contests, contest, control, limit, votes });
@@ -139,7 +139,7 @@ nodes.songList?.addEventListener('click', (event) => {
 });
 
 nodes.shareImage?.addEventListener('click', () => {
-  const state = getActiveTopCardState();
+  const state = renderTopCardState();
   if (!state.entries.length) {
     showShareFeedback(shareLabels.imageEmpty || topCardLabels.emptyCopy);
     return;
