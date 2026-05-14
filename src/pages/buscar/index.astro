@@ -1,0 +1,17 @@
+---
+import GlobalSearchApp from '../../components/GlobalSearchApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { getSearchLabels } from '../../i18n/searchLabels';
+import { buildSearchIndex } from '../../lib/searchIndex';
+
+const labels = getSearchLabels(defaultLocale);
+const index = await buildSearchIndex(defaultLocale);
+---
+
+<BaseLayout title={labels.title} description={labels.description} locale={defaultLocale}>
+  <Container>
+    <GlobalSearchApp index={index} locale={defaultLocale} />
+  </Container>
+</BaseLayout>
