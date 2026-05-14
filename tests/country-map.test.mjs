@@ -36,7 +36,8 @@ describe('Eurovision country map', () => {
     assert.match(helper, /lastParticipation/);
     assert.match(helper, /debut/);
     assert.match(helper, /getLocalizedPath/);
-    assert.match(helper, /comparador-paises/);
+    assert.match(helper, /countryComparatorHref/);
+    assert.match(helper, /\?countries=\$\{countryCode\.toLowerCase\(\)\}/);
     assert.match(helper, /rankings/);
   });
 
