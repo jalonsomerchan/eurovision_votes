@@ -50,7 +50,7 @@ describe('Eurovision prediction utility', () => {
     assert.ok(topPanelPosition > -1 && sharePanelPosition > topPanelPosition, 'share panel should be after the top picker');
     assert.ok(previewPosition > sharePanelPosition, 'final preview should be after sharing actions');
     assert.match(labels, /getPredictionLabels/);
-    assert.match(labels, /Quiniela Eurovision 2026/);
+    assert.match(labels, /heading: 'Quiniela Eurovision 2026'/);
     assert.match(labels, /Eurovision 2026 prediction/);
     assert.match(labels, /Eurovision 2026 kiniela/);
     assert.match(labels, /previewImage/);
@@ -109,6 +109,8 @@ describe('Eurovision prediction utility', () => {
     assert.match(storage, /localStorage/);
     assert.match(storage, /name: prediction\.name/);
     assert.doesNotMatch(storage, /winner/);
+    assert.match(render, /hasSelectedCountries/);
+    assert.match(render, /aria-pressed/);
     assert.match(render, /visually-hidden/);
     assert.doesNotMatch(render, /winner/);
     assert.match(styles, /prediction-country-card/);

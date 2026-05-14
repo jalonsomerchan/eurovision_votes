@@ -5,12 +5,13 @@ function escapeHtml(value) {
 }
 
 export function renderPrediction({ activeSlot, candidates, labels, nodes, prediction }) {
-  const selected = new Set(prediction.top.filter(Boolean));
+  const selectedValues = prediction.top.filter(Boolean);
+  const selected = new Set(selectedValues);
+  const hasSelectedCountries = selectedValues.length > 0;
   const activeIndex = Math.max(0, Number(activeSlot || 1) - 1);
   const activePosition = String(activeIndex + 1);
 
   if (nodes.name) nodes.name.value = prediction.name || '';
-  if (nodes.status) nodes.status.textContent = labels.saved;
   if (nodes.activeSlot) nodes.activeSlot.textContent = labels.selectedSlot.replaceAll('{position}', activePosition);
 
   nodes.slots.forEach((slot) => {
@@ -23,10 +24,11 @@ export function renderPrediction({ activeSlot, candidates, labels, nodes, predic
 
   nodes.countryCards.forEach((card) => {
     const flag = card.dataset.predictionCountry;
-    const isSelected = selected.has(flag);
+    const isSelected = hasSelectedCountries && selected.has(flag);
     const isCurrent = prediction.top[activeIndex] === flag;
     card.disabled = isSelected && !isCurrent;
     card.classList.toggle('is-selected', isSelected);
+    card.setAttribute('aria-pressed', String(isCurrent));
   });
 
   renderPreview({ candidates, labels, nodes, prediction });
