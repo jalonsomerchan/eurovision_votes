@@ -1,0 +1,31 @@
+---
+import EurovisionGlossaryTermApp from '../../../components/EurovisionGlossaryTermApp.astro';
+import Container from '../../../components/Container.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { defaultLocale, locales, type Locale } from '../../../config/site';
+import { findGlossaryTermBySlug, getGlossaryStaticPaths } from '../../../config/eurovisionGlossary';
+import { getGlossaryLabels } from '../../../i18n/glossaryLabels';
+import { isLocale } from '../../../i18n/ui';
+
+export function getStaticPaths() {
+  return locales
+    .filter((locale) => locale !== defaultLocale)
+    .flatMap((locale) => getGlossaryStaticPaths(locale).map((path) => ({ params: { locale, ...path.params } })));
+}
+
+const localeParam = Astro.params.locale;
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const term = findGlossaryTermBySlug(Astro.params.slug, locale);
+if (!term) {
+  return Astro.redirect('/404/');
+}
+
+const labels = getGlossaryLabels(locale);
+const title = `${term.term} · ${labels.indexTitle}`;
+---
+
+<BaseLayout title={title} description={term.shortDefinition} locale={locale}>
+  <Container>
+    <EurovisionGlossaryTermApp term={term} locale={locale} />
+  </Container>
+</BaseLayout>
