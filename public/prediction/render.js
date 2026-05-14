@@ -8,18 +8,30 @@ function countryProfileUrl(flag) {
   return `../paises/${String(flag || '').toLowerCase()}/`;
 }
 
-export function renderPrediction({ candidates, labels, nodes, prediction }) {
+export function renderPrediction({ activeSlot, candidates, labels, nodes, prediction }) {
   const selected = new Set(prediction.top.filter(Boolean));
+  const activePosition = String(activeSlot || 1);
 
-  nodes.positionSelects.forEach((select, index) => {
-    select.value = prediction.top[index] || '';
-    Array.from(select.options).forEach((option) => {
-      option.disabled = Boolean(option.value && selected.has(option.value) && option.value !== select.value);
-    });
-  });
-
+  if (nodes.name) nodes.name.value = prediction.name || '';
   if (nodes.winner) nodes.winner.value = prediction.winner || '';
   if (nodes.status) nodes.status.textContent = labels.saved;
+  if (nodes.activeSlot) nodes.activeSlot.textContent = labels.selectedSlot.replaceAll('{position}', activePosition);
+
+  nodes.slots.forEach((slot) => {
+    const index = Number(slot.dataset.predictionSlot) - 1;
+    const candidate = getCandidate(candidates, prediction.top[index]);
+    slot.classList.toggle('is-active', slot.dataset.predictionSlot === activePosition);
+    slot.setAttribute('aria-pressed', String(slot.dataset.predictionSlot === activePosition));
+    slot.innerHTML = `<span>${index + 1}</span><strong>${escapeHtml(candidate?.country || labels.emptyOption)}</strong>`;
+  });
+
+  nodes.countryCards.forEach((card) => {
+    const flag = card.dataset.predictionCountry;
+    const isSelected = selected.has(flag);
+    const isCurrent = prediction.top[activeSlot - 1] === flag;
+    card.disabled = isSelected && !isCurrent;
+    card.classList.toggle('is-selected', isSelected);
+  });
 
   renderPreview({ candidates, labels, nodes, prediction });
 }
@@ -31,11 +43,12 @@ export function renderPreview({ candidates, labels, nodes, prediction }) {
   const topEntries = prediction.top.map((flag) => getCandidate(candidates, flag)).filter(Boolean);
   const status = getPredictionStatus(labels, prediction);
   const summary = buildPredictionSummary({ candidates, labels, prediction });
+  const title = prediction.name ? labels.byName.replaceAll('{name}', prediction.name) : labels.summaryTitle;
 
   nodes.preview.innerHTML = `<article class="prediction-card ${status.complete ? 'is-ready' : ''}">
     <header>
       <span>${escapeHtml(labels.eyebrow)}</span>
-      <h2>${escapeHtml(status.complete ? labels.readyTitle : labels.shareTitle)}</h2>
+      <h2>${escapeHtml(status.complete ? title : labels.shareTitle)}</h2>
       <p>${escapeHtml(status.complete ? labels.readyCopy : status.message)}</p>
     </header>
     <section class="prediction-winner-card" aria-label="${escapeHtml(labels.winnerTitle)}">
@@ -45,6 +58,7 @@ export function renderPreview({ candidates, labels, nodes, prediction }) {
     <ol>
       ${topEntries.map((entry, index) => `<li><img width="48" height="36" loading="lazy" alt="${escapeHtml(labels.flagAlt.replaceAll('{country}', entry.country))}" src="https://flagsapi.com/${entry.flag}/flat/64.png" /><div><strong>${index + 1}. ${escapeHtml(entry.country)}</strong><span>${escapeHtml(entry.artist)} — «${escapeHtml(entry.song)}»</span></div></li>`).join('')}
     </ol>
+    <footer>${escapeHtml(labels.credit)}</footer>
     <p class="visually-hidden">${escapeHtml(summary)}</p>
   </article>`;
 }

@@ -11,7 +11,7 @@ export function normalizePrediction(prediction) {
     return value;
   });
 
-  return { winner: prediction.winner || '', top };
+  return { name: String(prediction.name || '').slice(0, 40), winner: prediction.winner || '', top };
 }
 
 export function encodePrediction(prediction) {
@@ -27,20 +27,25 @@ export function decodePrediction(value) {
   }
 }
 
+export function predictionHasContent(prediction) {
+  return Boolean(prediction.winner || prediction.top.some(Boolean));
+}
+
 export function buildPredictionSummary({ candidates, labels, prediction }) {
   const winner = getCandidate(candidates, prediction.winner);
-  const lines = [labels.summaryTitle];
+  const title = prediction.name ? labels.byName.replaceAll('{name}', prediction.name) : labels.summaryTitle;
+  const lines = [title];
   lines.push(labels.winnerSummary.replaceAll('{country}', winner?.country || '—'));
   lines.push(labels.topSummary);
   prediction.top.forEach((flag, index) => {
     const candidate = getCandidate(candidates, flag);
     if (candidate) lines.push(`${index + 1}. ${candidate.country} — ${candidate.artist} — «${candidate.song}»`);
   });
+  lines.push(labels.credit);
   return lines.join('\n');
 }
 
 export function getPredictionStatus(labels, prediction) {
-  if (!prediction.winner) return { complete: false, message: labels.missingWinner };
-  if (!prediction.top.some(Boolean)) return { complete: false, message: labels.missingTop };
+  if (!predictionHasContent(prediction)) return { complete: false, message: labels.missingPrediction };
   return { complete: true, message: labels.readyCopy };
 }
