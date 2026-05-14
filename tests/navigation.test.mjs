@@ -10,20 +10,29 @@ function readText(path) {
 }
 
 describe('navigation and footer smoke checks', () => {
-  it('moves stats out of the header and keeps data links grouped', () => {
+  it('redistributes the header links into 2026 and historical menus', () => {
     const header = readText('src/components/Header.astro');
     const labels = readText('src/i18n/navigationLabels.ts');
 
-    assert.match(header, /nav-dropdown/);
-    assert.match(header, /dataLinks/);
+    assert.match(header, /eurovision2026Links/);
+    assert.match(header, /historicalLinks/);
+    assert.match(header, /festival2026Url = 'https:\/\/eurovision\.alon\.one\/ediciones\/2026\/'/);
+    assert.match(header, /voteUrl/);
+    assert.match(header, /predictionUrl/);
+    assert.match(header, /statsUrl/);
     assert.match(header, /historyUrl/);
     assert.match(header, /countriesUrl/);
+    assert.match(header, /countryMapUrl/);
+    assert.match(header, /rankingsUrl/);
+    assert.match(header, /timelineUrl/);
     assert.match(header, /countryPointsUrl/);
-    assert.doesNotMatch(header, /const statsUrl/);
-    assert.doesNotMatch(header, /t\('nav\.stats'\)/);
-    assert.match(labels, /voteStatsCta/);
-    assert.match(labels, /Ver estadísticas de votaciones/);
-    assert.match(labels, /View voting statistics/);
+    assert.match(header, /newsUrl/);
+    assert.match(header, /t\('nav\.language'\)/);
+    assert.match(header, /data-open-settings/);
+    assert.match(labels, /eurovision2026/);
+    assert.match(labels, /festival2026/);
+    assert.match(labels, /historicalMenu/);
+    assert.match(labels, /Voting statistics/);
   });
 
   it('shows the voting statistics CTA inside the vote app', () => {
