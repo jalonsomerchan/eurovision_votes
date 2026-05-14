@@ -12,7 +12,7 @@ const labels = getPredictionLabels(locale);
 const candidates = eurovision2026Contests.flatMap((contest) => contest.songs).filter((song, index, songs) => (
   songs.findIndex((item) => item.flag === song.flag && item.country === song.country) === index
 ));
-const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513-3`;
+const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260514-1`;
 ---
 
 <section class="prediction-app" aria-labelledby="prediction-title">
@@ -33,27 +33,16 @@ const predictionScriptUrl = `${import.meta.env.BASE_URL}prediction.js?v=20260513
     </div>
   </header>
 
-  <div class="prediction-grid">
-    <section class="prediction-panel" aria-labelledby="prediction-winner-title">
-      <h2 id="prediction-winner-title">{labels.winnerTitle}</h2>
-      <label class="field-label" for="prediction-winner">{labels.winnerLabel}</label>
-      <select id="prediction-winner" class="text-input" data-prediction-winner>
-        <option value="">{labels.emptyOption}</option>
-        {candidates.map((song) => <option value={song.flag}>{song.country} — {song.artist}</option>)}
-      </select>
-    </section>
-
-    <section class="prediction-panel" aria-labelledby="prediction-share-title">
-      <h2 id="prediction-share-title">{labels.shareTitle}</h2>
-      <p>{labels.shareCopy}</p>
-      <div class="prediction-actions">
-        <button class="action-button action-button--primary" type="button" data-prediction-copy-link>{labels.copyLink}</button>
-        <button class="action-button" type="button" data-prediction-copy-summary>{labels.copySummary}</button>
-        <button class="action-button" type="button" data-prediction-preview-image>{labels.previewImage}</button>
-      </div>
-      <p class="feedback" role="status" aria-live="polite" data-prediction-feedback></p>
-    </section>
-  </div>
+  <section class="prediction-panel" aria-labelledby="prediction-share-title">
+    <h2 id="prediction-share-title">{labels.shareTitle}</h2>
+    <p>{labels.shareCopy}</p>
+    <div class="prediction-actions">
+      <button class="action-button action-button--primary" type="button" data-prediction-copy-link>{labels.copyLink}</button>
+      <button class="action-button" type="button" data-prediction-copy-summary>{labels.copySummary}</button>
+      <button class="action-button" type="button" data-prediction-preview-image>{labels.previewImage}</button>
+    </div>
+    <p class="feedback" role="status" aria-live="polite" data-prediction-feedback></p>
+  </section>
 
   <section class="prediction-panel" aria-labelledby="prediction-top-title">
     <div class="prediction-panel__head">
