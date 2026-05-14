@@ -1,12 +1,12 @@
-import { createVoteActions } from './vote/actions.js';
-import { createCloudApi, initCloud } from './vote/cloud.js';
-import { isSemi, getContest, getSemiStatus } from './vote/contest.js';
-import { deviceKey, readInitialData, storageKey, voterKey } from './vote/config.js';
-import { $, createUi, getVoteNodes } from './vote/dom.js';
-import { createRenderer } from './vote/render.js';
-import { buildTopCardImage, downloadTopCardImagePayload, shareTopCardImagePayload } from './vote/top-card-canvas.js';
-import { getRankedTopEntries } from './vote/top-card-data.js';
-import { getOrCreateDeviceId, loadJson, saveJson } from './vote/storage.js';
+import { createVoteActions } from './vote/actions.js?v=20260514-6';
+import { createCloudApi, initCloud } from './vote/cloud.js?v=20260514-6';
+import { isSemi, getContest, getSemiStatus } from './vote/contest.js?v=20260514-6';
+import { deviceKey, readInitialData, storageKey, voterKey } from './vote/config.js?v=20260514-6';
+import { $, createUi, getVoteNodes } from './vote/dom.js?v=20260514-6';
+import { createRenderer } from './vote/render.js?v=20260514-6';
+import { buildTopCardImage, downloadTopCardImagePayload, shareTopCardImagePayload } from './vote/top-card-canvas.js?v=20260514-6';
+import { getRankedTopEntries } from './vote/top-card-data.js?v=20260514-6';
+import { getOrCreateDeviceId, loadJson, saveJson } from './vote/storage.js?v=20260514-6';
 
 const { contests, firebaseConfig, shareLabels, t, topCardLabels } = readInitialData();
 const nodes = getVoteNodes();
