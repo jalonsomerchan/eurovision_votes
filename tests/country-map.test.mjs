@@ -18,17 +18,20 @@ describe('Eurovision country map', () => {
       'src/lib/eurovisionMapData.ts',
       'src/i18n/mapLabels.ts',
       'public/eurovision-map.js',
+      'public/vector-map-engine.js',
       'docs/country-map.md',
     ].forEach((path) => {
       assert.equal(existsSync(join(root, path)), true, `${path} should exist`);
     });
   });
 
-  it('derives map data from existing historical country profiles and localized links', () => {
+  it('derives vector map data from existing historical country profiles and localized links', () => {
     const helper = readText('src/lib/eurovisionMapData.ts');
 
     assert.match(helper, /listEurovisionCountryProfiles/);
     assert.match(helper, /getEurovisionCountryProfile/);
+    assert.match(helper, /countryPath/);
+    assert.match(helper, /path: countryPath/);
     assert.match(helper, /mapMetrics/);
     assert.match(helper, /participations/);
     assert.match(helper, /wins/);
@@ -41,31 +44,42 @@ describe('Eurovision country map', () => {
     assert.match(helper, /rankings/);
   });
 
-  it('renders an accessible map, metric selector, summary and table fallback', () => {
+  it('renders an accessible vector map, metric selector, controls, summary and table fallback', () => {
     const component = readText('src/components/EurovisionCountryMapApp.astro');
 
     assert.match(component, /data-country-map/);
     assert.match(component, /aria-labelledby="country-map-title"/);
     assert.match(component, /data-map-metric/);
-    assert.match(component, /aria-label=\{labels\.mapLabel\}/);
-    assert.match(component, /role="list"/);
-    assert.match(component, /data-map-point/);
+    assert.match(component, /data-map-viewport/);
+    assert.match(component, /touch-action: none/);
+    assert.match(component, /data-map-layer/);
+    assert.match(component, /data-map-zoom-in/);
+    assert.match(component, /data-map-zoom-out/);
+    assert.match(component, /data-map-reset/);
+    assert.match(component, /data-map-country/);
+    assert.match(component, /role="button"/);
+    assert.match(component, /tabindex="0"/);
     assert.match(component, /data-map-summary/);
     assert.match(component, /<table>/);
     assert.match(component, /scope="col"/);
     assert.match(component, /scope="row"/);
   });
 
-  it('updates points and country summary without external services or dependencies', () => {
+  it('uses a local pan and zoom engine without external services or heavy map dependencies', () => {
     const script = readText('public/eurovision-map.js');
+    const engine = readText('public/vector-map-engine.js');
 
+    assert.match(script, /createVectorMapEngine/);
+    assert.match(script, /vector-map-engine\.js\?v=/);
     assert.match(script, /metricValue/);
     assert.match(script, /renderSummary/);
-    assert.match(script, /addEventListener\('change'/);
-    assert.match(script, /addEventListener\('click'/);
-    assert.doesNotMatch(script, /fetch\(/);
-    assert.doesNotMatch(script, /import /);
-    assert.doesNotMatch(script, /mapbox|leaflet|openstreetmap/i);
+    assert.match(engine, /pointerdown/);
+    assert.match(engine, /pointermove/);
+    assert.match(engine, /wheel/);
+    assert.match(engine, /zoomIn/);
+    assert.match(engine, /zoomOut/);
+    assert.doesNotMatch(script + engine, /fetch\(/);
+    assert.doesNotMatch(script + engine, /mapbox|leaflet|openstreetmap/i);
   });
 
   it('keeps map labels available for all configured locales', () => {
@@ -76,6 +90,8 @@ describe('Eurovision country map', () => {
     });
     assert.match(labels, /Mapa de países de Eurovision/);
     assert.match(labels, /Eurovision country map/);
+    assert.match(labels, /zoomIn/);
+    assert.match(labels, /resetMap/);
     assert.match(labels, /metrics: \{ participations:/);
   });
 
