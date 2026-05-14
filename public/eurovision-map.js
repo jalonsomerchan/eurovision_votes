@@ -3,6 +3,8 @@ const CARTO_TILES = {
   dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
 };
 const TILE_ATTRIBUTION = '&copy; OpenStreetMap contributors &copy; CARTO';
+const INITIAL_VIEW = [44, 16];
+const INITIAL_ZOOM = 3;
 
 function readJson(root, selector, fallback) {
   try {
@@ -102,8 +104,21 @@ function waitForLeaflet() {
 }
 
 function markerRadius(country, metric, max) {
-  const weight = Math.max(0.12, metricValue(country, metric) / Math.max(max, 1));
-  return 6 + weight * 16;
+  const weight = Math.max(0.1, metricValue(country, metric) / Math.max(max, 1));
+  return 5 + weight * 9;
+}
+
+function setMarkerA11y(marker, country, metric, labels, onSelect) {
+  const element = marker.getElement?.();
+  if (!element) return;
+  element.setAttribute('tabindex', '0');
+  element.setAttribute('role', 'button');
+  element.setAttribute('aria-label', markerLabel(country, metric, labels));
+  element.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onSelect();
+  });
 }
 
 async function initCountryMap(root) {
@@ -132,7 +147,7 @@ async function initCountryMap(root) {
     touchZoom: true,
     worldCopyJump: true,
     zoomControl: false,
-  }).setView([32, 18], 2);
+  }).setView(INITIAL_VIEW, INITIAL_ZOOM);
 
   const tileLayer = L.tileLayer(getTileUrl(), {
     attribution: TILE_ATTRIBUTION,
@@ -155,9 +170,9 @@ async function initCountryMap(root) {
       marker.setStyle({
         color: code === selectedCode ? '#111827' : '#ffffff',
         fillColor: code === selectedCode ? '#f59e0b' : primary,
-        fillOpacity: code === selectedCode ? 0.92 : 0.68,
-        opacity: 0.98,
-        weight: code === selectedCode ? 3 : 1.5,
+        fillOpacity: code === selectedCode ? 0.9 : 0.66,
+        opacity: 0.95,
+        weight: code === selectedCode ? 2.6 : 1.2,
       });
       marker.getElement?.()?.setAttribute('aria-label', markerLabel(country, metric, labels));
     });
@@ -179,28 +194,16 @@ async function initCountryMap(root) {
       className: 'country-map__marker',
       color: '#ffffff',
       fillColor: primary,
-      fillOpacity: 0.68,
-      opacity: 0.98,
-      radius: 10,
-      weight: 1.5,
+      fillOpacity: 0.66,
+      opacity: 0.95,
+      radius: 8,
+      weight: 1.2,
     }).addTo(map);
 
     markersByCountry.set(country.countryCode, marker);
     marker.bindTooltip(country.country, { direction: 'top', sticky: true });
     marker.on('click', () => selectCountry(country.countryCode));
-
-    setTimeout(() => {
-      const element = marker.getElement?.();
-      if (!element) return;
-      element.setAttribute('tabindex', '0');
-      element.setAttribute('role', 'button');
-      element.setAttribute('aria-label', markerLabel(country, metricSelect.value, labels));
-      element.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        selectCountry(country.countryCode);
-      });
-    }, 0);
+    setTimeout(() => setMarkerA11y(marker, country, metricSelect.value, labels, () => selectCountry(country.countryCode)), 0);
   });
 
   updateMetric();
@@ -208,7 +211,7 @@ async function initCountryMap(root) {
 
   root.querySelector('[data-map-zoom-in]')?.addEventListener('click', () => map.zoomIn());
   root.querySelector('[data-map-zoom-out]')?.addEventListener('click', () => map.zoomOut());
-  root.querySelector('[data-map-reset]')?.addEventListener('click', () => map.setView([32, 18], 2));
+  root.querySelector('[data-map-reset]')?.addEventListener('click', () => map.setView(INITIAL_VIEW, INITIAL_ZOOM));
   metricSelect.addEventListener('change', updateMetric);
 }
 

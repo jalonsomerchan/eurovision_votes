@@ -31,8 +31,12 @@ describe('Eurovision country map', () => {
     assert.match(helper, /listEurovisionCountryProfiles/);
     assert.match(helper, /getEurovisionCountryProfile/);
     assert.match(helper, /countryCoordinates/);
+    assert.match(helper, /'GB-WLS'/);
+    assert.match(helper, /KZ:/);
+    assert.match(helper, /CS:/);
     assert.match(helper, /latitude/);
     assert.match(helper, /longitude/);
+    assert.match(helper, /filter\(\(country\) => country\.latitude !== 0 \|\| country\.longitude !== 0\)/);
     assert.match(helper, /mapMetrics/);
     assert.match(helper, /participations/);
     assert.match(helper, /wins/);
@@ -67,7 +71,7 @@ describe('Eurovision country map', () => {
     assert.match(component, /scope="row"/);
   });
 
-  it('uses Leaflet with a full world map and interactive country markers', () => {
+  it('uses Leaflet with a full world map and stable interactive country markers', () => {
     const script = readText('public/eurovision-map.js');
     const pkg = readText('package.json');
 
@@ -75,6 +79,8 @@ describe('Eurovision country map', () => {
     assert.match(script, /light_all/);
     assert.match(script, /dark_all/);
     assert.match(script, /basemaps\.cartocdn\.com/);
+    assert.match(script, /INITIAL_VIEW/);
+    assert.match(script, /INITIAL_ZOOM/);
     assert.match(script, /getCurrentTheme/);
     assert.match(script, /watchThemeChanges/);
     assert.match(script, /tileLayer\.setUrl/);
@@ -83,6 +89,8 @@ describe('Eurovision country map', () => {
     assert.match(script, /L\.tileLayer/);
     assert.match(script, /L\.circleMarker/);
     assert.match(script, /markerRadius/);
+    assert.match(script, /5 \+ weight \* 9/);
+    assert.match(script, /setMarkerA11y/);
     assert.match(script, /markersByCountry/);
     assert.match(script, /renderSummary/);
     assert.doesNotMatch(script, /GEOJSON_URL/);
