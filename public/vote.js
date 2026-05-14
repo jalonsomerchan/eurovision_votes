@@ -1,12 +1,12 @@
-import { createVoteActions } from './vote/actions.js?v=20260514-6';
-import { createCloudApi, initCloud } from './vote/cloud.js?v=20260514-6';
-import { isSemi, getContest, getSemiStatus } from './vote/contest.js?v=20260514-6';
-import { deviceKey, readInitialData, storageKey, voterKey } from './vote/config.js?v=20260514-6';
-import { $, createUi, getVoteNodes } from './vote/dom.js?v=20260514-6';
-import { createRenderer } from './vote/render.js?v=20260514-6';
-import { buildTopCardImage, downloadTopCardImagePayload, shareTopCardImagePayload } from './vote/top-card-canvas.js?v=20260514-6';
-import { getRankedTopEntries } from './vote/top-card-data.js?v=20260514-6';
-import { getOrCreateDeviceId, loadJson, saveJson } from './vote/storage.js?v=20260514-6';
+import { createVoteActions } from './vote/actions.js?v=20260514-7';
+import { createCloudApi, initCloud } from './vote/cloud.js?v=20260514-7';
+import { isSemi, getContest, getSemiStatus } from './vote/contest.js?v=20260514-7';
+import { deviceKey, readInitialData, storageKey, voterKey } from './vote/config.js?v=20260514-7';
+import { $, createUi, getVoteNodes } from './vote/dom.js?v=20260514-7';
+import { createRenderer } from './vote/render.js?v=20260514-7';
+import { buildVoteShareImage, downloadTopCardImagePayload, shareTopCardImagePayload } from './vote/top-card-canvas.js?v=20260514-7';
+import { buildVoteShareVariants } from './vote/share-variants.js?v=20260514-7';
+import { getOrCreateDeviceId, loadJson, saveJson } from './vote/storage.js?v=20260514-7';
 
 const { contests, firebaseConfig, shareLabels, t, topCardLabels } = readInitialData();
 const nodes = getVoteNodes();
@@ -14,6 +14,8 @@ const ui = createUi(nodes);
 const deviceId = getOrCreateDeviceId(deviceKey);
 const voteImageNodes = {
   modal: $('[data-vote-image-modal]'),
+  gallery: $('[data-vote-image-gallery]'),
+  selected: $('[data-vote-image-selected]'),
   preview: $('[data-vote-image-preview]'),
   close: $('[data-vote-image-close]'),
   share: $('[data-vote-image-share]'),
@@ -24,6 +26,7 @@ let activeContestId = contests[0]?.id || 'semi-1';
 let allVoters = [];
 let control = { semifinals: {}, final: { positions: {} } };
 let imagePayload = null;
+let imagePayloads = [];
 let saveTimeoutId;
 let shareFeedbackTimeoutId;
 let voter = loadJson(voterKey, null);
@@ -50,12 +53,11 @@ function getState() {
   };
 }
 
-function renderTopCardState() {
+function getVoteShareState() {
   const contest = getContest(contests, activeContestId);
-  const limit = 10;
-  const entries = getRankedTopEntries({ contests, contest, control, limit, votes });
-
-  return { contest, entries, labels: topCardLabels, limit };
+  const labels = { ...topCardLabels, ...shareLabels };
+  const variants = buildVoteShareVariants({ contests, contest, control, labels, votes });
+  return { contest, variants };
 }
 
 function showShareFeedback(message) {
@@ -84,13 +86,39 @@ function closeImageModal() {
 }
 
 function clearImagePayload() {
-  if (imagePayload?.url) URL.revokeObjectURL(imagePayload.url);
+  [...imagePayloads, imagePayload].filter(Boolean).forEach((payload) => URL.revokeObjectURL(payload.url));
   imagePayload = null;
+  imagePayloads = [];
   voteImageNodes.preview?.removeAttribute('src');
+  if (voteImageNodes.gallery) voteImageNodes.gallery.innerHTML = '';
+  if (voteImageNodes.selected) voteImageNodes.selected.hidden = true;
 }
 
 function renderVoteUi() {
   renderer.renderSongs();
+}
+
+function selectImagePayload(index) {
+  const payload = imagePayloads[index];
+  if (!payload) return;
+  imagePayload = payload;
+  if (voteImageNodes.preview) voteImageNodes.preview.src = payload.url;
+  if (voteImageNodes.selected) voteImageNodes.selected.hidden = false;
+}
+
+function renderImageGallery() {
+  if (!voteImageNodes.gallery) return;
+  voteImageNodes.gallery.innerHTML = imagePayloads.map((payload, index) => `
+    <article class="vote-image-option">
+      <img src="${payload.url}" alt="${payload.title}" loading="lazy" />
+      <h3>${payload.title}</h3>
+      <div class="vote-share-card__actions">
+        <button class="action-button action-button--primary" type="button" data-vote-image-option-share="${index}">${shareLabels.shareImage}</button>
+        <button class="action-button" type="button" data-vote-image-option-download="${index}">${shareLabels.downloadImage}</button>
+      </div>
+    </article>
+  `).join('');
+  selectImagePayload(0);
 }
 
 const renderer = createRenderer({ contests, getState, nodes, t });
@@ -172,22 +200,48 @@ nodes.songList?.addEventListener('click', (event) => {
 });
 
 nodes.shareImage?.addEventListener('click', async () => {
-  const state = renderTopCardState();
-  if (!state.entries.length) {
+  const { variants } = getVoteShareState();
+  if (!variants.length) {
     showShareFeedback(shareLabels.imageEmpty || topCardLabels.emptyCopy);
     return;
   }
 
   clearImagePayload();
-  imagePayload = await buildTopCardImage(state);
-  if (!imagePayload) {
+  imagePayloads = (await Promise.all(variants.map(async (variant) => {
+    const payload = await buildVoteShareImage(variant);
+    return payload ? { ...payload, title: variant.title } : null;
+  }))).filter(Boolean);
+
+  if (!imagePayloads.length) {
     showShareFeedback(shareLabels.imageError || topCardLabels.downloadError);
     return;
   }
 
-  if (voteImageNodes.preview) voteImageNodes.preview.src = imagePayload.url;
+  renderImageGallery();
   openImageModal();
   showShareFeedback(shareLabels.imageReady || topCardLabels.downloaded);
+});
+
+voteImageNodes.gallery?.addEventListener('click', async (event) => {
+  const shareButton = event.target.closest('[data-vote-image-option-share]');
+  const downloadButton = event.target.closest('[data-vote-image-option-download]');
+  const index = Number(shareButton?.dataset.voteImageOptionShare ?? downloadButton?.dataset.voteImageOptionDownload);
+  if (!Number.isInteger(index) || !imagePayloads[index]) return;
+  selectImagePayload(index);
+
+  if (downloadButton) {
+    downloadTopCardImagePayload(imagePayloads[index]);
+    showShareFeedback(shareLabels.imageDownloaded || topCardLabels.downloaded);
+    return;
+  }
+
+  try {
+    const shared = await shareTopCardImagePayload(imagePayloads[index], shareLabels);
+    showShareFeedback(shared ? shareLabels.imageShared : shareLabels.shareUnavailable);
+    if (shared) closeImageModal();
+  } catch {
+    showShareFeedback(shareLabels.shareUnavailable);
+  }
 });
 
 voteImageNodes.close?.addEventListener('click', closeImageModal);
