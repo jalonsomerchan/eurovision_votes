@@ -6,7 +6,6 @@ import { getMapLabels } from '../i18n/mapLabels';
 import { getNewsLabels } from '../i18n/newsLabels';
 import { getNavigationLabels } from '../i18n/navigationLabels';
 import { getRankingLabels } from '../i18n/rankingLabels';
-import { getSearchLabels } from '../i18n/searchLabels';
 import { getTimelineLabels } from '../i18n/timelineLabels';
 
 interface Props {
@@ -19,12 +18,12 @@ const mapLabels = getMapLabels(locale);
 const newsLabels = getNewsLabels(locale);
 const navLabels = getNavigationLabels(locale);
 const rankingLabels = getRankingLabels(locale);
-const searchLabels = getSearchLabels(locale);
 const timelineLabels = getTimelineLabels(locale);
 const homeUrl = getLocalizedPath('/', locale);
 const voteUrl = getLocalizedPath('/vota/', locale);
 const predictionUrl = getLocalizedPath('/quiniela/', locale);
-const searchUrl = getLocalizedPath('/buscar/', locale);
+const statsUrl = getLocalizedPath('/stats/', locale);
+const festival2026Url = 'https://eurovision.alon.one/ediciones/2026/';
 const historyUrl = getLocalizedPath('/historico/', locale);
 const countriesUrl = getLocalizedPath('/paises/', locale);
 const countryMapUrl = getLocalizedPath('/mapa-paises/', locale);
@@ -40,35 +39,40 @@ const rankingPathMatch = currentPath.match(/\/rankings(?:\/([a-z0-9-]+))?\/?$/i)
 const comparatorPathMatch = currentPath.match(/\/comparador-paises\/?$/i);
 const alternatePath = currentPath.includes('/mapa-paises')
   ? '/mapa-paises/'
-  : currentPath.includes('/buscar')
-    ? '/buscar/'
-    : currentPath.includes('/quiniela')
-      ? '/quiniela/'
-      : currentPath.includes('/vota')
-        ? '/vota/'
-        : currentPath.includes('/linea-tiempo')
-          ? '/linea-tiempo/'
-          : currentPath.includes('/puntos-por-pais')
-            ? '/puntos-por-pais/'
-            : currentPath.includes('/noticias')
-              ? '/noticias/'
-              : rankingPathMatch
-                ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
-                : comparatorPathMatch
-                  ? '/comparador-paises/'
-                  : editionPathMatch
-                    ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
-                    : countryPathMatch
-                      ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
-                      : currentPath.includes('/historico')
-                        ? '/historico/'
-                        : currentPath.includes('/stats')
-                          ? '/stats/'
-                          : '/';
-const dataLinks = [
+  : currentPath.includes('/quiniela')
+    ? '/quiniela/'
+    : currentPath.includes('/vota')
+      ? '/vota/'
+      : currentPath.includes('/linea-tiempo')
+        ? '/linea-tiempo/'
+        : currentPath.includes('/puntos-por-pais')
+          ? '/puntos-por-pais/'
+          : currentPath.includes('/noticias')
+            ? '/noticias/'
+            : rankingPathMatch
+              ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
+              : comparatorPathMatch
+                ? '/comparador-paises/'
+                : editionPathMatch
+                  ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
+                  : countryPathMatch
+                    ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
+                    : currentPath.includes('/historico')
+                      ? '/historico/'
+                      : currentPath.includes('/stats')
+                        ? '/stats/'
+                        : '/';
+const eurovision2026Links = [
+  { href: festival2026Url, label: navLabels.festival2026 },
+  { href: voteUrl, label: t('nav.vote') },
+  { href: predictionUrl, label: navLabels.prediction },
+  { href: statsUrl, label: navLabels.voteStatsCta },
+];
+const historicalLinks = [
   { href: historyUrl, label: t('nav.history') },
   { href: countriesUrl, label: t('nav.countries') },
   { href: countryMapUrl, label: mapLabels.title },
+  { href: rankingsUrl, label: rankingLabels.ranking },
   { href: timelineUrl, label: timelineLabels.title },
   { href: countryPointsUrl, label: t('nav.pointsByCountry') },
 ];
@@ -83,19 +87,21 @@ const dataLinks = [
 
     <nav aria-label={t('nav.menu')} class="main-nav main-nav--desktop">
       <a href={homeUrl}>{t('nav.home')}</a>
-      <a href={voteUrl}>{t('nav.vote')}</a>
-      <a href={predictionUrl}>{navLabels.prediction}</a>
-      <a href={searchUrl}>{searchLabels.title}</a>
       <details class="nav-dropdown">
-        <summary>{navLabels.dataMenu}</summary>
+        <summary>{navLabels.eurovision2026}</summary>
         <div class="nav-dropdown__list">
-          {dataLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+          {eurovision2026Links.map((link) => <a href={link.href}>{link.label}</a>)}
+        </div>
+      </details>
+      <details class="nav-dropdown">
+        <summary>{navLabels.historicalMenu}</summary>
+        <div class="nav-dropdown__list">
+          {historicalLinks.map((link) => <a href={link.href}>{link.label}</a>)}
         </div>
       </details>
       <a href={newsUrl}>{newsLabels.nav}</a>
-      <a href={rankingsUrl}>{rankingLabels.ranking}</a>
       <details class="locale-menu">
-        <summary>{localeLabels[locale]}</summary>
+        <summary>{t('nav.language')}</summary>
         <div class="locale-menu__list">
           {alternateLocales.map((alternateLocale) => (
             <a href={getLocalizedPath(alternatePath, alternateLocale)} hreflang={alternateLocale}>{localeLabels[alternateLocale]}</a>
@@ -118,17 +124,19 @@ const dataLinks = [
         </div>
         <nav aria-label={t('nav.menu')} class="mobile-menu__nav">
           <a href={homeUrl}>{t('nav.home')}</a>
-          <a href={voteUrl}>{t('nav.vote')}</a>
-          <a href={predictionUrl}>{navLabels.prediction}</a>
-          <a href={searchUrl}>{searchLabels.title}</a>
           <details class="mobile-menu__section">
-            <summary>{navLabels.dataMenu}</summary>
+            <summary>{navLabels.eurovision2026}</summary>
             <div>
-              {dataLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+              {eurovision2026Links.map((link) => <a href={link.href}>{link.label}</a>)}
+            </div>
+          </details>
+          <details class="mobile-menu__section">
+            <summary>{navLabels.historicalMenu}</summary>
+            <div>
+              {historicalLinks.map((link) => <a href={link.href}>{link.label}</a>)}
             </div>
           </details>
           <a href={newsUrl}>{newsLabels.nav}</a>
-          <a href={rankingsUrl}>{rankingLabels.ranking}</a>
           <button type="button" data-open-settings>{t('nav.settings')}</button>
         </nav>
         <div class="mobile-menu__languages" aria-label={t('nav.language')}>
