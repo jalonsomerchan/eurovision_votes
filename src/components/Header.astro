@@ -5,6 +5,7 @@ import { getAlternateLocales, getLocalizedPath, useTranslations } from '../i18n/
 import { getNewsLabels } from '../i18n/newsLabels';
 import { getNavigationLabels } from '../i18n/navigationLabels';
 import { getRankingLabels } from '../i18n/rankingLabels';
+import { getTimelineLabels } from '../i18n/timelineLabels';
 
 interface Props {
   locale: Locale;
@@ -15,11 +16,13 @@ const t = useTranslations(locale);
 const newsLabels = getNewsLabels(locale);
 const navLabels = getNavigationLabels(locale);
 const rankingLabels = getRankingLabels(locale);
+const timelineLabels = getTimelineLabels(locale);
 const homeUrl = getLocalizedPath('/', locale);
 const voteUrl = getLocalizedPath('/vota/', locale);
 const predictionUrl = getLocalizedPath('/quiniela/', locale);
 const historyUrl = getLocalizedPath('/historico/', locale);
 const countriesUrl = getLocalizedPath('/paises/', locale);
+const timelineUrl = getLocalizedPath('/linea-tiempo/', locale);
 const newsUrl = getLocalizedPath('/noticias/', locale);
 const rankingsUrl = getLocalizedPath('/rankings/', locale);
 const countryPointsUrl = getLocalizedPath('/puntos-por-pais/', locale);
@@ -33,26 +36,29 @@ const alternatePath = currentPath.includes('/quiniela')
   ? '/quiniela/'
   : currentPath.includes('/vota')
     ? '/vota/'
-    : currentPath.includes('/puntos-por-pais')
-      ? '/puntos-por-pais/'
-      : currentPath.includes('/noticias')
-        ? '/noticias/'
-        : rankingPathMatch
-          ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
-          : comparatorPathMatch
-            ? '/comparador-paises/'
-            : editionPathMatch
-              ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
-              : countryPathMatch
-                ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
-                : currentPath.includes('/historico')
-                  ? '/historico/'
-                  : currentPath.includes('/stats')
-                    ? '/stats/'
-                    : '/';
+    : currentPath.includes('/linea-tiempo')
+      ? '/linea-tiempo/'
+      : currentPath.includes('/puntos-por-pais')
+        ? '/puntos-por-pais/'
+        : currentPath.includes('/noticias')
+          ? '/noticias/'
+          : rankingPathMatch
+            ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
+            : comparatorPathMatch
+              ? '/comparador-paises/'
+              : editionPathMatch
+                ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
+                : countryPathMatch
+                  ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
+                  : currentPath.includes('/historico')
+                    ? '/historico/'
+                    : currentPath.includes('/stats')
+                      ? '/stats/'
+                      : '/';
 const dataLinks = [
   { href: historyUrl, label: t('nav.history') },
   { href: countriesUrl, label: t('nav.countries') },
+  { href: timelineUrl, label: timelineLabels.title },
   { href: countryPointsUrl, label: t('nav.pointsByCountry') },
 ];
 ---
