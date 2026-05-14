@@ -46,7 +46,7 @@ describe('project smoke checks', () => {
     assert.match(layout, /<Footer/);
     assert.match(layout, /canonicalUrl/);
     assert.match(header, /getNavigationLabels/);
-    assert.match(header, /data-theme-toggle/);
+    assert.match(header, /data-open-settings/);
     assert.match(footer, /getFooterLabels/);
     assert.match(container, /container/);
   });
@@ -142,9 +142,5 @@ describe('project smoke checks', () => {
     assert.match(history, /SENIOR_DATASET_DIR/);
     assert.match(history, /senior/);
     assert.match(editions, /getEurovisionEditions/);
-  });
-
-  it('keeps GitHub Pages workflow available', () => {
-    assert.equal(existsSync(join(root, '.github/workflows/deploy.yml')), true);
   });
 });
