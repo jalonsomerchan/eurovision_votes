@@ -1,0 +1,17 @@
+---
+import EurovisionCountryMapApp from '../../components/EurovisionCountryMapApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { getMapLabels } from '../../i18n/mapLabels';
+import { getEurovisionMapCountries } from '../../lib/eurovisionMapData';
+
+const labels = getMapLabels(defaultLocale);
+const countries = await getEurovisionMapCountries(defaultLocale);
+---
+
+<BaseLayout title={labels.title} description={labels.description} locale={defaultLocale}>
+  <Container>
+    <EurovisionCountryMapApp countries={countries} locale={defaultLocale} />
+  </Container>
+</BaseLayout>
