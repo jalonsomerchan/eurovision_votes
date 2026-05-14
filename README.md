@@ -56,6 +56,9 @@ El dataset histórico se lee desde `public/dataset/data/senior`. Los helpers que
 - `/rankings/`: índice de rankings históricos evergreen generados desde el dataset disponible.
 - `/rankings/{slug}/`: páginas SEO de rankings históricos, como países con más victorias, más participaciones, ganadores por década, mejores puntuaciones disponibles, más top 10, sedes repetidas y ediciones con más participantes.
 - `/{locale}/rankings/` y `/{locale}/rankings/{slug}/`: versiones localizadas de los rankings para los idiomas secundarios configurados.
+- `/glosario/`: índice SEO del glosario eurovisivo con definiciones útiles y enlaces internos.
+- `/glosario/{slug}/`: ficha indexable de cada término, con slugs localizados desde `src/config/eurovisionGlossary.ts`.
+- `/{locale}/glosario/` y `/{locale}/glosario/{slug}/`: versiones localizadas del glosario para todos los idiomas secundarios configurados.
 - `/paises/`: índice de fichas por país.
 - `/paises/{codigo}/`: ficha SEO indexable de cada país, generada desde el dataset disponible. Incluye title/meta description únicos, h1, estadísticas, participación actual cuando exista, gráfica, tabla histórica, enlaces internos, FAQ visible y estados claros para datos ausentes.
 - `/{locale}/paises/{codigo}/`: versión localizada de cada ficha para los idiomas secundarios configurados.
@@ -64,7 +67,7 @@ El dataset histórico se lee desde `public/dataset/data/senior`. Los helpers que
 
 La app de votación mantiene `public/vote.js` como orquestador pequeño y separa responsabilidades en módulos ES bajo `public/vote/`: `config.js` lee los JSON embebidos y labels, `storage.js` gestiona localStorage/device id, `dom.js` contiene utilidades de DOM/modales/feedback, `contest.js` centraliza reglas de concursos y medias, `render.js` pinta pestañas y canciones, `cloud.js` encapsula Firebase/Firestore y `actions.js` cubre importar, exportar, resetear y compartir votos. El generador de tarjeta compartible usa `top-card-data.js` para calcular el top personal desde votos guardados, `top-card-render.js` para la previsualización accesible y el resumen textual, y `top-card-canvas.js` para descargar una imagen PNG con Canvas nativo sin dependencias pesadas. Los textos visibles deben seguir viniendo de labels inyectados por Astro, incluido `src/i18n/topCardLabels.ts`.
 
-Los rankings usan `src/lib/eurovisionRankings.ts` para centralizar cálculos, `src/components/RankingsIndexApp.astro`, `src/components/EurovisionRankingApp.astro` y `src/components/RankingTable.astro` para la interfaz, y `src/i18n/rankingLabels.ts` para textos SEO/UI traducidos. Los rankings explican límites del dataset cuando faltan puntos, sedes u otros datos, y no inventan información. Las noticias usan `src/lib/newsFeed.mjs` para parsear RSS 2.0 de WordPress con namespaces y CDATA, `src/components/EurovisionNewsApp.astro` para la interfaz y `src/i18n/newsLabels.ts` para textos traducidos. Las fichas por país usan `src/lib/eurovisionCountryProfiles.ts` para centralizar datos y cálculos, `src/components/EurovisionCountryProfileApp.astro` como orquestador, componentes pequeños para gráfica, tabla, enlaces y FAQ, y `src/i18n/countryProfileSeoLabels.ts` para textos SEO/FAQ traducidos. El comparador usa `src/lib/countryComparison.ts`, `src/components/EurovisionCountryComparatorApp.astro`, `public/country-comparator.js` y `src/i18n/countryComparisonLabels.ts`.
+Los rankings usan `src/lib/eurovisionRankings.ts` para centralizar cálculos, `src/components/RankingsIndexApp.astro`, `src/components/EurovisionRankingApp.astro` y `src/components/RankingTable.astro` para la interfaz, y `src/i18n/rankingLabels.ts` para textos SEO/UI traducidos. Los rankings explican límites del dataset cuando faltan puntos, sedes u otros datos, y no inventan información. El glosario usa `src/config/eurovisionGlossary.ts`, `src/lib/glossaryRoutes.ts`, `src/components/EurovisionGlossaryIndexApp.astro`, `src/components/EurovisionGlossaryTermApp.astro` y `src/i18n/glossaryLabels.ts`; debe evitar afirmar reglas cambiantes como definitivas y mantener cada concepto como dato configurable cuando dependa de una edición. Las noticias usan `src/lib/newsFeed.mjs` para parsear RSS 2.0 de WordPress con namespaces y CDATA, `src/components/EurovisionNewsApp.astro` para la interfaz y `src/i18n/newsLabels.ts` para textos traducidos. Las fichas por país usan `src/lib/eurovisionCountryProfiles.ts` para centralizar datos y cálculos, `src/components/EurovisionCountryProfileApp.astro` como orquestador, componentes pequeños para gráfica, tabla, enlaces y FAQ, y `src/i18n/countryProfileSeoLabels.ts` para textos SEO/FAQ traducidos. El comparador usa `src/lib/countryComparison.ts`, `src/components/EurovisionCountryComparatorApp.astro`, `public/country-comparator.js` y `src/i18n/countryComparisonLabels.ts`.
 
 ## Estructura recomendada
 
@@ -257,27 +260,3 @@ ASTRO_BASE=/
 ```
 
 ## CI
-
-`.github/workflows/ci.yml` ejecuta en pull requests:
-
-```sh
-npm ci
-npm test
-npm run build
-```
-
-Los tests son intencionadamente suaves: comprueban que la estructura mínima existe, que los scripts básicos están disponibles y que los workflows no desaparecen.
-
-## Configuración principal
-
-La configuración editable del sitio está en:
-
-```ts
-src/config/site.ts
-```
-
-Ahí puedes cambiar nombre, descripción, idiomas, autor y URL base del proyecto.
-
-## Notas
-
-Esta plantilla intenta ser útil sin ser pesada. Evita añadir dependencias de desarrollo obligatorias para que los proyectos derivados arranquen rápido y no fallen por configuración innecesaria.
