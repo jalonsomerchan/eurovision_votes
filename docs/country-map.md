@@ -4,7 +4,7 @@ La ruta `/mapa-paises/` y sus variantes localizadas `/{locale}/mapa-paises/` mue
 
 ## Arquitectura
 
-- `src/lib/eurovisionMapData.ts` deriva las métricas históricas desde los perfiles de país ya existentes y añade coordenadas centrales por país para colocar marcadores.
+- `src/lib/eurovisionMapData.ts` deriva las métricas históricas desde los perfiles de país ya existentes y añade coordenadas centrales revisadas por país para colocar marcadores.
 - `src/i18n/mapLabels.ts` contiene todos los textos visibles del mapa para los idiomas configurados.
 - `src/components/EurovisionCountryMapApp.astro` renderiza el contenedor de Leaflet, el selector de métrica, controles de zoom, el resumen del país y la tabla accesible.
 - `public/eurovision-map.js` inicializa Leaflet sobre un mapa mundial completo, añade un marcador interactivo por país de Eurovision y actualiza el resumen.
@@ -32,10 +32,11 @@ El mapa permite alternar entre:
 - Última participación.
 - Debut.
 
-La métrica de mejor posición se invierte internamente para que los mejores puestos tengan más peso visual. En el mapa, el valor de la métrica modifica el tamaño de cada marcador.
+La métrica de mejor posición se invierte internamente para que los mejores puestos tengan más peso visual. En el mapa, el valor de la métrica modifica el tamaño de cada marcador con un rango limitado para evitar puntos desproporcionados.
 
 ## Reglas de mantenimiento
 
+- No volver a usar polígonos o GeoJSON si solo se necesita un punto por país.
 - Leaflet puede cargarse desde CDN cuando sea necesario para mejorar la visualización del mapa.
 - Los datos históricos siguen saliendo de los helpers locales del proyecto.
 - Las coordenadas de marcador viven en `countryCoordinates` dentro de `src/lib/eurovisionMapData.ts`.
