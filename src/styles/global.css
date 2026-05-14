@@ -27,7 +27,7 @@ img, picture, svg, video { display: block; max-width: 100%; }
 
 .eurovision-vote-app, .stats-app, .history-app { display: grid; gap: 1rem; padding: 1.25rem 0 3rem; }
 .hero-card, .status-card, .song-card, .empty-state, .user-card, .modal-panel, .stats-card, .stats-kpi, .distribution-card, .history-contest-card, .history-winner-card { border: 1px solid color-mix(in srgb, var(--color-border), transparent 15%); background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%); box-shadow: 0 20px 55px rgb(15 23 42 / 0.08); }
-.hero-card { display: grid; gap: 1.25rem; overflow: hidden; border-radius: 2rem; padding: clamp(1.25rem, 4vw, 2.5rem); position: relative; }
+.hero-card { overflow: hidden; border-radius: 2rem; padding: clamp(1.25rem, 4vw, 2.5rem); position: relative; }
 .hero-card::after { content: ''; position: absolute; inset: auto -5rem -7rem auto; width: 14rem; height: 14rem; border-radius: 999px; background: color-mix(in srgb, var(--color-primary), transparent 72%); pointer-events: none; }
 .user-card { z-index: 1; border-radius: 1.35rem; padding: 1rem; }
 .user-card strong { display: block; margin-top: 0.15rem; font-size: 1.15rem; }
@@ -143,7 +143,6 @@ img, picture, svg, video { display: block; max-width: 100%; }
 
 @media (min-width: 720px) {
   .eurovision-vote-app, .stats-app, .history-app { gap: 1.35rem; padding-block: 2rem 4rem; }
-  .hero-card { grid-template-columns: minmax(0, 1fr) minmax(12rem, auto); align-items: end; }
   .song-card { padding: 1rem; }
   .score-grid { grid-template-columns: repeat(11, minmax(0, 1fr)); }
   .app-modal { place-items: center; }
