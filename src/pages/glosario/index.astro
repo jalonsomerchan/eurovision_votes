@@ -1,0 +1,17 @@
+---
+import EurovisionGlossaryIndexApp from '../../components/EurovisionGlossaryIndexApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { listGlossaryTerms } from '../../config/eurovisionGlossary';
+import { getGlossaryLabels } from '../../i18n/glossaryLabels';
+
+const labels = getGlossaryLabels(defaultLocale);
+const terms = listGlossaryTerms(defaultLocale);
+---
+
+<BaseLayout title={labels.indexTitle} description={labels.indexDescription} locale={defaultLocale}>
+  <Container>
+    <EurovisionGlossaryIndexApp terms={terms} locale={defaultLocale} />
+  </Container>
+</BaseLayout>
