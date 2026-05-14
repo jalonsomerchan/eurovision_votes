@@ -15,6 +15,8 @@ describe('Eurovision timeline', () => {
       'src/pages/linea-tiempo/index.astro',
       'src/pages/[locale]/linea-tiempo/index.astro',
       'src/components/EurovisionTimelineApp.astro',
+      'src/components/TimelineEntryCard.astro',
+      'src/components/TimelineFilterPanel.astro',
       'src/lib/eurovisionTimeline.ts',
       'src/data/eurovisionTimelineMilestones.ts',
       'src/i18n/timelineLabels.ts',
@@ -47,15 +49,21 @@ describe('Eurovision timeline', () => {
 
   it('renders accessible filters and uses a small client script', () => {
     const component = readText('src/components/EurovisionTimelineApp.astro');
+    const filterPanel = readText('src/components/TimelineFilterPanel.astro');
+    const entryCard = readText('src/components/TimelineEntryCard.astro');
     const script = readText('public/timeline-filters.js');
 
     assert.match(component, /data-timeline/);
     assert.match(component, /aria-labelledby="timeline-title"/);
-    assert.match(component, /data-timeline-filter="decade"/);
-    assert.match(component, /data-timeline-filter="host"/);
-    assert.match(component, /data-timeline-filter="winner"/);
-    assert.match(component, /data-timeline-filter="type"/);
-    assert.match(component, /aria-live="polite"/);
+    assert.match(component, /TimelineFilterPanel/);
+    assert.match(component, /TimelineEntryCard/);
+    assert.match(filterPanel, /data-timeline-filter="decade"/);
+    assert.match(filterPanel, /data-timeline-filter="host"/);
+    assert.match(filterPanel, /data-timeline-filter="winner"/);
+    assert.match(filterPanel, /data-timeline-filter="type"/);
+    assert.match(filterPanel, /aria-live="polite"/);
+    assert.match(entryCard, /data-timeline-entry/);
+    assert.match(entryCard, /timeline-milestones/);
     assert.match(component, /timeline-glossary/);
     assert.match(component, /timeline-filters\.js/);
     assert.match(script, /updateTimeline/);
