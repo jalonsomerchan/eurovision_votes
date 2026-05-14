@@ -8,7 +8,8 @@ La ruta `/mapa-paises/` y sus variantes localizadas `/{locale}/mapa-paises/` mue
 - `src/i18n/mapLabels.ts` contiene todos los textos visibles del mapa para los idiomas configurados.
 - `src/components/EurovisionCountryMapApp.astro` renderiza el contenedor de Leaflet, el selector de métrica, controles de zoom, el resumen del país y la tabla accesible.
 - `public/eurovision-map.js` inicializa Leaflet, carga un GeoJSON mundial externo, cruza cada país de Eurovision por ISO/nombre, pinta las capas vectoriales reales y actualiza el resumen.
-- Leaflet se carga desde CDN con SRI y el GeoJSON se obtiene desde jsDelivr. Las teselas base usan CARTO/OSM para que el mapa tenga contexto visual real.
+- Leaflet se carga desde CDN con SRI y el GeoJSON se obtiene desde jsDelivr. Las teselas base usan CARTO desde `basemaps.cartocdn.com`.
+- El script elige `light_all` o `dark_all` según el tema activo del sitio, `color-scheme`, `data-theme`, clase del documento o `prefers-color-scheme`, y actualiza la capa si cambia el tema.
 
 ## Interacción
 
@@ -39,4 +40,5 @@ La métrica de mejor posición se invierte internamente para que los mejores pue
 - Los datos históricos siguen saliendo de los helpers locales del proyecto; el GeoJSON externo solo aporta geometría geográfica.
 - Los enlaces internos deben generarse con `getLocalizedPath()` para respetar `base` y GitHub Pages.
 - El mapa debe mantener siempre una tabla accesible con los mismos datos básicos.
+- Si se cambia el sistema de tema del sitio, revisar `getCurrentTheme()` y `watchThemeChanges()` en `public/eurovision-map.js`.
 - Si se añaden nuevas métricas, deben añadirse en `mapMetrics`, en `valueForMapMetric()`, en `mapLabels.ts`, en el componente y en `public/eurovision-map.js`.
