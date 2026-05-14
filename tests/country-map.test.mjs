@@ -56,6 +56,8 @@ describe('Eurovision country map', () => {
 
     assert.match(component, /leaflet@1\.9\.4/);
     assert.match(component, /unpkg\.com\/leaflet/);
+    assert.match(component, /sha256-p4NxAoJBhIIN\+hmNHrzRCf9tD\/miZyoHS5obTRR9BMY=/);
+    assert.match(component, /sha256-20nQCchB9co0qIjJZRGuk2\/Z9VM\+kNiyxNV1lvTlZBo=/);
     assert.match(component, /data-country-map/);
     assert.match(component, /aria-labelledby="country-map-title"/);
     assert.match(component, /data-map-metric/);

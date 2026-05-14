@@ -77,13 +77,20 @@ describe('global Eurovision search', () => {
     assert.match(labels, /typeLabels: \{ country:/);
   });
 
-  it('links the search page from navigation and preserves localized alternate paths', () => {
-    const header = readText('src/components/Header.astro');
+  it('keeps the search page routed, localized and SEO-ready without requiring header placement', () => {
+    const defaultRoute = readText('src/pages/buscar/index.astro');
+    const localizedRoute = readText('src/pages/[locale]/buscar/index.astro');
 
-    assert.match(header, /getSearchLabels/);
-    assert.match(header, /searchUrl/);
-    assert.match(header, /\/buscar\//);
-    assert.match(header, /currentPath\.includes\('\/buscar'\)/);
-    assert.match(header, /searchLabels\.title/);
+    assert.match(defaultRoute, /getSearchLabels/);
+    assert.match(defaultRoute, /buildSearchIndex/);
+    assert.match(defaultRoute, /GlobalSearchApp/);
+    assert.match(defaultRoute, /BaseLayout/);
+    assert.match(defaultRoute, /labels\.title/);
+    assert.match(defaultRoute, /labels\.description/);
+    assert.match(localizedRoute, /getStaticPaths/);
+    assert.match(localizedRoute, /locales/);
+    assert.match(localizedRoute, /isLocale/);
+    assert.match(localizedRoute, /buildSearchIndex\(locale\)/);
+    assert.match(localizedRoute, /GlobalSearchApp/);
   });
 });
