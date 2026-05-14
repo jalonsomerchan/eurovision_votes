@@ -2,6 +2,7 @@
 import Container from './Container.astro';
 import { localeLabels, siteConfig, type Locale } from '../config/site';
 import { getAlternateLocales, getLocalizedPath, useTranslations } from '../i18n/ui';
+import { getMapLabels } from '../i18n/mapLabels';
 import { getNewsLabels } from '../i18n/newsLabels';
 import { getNavigationLabels } from '../i18n/navigationLabels';
 import { getRankingLabels } from '../i18n/rankingLabels';
@@ -14,6 +15,7 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = useTranslations(locale);
+const mapLabels = getMapLabels(locale);
 const newsLabels = getNewsLabels(locale);
 const navLabels = getNavigationLabels(locale);
 const rankingLabels = getRankingLabels(locale);
@@ -25,6 +27,7 @@ const predictionUrl = getLocalizedPath('/quiniela/', locale);
 const searchUrl = getLocalizedPath('/buscar/', locale);
 const historyUrl = getLocalizedPath('/historico/', locale);
 const countriesUrl = getLocalizedPath('/paises/', locale);
+const countryMapUrl = getLocalizedPath('/mapa-paises/', locale);
 const timelineUrl = getLocalizedPath('/linea-tiempo/', locale);
 const newsUrl = getLocalizedPath('/noticias/', locale);
 const rankingsUrl = getLocalizedPath('/rankings/', locale);
@@ -35,34 +38,37 @@ const countryPathMatch = currentPath.match(/\/paises(?:\/([a-z0-9-]+))?\/?$/i);
 const editionPathMatch = currentPath.match(/\/ediciones(?:\/(\d{4}))?\/?$/i);
 const rankingPathMatch = currentPath.match(/\/rankings(?:\/([a-z0-9-]+))?\/?$/i);
 const comparatorPathMatch = currentPath.match(/\/comparador-paises\/?$/i);
-const alternatePath = currentPath.includes('/buscar')
-  ? '/buscar/'
-  : currentPath.includes('/quiniela')
-    ? '/quiniela/'
-    : currentPath.includes('/vota')
-      ? '/vota/'
-      : currentPath.includes('/linea-tiempo')
-        ? '/linea-tiempo/'
-        : currentPath.includes('/puntos-por-pais')
-          ? '/puntos-por-pais/'
-          : currentPath.includes('/noticias')
-            ? '/noticias/'
-            : rankingPathMatch
-              ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
-              : comparatorPathMatch
-                ? '/comparador-paises/'
-                : editionPathMatch
-                  ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
-                  : countryPathMatch
-                    ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
-                    : currentPath.includes('/historico')
-                      ? '/historico/'
-                      : currentPath.includes('/stats')
-                        ? '/stats/'
-                        : '/';
+const alternatePath = currentPath.includes('/mapa-paises')
+  ? '/mapa-paises/'
+  : currentPath.includes('/buscar')
+    ? '/buscar/'
+    : currentPath.includes('/quiniela')
+      ? '/quiniela/'
+      : currentPath.includes('/vota')
+        ? '/vota/'
+        : currentPath.includes('/linea-tiempo')
+          ? '/linea-tiempo/'
+          : currentPath.includes('/puntos-por-pais')
+            ? '/puntos-por-pais/'
+            : currentPath.includes('/noticias')
+              ? '/noticias/'
+              : rankingPathMatch
+                ? `/rankings/${rankingPathMatch[1] ? `${rankingPathMatch[1]}/` : ''}`
+                : comparatorPathMatch
+                  ? '/comparador-paises/'
+                  : editionPathMatch
+                    ? `/ediciones/${editionPathMatch[1] ? `${editionPathMatch[1]}/` : ''}`
+                    : countryPathMatch
+                      ? `/paises/${countryPathMatch[1] ? `${countryPathMatch[1]}/` : ''}`
+                      : currentPath.includes('/historico')
+                        ? '/historico/'
+                        : currentPath.includes('/stats')
+                          ? '/stats/'
+                          : '/';
 const dataLinks = [
   { href: historyUrl, label: t('nav.history') },
   { href: countriesUrl, label: t('nav.countries') },
+  { href: countryMapUrl, label: mapLabels.title },
   { href: timelineUrl, label: timelineLabels.title },
   { href: countryPointsUrl, label: t('nav.pointsByCountry') },
 ];

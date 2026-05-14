@@ -1,0 +1,172 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { getMapLabels } from '../i18n/mapLabels';
+import { mapMetrics, valueForMapMetric, type EurovisionMapCountry, type MapMetric } from '../lib/eurovisionMapData';
+
+interface Props {
+  countries: EurovisionMapCountry[];
+  locale?: Locale;
+}
+
+const { countries, locale = defaultLocale } = Astro.props;
+const labels = getMapLabels(locale);
+const initialMetric: MapMetric = 'participations';
+const maxValue = Math.max(...countries.map((country) => valueForMapMetric(country, initialMetric)), 1);
+const mapScriptUrl = `${import.meta.env.BASE_URL}eurovision-map.js?v=20260514-1`;
+
+function displayValue(country: EurovisionMapCountry, metric: MapMetric) {
+  const value = metric === 'participations'
+    ? country.participations
+    : metric === 'wins'
+      ? country.wins
+      : metric === 'bestPlace'
+        ? country.bestPlace
+        : metric === 'lastParticipation'
+          ? country.lastParticipation
+          : country.debut;
+  return value ?? labels.unavailable;
+}
+
+function pointSize(country: EurovisionMapCountry) {
+  const value = valueForMapMetric(country, initialMetric);
+  return 0.68 + (value / maxValue) * 1.15;
+}
+---
+
+<section class="country-map-app" data-country-map aria-labelledby="country-map-title">
+  <script type="application/json" data-map-countries set:html={JSON.stringify(countries)}></script>
+  <script type="application/json" data-map-labels set:html={JSON.stringify(labels)}></script>
+
+  <header class="hero-card country-map-hero">
+    <p class="eyebrow">{labels.eyebrow}</p>
+    <h1 id="country-map-title">{labels.title}</h1>
+    <p class="hero-copy">{labels.intro}</p>
+  </header>
+
+  <div class="country-map-toolbar">
+    <label for="country-map-metric">{labels.metricLabel}</label>
+    <select id="country-map-metric" data-map-metric>
+      {mapMetrics.map((metric) => <option value={metric} selected={metric === initialMetric}>{labels.metrics[metric]}</option>)}
+    </select>
+  </div>
+
+  <div class="country-map-layout">
+    <figure class="country-map" aria-label={labels.mapLabel}>
+      <div class="country-map__canvas" role="list" data-map-canvas>
+        <span class="country-map__region country-map__region--north" aria-hidden="true"></span>
+        <span class="country-map__region country-map__region--west" aria-hidden="true"></span>
+        <span class="country-map__region country-map__region--east" aria-hidden="true"></span>
+        {countries.map((country) => {
+          const value = displayValue(country, initialMetric);
+          const ariaLabel = labels.pointLabel
+            .replaceAll('{country}', country.country)
+            .replaceAll('{metric}', labels.metrics[initialMetric])
+            .replaceAll('{value}', String(value));
+          return (
+            <button
+              class="country-map__point"
+              type="button"
+              role="listitem"
+              aria-label={ariaLabel}
+              title={`${country.country}: ${value}`}
+              data-country-code={country.countryCode}
+              data-map-point
+              style={`--x:${country.x};--y:${country.y};--size:${pointSize(country).toFixed(2)}rem;`}
+            >
+              <span>{country.countryCode}</span>
+            </button>
+          );
+        })}
+      </div>
+    </figure>
+
+    <aside class="country-map-summary" aria-labelledby="country-map-summary-title" data-map-summary>
+      <p class="eyebrow">{labels.selectedTitle}</p>
+      <h2 id="country-map-summary-title">{labels.noSelection}</h2>
+      <dl>
+        <div><dt>{labels.participations}</dt><dd>—</dd></div>
+        <div><dt>{labels.wins}</dt><dd>—</dd></div>
+        <div><dt>{labels.bestPlace}</dt><dd>—</dd></div>
+        <div><dt>{labels.lastParticipation}</dt><dd>—</dd></div>
+        <div><dt>{labels.debut}</dt><dd>—</dd></div>
+      </dl>
+    </aside>
+  </div>
+
+  <section class="country-map-table" aria-labelledby="country-map-table-title">
+    <h2 id="country-map-table-title">{labels.tableTitle}</h2>
+    <div class="country-map-table__scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">{labels.country}</th>
+            <th scope="col">{labels.participations}</th>
+            <th scope="col">{labels.wins}</th>
+            <th scope="col">{labels.bestPlace}</th>
+            <th scope="col">{labels.lastParticipation}</th>
+            <th scope="col">{labels.debut}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {countries.map((country) => (
+            <tr>
+              <th scope="row"><a href={country.href}>{country.country}</a></th>
+              <td>{country.participations}</td>
+              <td>{country.wins}</td>
+              <td>{country.bestPlace ?? labels.unavailable}</td>
+              <td>{country.lastParticipation ?? labels.unavailable}</td>
+              <td>{country.debut ?? labels.unavailable}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+
+<script type="module" src={mapScriptUrl}></script>
+
+<style>
+  :global(.country-map-app) { display: grid; gap: 1rem; padding: 1.25rem 0 3rem; }
+  :global(.country-map-hero h1) { max-width: 14ch; }
+  :global(.country-map-toolbar), :global(.country-map), :global(.country-map-summary), :global(.country-map-table) { border: 1px solid var(--color-border); border-radius: 1.35rem; background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%); box-shadow: 0 14px 34px rgb(15 23 42 / 0.07); }
+  :global(.country-map-toolbar) { display: grid; gap: 0.5rem; padding: 1rem; }
+  :global(.country-map-toolbar label) { font-weight: 950; }
+  :global(.country-map-toolbar select) { min-height: 3rem; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-bg); color: var(--color-text); padding: 0.75rem 0.95rem; font: inherit; font-weight: 800; }
+  :global(.country-map-toolbar select:focus), :global(.country-map__point:focus-visible), :global(.country-map-summary a:focus-visible), :global(.country-map-table a:focus-visible) { outline: 3px solid color-mix(in srgb, var(--color-primary), transparent 65%); outline-offset: 3px; }
+  :global(.country-map-layout) { display: grid; gap: 1rem; }
+  :global(.country-map) { margin: 0; padding: 1rem; overflow: hidden; }
+  :global(.country-map__canvas) { position: relative; min-height: 22rem; border-radius: 1.1rem; overflow: hidden; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--color-primary), transparent 78%), transparent 34%), linear-gradient(135deg, color-mix(in srgb, var(--color-bg), var(--color-primary) 8%), color-mix(in srgb, var(--color-bg), var(--color-secondary, var(--color-primary)) 12%)); }
+  :global(.country-map__region) { position: absolute; border: 1px solid color-mix(in srgb, var(--color-primary), transparent 55%); background: color-mix(in srgb, var(--color-bg), var(--color-primary) 15%); opacity: 0.72; filter: blur(0.1px); }
+  :global(.country-map__region--north) { inset: 9% 31% 53% 29%; border-radius: 52% 48% 42% 58%; }
+  :global(.country-map__region--west) { inset: 34% 52% 16% 10%; border-radius: 48% 42% 58% 40%; }
+  :global(.country-map__region--east) { inset: 31% 10% 18% 47%; border-radius: 42% 55% 48% 52%; }
+  :global(.country-map__point) { position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); width: var(--size); height: var(--size); min-width: 0.75rem; min-height: 0.75rem; transform: translate(-50%, -50%); border: 2px solid var(--color-bg); border-radius: 999px; background: var(--color-primary); color: #fff; box-shadow: 0 10px 26px rgb(15 23 42 / 0.22); cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease; }
+  :global(.country-map__point:hover), :global(.country-map__point.is-selected) { transform: translate(-50%, -50%) scale(1.22); background: color-mix(in srgb, var(--color-primary), #f59e0b 35%); z-index: 2; }
+  :global(.country-map__point span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  :global(.country-map-summary) { display: grid; align-content: start; gap: 1rem; padding: 1rem; }
+  :global(.country-map-summary h2), :global(.country-map-summary p) { margin: 0; }
+  :global(.country-map-summary h2) { font-size: clamp(1.3rem, 5vw, 2.1rem); line-height: 1.05; letter-spacing: -0.04em; }
+  :global(.country-map-summary dl) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; margin: 0; }
+  :global(.country-map-summary dl div) { border: 1px solid var(--color-border); border-radius: 1rem; padding: 0.8rem; background: var(--color-bg); }
+  :global(.country-map-summary dt) { color: var(--color-muted); font-size: 0.78rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+  :global(.country-map-summary dd) { margin: 0.25rem 0 0; font-size: 1.25rem; font-weight: 950; }
+  :global(.country-map-summary__actions) { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  :global(.country-map-summary__actions a) { display: inline-flex; align-items: center; justify-content: center; min-height: 2.6rem; border: 1px solid var(--color-border); border-radius: 999px; padding: 0.65rem 0.9rem; color: var(--color-text); text-decoration: none; font-weight: 900; }
+  :global(.country-map-summary__actions a:first-child) { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+  :global(.country-map-table) { display: grid; gap: 0.75rem; padding: 1rem; }
+  :global(.country-map-table h2) { margin: 0; font-size: 1.1rem; }
+  :global(.country-map-table__scroll) { overflow-x: auto; }
+  :global(.country-map-table table) { width: 100%; border-collapse: collapse; min-width: 44rem; }
+  :global(.country-map-table th), :global(.country-map-table td) { border-bottom: 1px solid var(--color-border); padding: 0.75rem; text-align: left; }
+  :global(.country-map-table a) { color: var(--color-primary); font-weight: 900; }
+  @media (min-width: 820px) {
+    :global(.country-map-app) { gap: 1.25rem; padding-block: 2rem 4rem; }
+    :global(.country-map-toolbar) { grid-template-columns: auto minmax(16rem, 0.35fr); align-items: center; }
+    :global(.country-map-layout) { grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.65fr); align-items: stretch; }
+    :global(.country-map__canvas) { min-height: 34rem; }
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(.country-map-toolbar), :global(.country-map), :global(.country-map-summary), :global(.country-map-table) { box-shadow: 0 18px 44px rgb(0 0 0 / 0.28); }
+  }
+</style>
