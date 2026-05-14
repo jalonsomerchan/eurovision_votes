@@ -30,6 +30,10 @@ function fallbackPosition(index: number, total: number): [number, number] {
   return [50 + Math.cos(angle) * 37, 52 + Math.sin(angle) * 34];
 }
 
+function countryComparatorHref(countryCode: string, locale: Locale) {
+  return `${getLocalizedPath('/comparador-paises/', locale)}?countries=${countryCode.toLowerCase()}`;
+}
+
 export function valueForMapMetric(country: EurovisionMapCountry, metric: MapMetric) {
   if (metric === 'participations') return country.participations;
   if (metric === 'wins') return country.wins;
@@ -58,7 +62,7 @@ export async function getEurovisionMapCountries(locale: Locale = defaultLocale):
         x: position[0],
         y: position[1],
         href: getLocalizedPath(`/paises/${profile.countryCode.toLowerCase()}/`, locale),
-        compareHref: getLocalizedPath(`/comparador-paises/?countries=${profile.countryCode.toLowerCase()}`, locale),
+        compareHref: countryComparatorHref(profile.countryCode, locale),
         rankingsHref: getLocalizedPath('/rankings/', locale),
       };
     })
