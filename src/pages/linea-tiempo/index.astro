@@ -1,0 +1,17 @@
+---
+import EurovisionTimelineApp from '../../components/EurovisionTimelineApp.astro';
+import Container from '../../components/Container.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { getTimelineLabels } from '../../i18n/timelineLabels';
+import { getEurovisionTimeline } from '../../lib/eurovisionTimeline';
+
+const labels = getTimelineLabels(defaultLocale);
+const timeline = await getEurovisionTimeline(defaultLocale);
+---
+
+<BaseLayout title={labels.title} description={labels.description} locale={defaultLocale}>
+  <Container>
+    <EurovisionTimelineApp timeline={timeline} locale={defaultLocale} />
+  </Container>
+</BaseLayout>

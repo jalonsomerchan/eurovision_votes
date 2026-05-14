@@ -1,0 +1,102 @@
+---
+import { defaultLocale, type Locale } from '../config/site';
+import { getLocalizedPath } from '../i18n/ui';
+import { getTimelineLabels, getTimelineTypeLabels } from '../i18n/timelineLabels';
+import type { EurovisionTimeline } from '../lib/eurovisionTimeline';
+import TimelineEntryCard from './TimelineEntryCard.astro';
+import TimelineFilterPanel from './TimelineFilterPanel.astro';
+
+interface Props {
+  timeline: EurovisionTimeline;
+  locale?: Locale;
+}
+
+const { timeline, locale = defaultLocale } = Astro.props;
+const labels = getTimelineLabels(locale);
+const typeLabels = getTimelineTypeLabels(locale);
+---
+
+<section class="timeline-page" data-timeline aria-labelledby="timeline-title">
+  <header class="hero-card timeline-hero">
+    <div>
+      <p class="eyebrow">{labels.eyebrow}</p>
+      <h1 id="timeline-title">{labels.title}</h1>
+      <p class="hero-copy">{labels.intro}</p>
+    </div>
+  </header>
+
+  <div class="timeline-layout">
+    <TimelineFilterPanel timeline={timeline} locale={locale} />
+
+    <div class="timeline-results">
+      <div class="timeline-empty" data-timeline-empty hidden>
+        <strong>{labels.emptyTitle}</strong>
+        <p>{labels.emptyDescription}</p>
+      </div>
+
+      <ol class="timeline-list">
+        {timeline.entries.map((entry) => <TimelineEntryCard entry={entry} locale={locale} />)}
+      </ol>
+    </div>
+  </div>
+
+  <section class="timeline-glossary" id="timeline-glossary" aria-labelledby="timeline-glossary-title">
+    <h2 id="timeline-glossary-title">{labels.glossaryTitle}</h2>
+    <p>{labels.glossaryIntro}</p>
+    <div>
+      {timeline.filters.types.map((type) => (
+        <a href="#timeline-filters-title" data-glossary-type={type}>{typeLabels[type]}</a>
+      ))}
+    </div>
+  </section>
+
+  <aside class="timeline-limits" aria-labelledby="timeline-limits-title">
+    <h2 id="timeline-limits-title">{labels.dataLimitTitle}</h2>
+    <p>{labels.dataLimit}</p>
+  </aside>
+</section>
+
+<script src={getLocalizedPath('/timeline-filters.js', defaultLocale)} type="module"></script>
+
+<style>
+  :global(.timeline-page) { display: grid; gap: 1rem; padding: 1.25rem 0 3rem; }
+  :global(.timeline-layout) { display: grid; gap: 1rem; }
+  :global(.timeline-panel), :global(.timeline-card), :global(.timeline-glossary), :global(.timeline-limits), :global(.timeline-empty) { border: 1px solid var(--color-border); border-radius: 1.35rem; background: color-mix(in srgb, var(--color-bg), var(--color-primary) 3%); box-shadow: 0 14px 34px rgb(15 23 42 / 0.07); }
+  :global(.timeline-panel) { display: grid; gap: 1rem; align-self: start; padding: 1rem; }
+  :global(.timeline-filters) { display: grid; gap: 0.85rem; }
+  :global(.timeline-filters h2), :global(.timeline-related h2), :global(.timeline-glossary h2), :global(.timeline-limits h2) { margin: 0; font-size: 1rem; }
+  :global(.timeline-filters label) { display: grid; gap: 0.35rem; color: var(--color-muted); font-size: 0.85rem; font-weight: 850; }
+  :global(.timeline-filters select), :global(.timeline-filters button) { width: 100%; border: 1px solid var(--color-border); border-radius: 0.9rem; background: var(--color-bg); color: var(--color-text); padding: 0.75rem 0.85rem; font: inherit; }
+  :global(.timeline-filters button) { cursor: pointer; background: var(--color-primary); color: #fff; font-weight: 900; }
+  :global(.timeline-status) { min-height: 1.25rem; margin: 0; color: var(--color-muted); font-weight: 800; }
+  :global(.timeline-related) { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  :global(.timeline-related h2) { flex-basis: 100%; }
+  :global(.timeline-related a), :global(.timeline-actions a), :global(.timeline-glossary a) { border-radius: 999px; background: color-mix(in srgb, var(--color-primary), transparent 88%); color: var(--color-primary); font-weight: 900; padding: 0.55rem 0.75rem; text-decoration: none; }
+  :global(.timeline-list) { display: grid; gap: 0.9rem; list-style: none; margin: 0; padding: 0; }
+  :global(.timeline-card) { display: grid; overflow: hidden; }
+  :global(.timeline-card__year) { display: flex; align-items: center; justify-content: space-between; background: color-mix(in srgb, var(--color-primary), var(--color-bg) 82%); padding: 0.85rem 1rem; }
+  :global(.timeline-card__year span) { font-size: clamp(1.65rem, 7vw, 3rem); font-weight: 1000; line-height: 1; }
+  :global(.timeline-card__year em), :global(.timeline-card__head p), :global(.timeline-milestones span) { color: var(--color-muted); font-size: 0.75rem; font-style: normal; font-weight: 950; letter-spacing: 0.08em; text-transform: uppercase; }
+  :global(.timeline-card__body) { display: grid; gap: 0.9rem; padding: 1rem; }
+  :global(.timeline-card__head h2) { margin: 0.15rem 0 0; font-size: clamp(1.25rem, 5vw, 1.8rem); }
+  :global(.timeline-facts) { display: grid; gap: 0.55rem; margin: 0; }
+  :global(.timeline-facts div) { display: grid; gap: 0.2rem; border-top: 1px solid var(--color-border); padding-top: 0.55rem; }
+  :global(.timeline-facts dt) { color: var(--color-muted); font-size: 0.75rem; font-weight: 900; text-transform: uppercase; }
+  :global(.timeline-facts dd) { margin: 0; font-weight: 850; }
+  :global(.timeline-facts a) { color: var(--color-primary); }
+  :global(.timeline-milestones) { display: grid; gap: 0.65rem; }
+  :global(.timeline-milestones section) { border: 1px solid var(--color-border); border-radius: 1rem; background: color-mix(in srgb, var(--color-bg), var(--color-primary) 4%); padding: 0.8rem; }
+  :global(.timeline-milestones h3) { margin: 0.2rem 0; font-size: 1rem; }
+  :global(.timeline-milestones p), :global(.timeline-empty p), :global(.timeline-glossary p), :global(.timeline-limits p) { margin: 0; color: var(--color-muted); font-weight: 750; }
+  :global(.timeline-actions), :global(.timeline-glossary div) { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  :global(.timeline-glossary), :global(.timeline-limits), :global(.timeline-empty) { display: grid; gap: 0.75rem; padding: 1rem; }
+  :global(.timeline-empty[hidden]), :global(.timeline-item[hidden]) { display: none; }
+  @media (min-width: 860px) {
+    :global(.timeline-page) { gap: 1.35rem; padding-block: 2rem 4rem; }
+    :global(.timeline-layout) { grid-template-columns: minmax(15rem, 19rem) 1fr; align-items: start; }
+    :global(.timeline-panel) { position: sticky; top: 1rem; }
+    :global(.timeline-card) { grid-template-columns: 10rem 1fr; }
+    :global(.timeline-card__year) { align-items: start; flex-direction: column; }
+    :global(.timeline-facts) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
