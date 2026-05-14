@@ -17,17 +17,23 @@ describe('Eurovision 2026 contest data', () => {
     assert.match(semi2Block, /Orden de actuación publicado para la segunda semifinal/);
     assert.match(semi2Block, /runningOrder: '01', country: 'Bulgaria'/);
     assert.match(semi2Block, /artist: 'DARA', song: 'Bangaranga'/);
+    assert.match(semi2Block, /runningOrder: '05', country: 'Chequia'/);
     assert.match(semi2Block, /country: 'Francia', flag: 'FR', artist: 'Monroe', song: 'Regarde!', directFinalist: true/);
+    assert.match(semi2Block, /runningOrder: '08', country: 'Chipre'/);
+    assert.match(semi2Block, /country: 'Austria', flag: 'AT', artist: 'COSMÓ', song: 'TANZSCHEIN', directFinalist: true/);
     assert.match(semi2Block, /artist: 'Søren Torpegaard Lund', song: 'Før Vi Går Hjem'/);
-    assert.match(semi2Block, /country: 'Ucrania', flag: 'UA', artist: 'Leléka', song: 'Ridnym', directFinalist: true/);
+    assert.match(semi2Block, /country: 'Ucrania', flag: 'UA', artist: 'Leléka', song: 'Ridnym'/);
     assert.match(semi2Block, /country: 'Reino Unido', flag: 'GB', artist: 'LOOK MUM NO COMPUTER', song: 'Eins, Zwei, Drei', directFinalist: true/);
     assert.match(semi2Block, /runningOrder: '15', country: 'Noruega'/);
+    assert.doesNotMatch(semi2Block, /country: 'Chequia'[^\n]+directFinalist/);
+    assert.doesNotMatch(semi2Block, /country: 'Chipre'[^\n]+directFinalist/);
+    assert.doesNotMatch(semi2Block, /country: 'Ucrania'[^\n]+directFinalist/);
 
     const runningOrders = semi2Block.match(/runningOrder: '/g) ?? [];
     const directFinalists = semi2Block.match(/directFinalist: true/g) ?? [];
 
     assert.equal(runningOrders.length, 15);
-    assert.equal(directFinalists.length, 6);
+    assert.equal(directFinalists.length, 3);
     assert.doesNotMatch(semi2Block, /songs: \[\]/);
   });
 });
