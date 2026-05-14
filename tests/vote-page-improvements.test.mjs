@@ -54,16 +54,20 @@ describe('vote page improvements', () => {
     assert.match(contest, /!song\.directFinalist/);
     assert.match(render, /votedCountForSongs/);
     assert.match(render, /songKeys\.has\(key\)/);
-    assert.match(script, /contest\.js\?v=20260514-6/);
-    assert.match(script, /render\.js\?v=20260514-6/);
-    assert.match(script, /top-card-canvas\.js\?v=20260514-6/);
+    assert.match(script, /contest\.js\?v=20260514-7/);
+    assert.match(script, /render\.js\?v=20260514-7/);
+    assert.match(script, /top-card-canvas\.js\?v=20260514-7/);
+    assert.match(script, /share-variants\.js\?v=20260514-7/);
   });
 
-  it('generates shareable image payloads instead of direct-only downloads', () => {
+  it('generates shareable image payloads and variant galleries', () => {
     const script = readText('public/vote.js');
     const canvas = readText('public/vote/top-card-canvas.js');
 
-    assert.match(script, /buildTopCardImage/);
+    assert.match(script, /buildVoteShareImage/);
+    assert.match(script, /buildVoteShareVariants/);
+    assert.match(script, /imagePayloads/);
+    assert.match(script, /renderImageGallery/);
     assert.match(script, /shareTopCardImagePayload/);
     assert.match(script, /downloadTopCardImagePayload/);
     assert.match(script, /showModal/);
