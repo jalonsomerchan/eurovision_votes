@@ -10,12 +10,13 @@ function readText(path) {
 }
 
 describe('global Eurovision search', () => {
-  it('adds routes, component, helper, script and documentation', () => {
+  it('adds routes, component, helpers, script and documentation', () => {
     [
       'src/pages/buscar/index.astro',
       'src/pages/[locale]/buscar/index.astro',
       'src/components/GlobalSearchApp.astro',
       'src/lib/searchIndex.ts',
+      'src/lib/searchTools.ts',
       'src/i18n/searchLabels.ts',
       'public/global-search.js',
       'docs/global-search.md',
@@ -26,6 +27,7 @@ describe('global Eurovision search', () => {
 
   it('builds a local, accent-insensitive index without dependencies', () => {
     const helper = readText('src/lib/searchIndex.ts');
+    const tools = readText('src/lib/searchTools.ts');
     const client = readText('public/global-search.js');
 
     assert.match(helper, /normalizeSearchText/);
@@ -36,6 +38,10 @@ describe('global Eurovision search', () => {
     assert.match(helper, /eurovision2026Contests/);
     assert.match(helper, /getLocalizedPath/);
     assert.match(helper, /filterSearchIndex/);
+    assert.match(helper, /getSearchToolItems/);
+    assert.match(tools, /toolTitles/);
+    assert.match(tools, /rankingTitles/);
+    assert.match(tools, /getLocalizedPath/);
     assert.doesNotMatch(helper, /from ['"]fuse\.js/);
     assert.doesNotMatch(client, /fetch\(/);
     assert.doesNotMatch(client, /import /);
