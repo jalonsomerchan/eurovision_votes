@@ -17,6 +17,18 @@ export interface SearchIndexItem {
   keywords: string[];
 }
 
+type ToolId = 'vote' | 'prediction' | 'history' | 'countries' | 'timeline' | 'rankings' | 'country-comparator' | 'points-by-country';
+
+const toolTitles: Record<Locale, Record<ToolId, string>> = {
+  es: { vote: 'Vota Eurovision 2026', prediction: 'Quiniela Eurovision 2026', history: 'Histórico de Eurovision', countries: 'Países', timeline: 'Línea temporal de Eurovision', rankings: 'Rankings de Eurovision', 'country-comparator': 'Comparador de países', 'points-by-country': 'Puntos por país' },
+  en: { vote: 'Vote Eurovision 2026', prediction: 'Eurovision 2026 prediction', history: 'Eurovision history', countries: 'Countries', timeline: 'Eurovision timeline', rankings: 'Eurovision rankings', 'country-comparator': 'Country comparator', 'points-by-country': 'Points by country' },
+  fr: { vote: 'Voter Eurovision 2026', prediction: 'Pronostic Eurovision 2026', history: 'Historique de l’Eurovision', countries: 'Pays', timeline: 'Chronologie de l’Eurovision', rankings: 'Classements Eurovision', 'country-comparator': 'Comparateur de pays', 'points-by-country': 'Points par pays' },
+  pt: { vote: 'Votar na Eurovisão 2026', prediction: 'Prognóstico Eurovisão 2026', history: 'Histórico da Eurovisão', countries: 'Países', timeline: 'Linha temporal da Eurovisão', rankings: 'Rankings da Eurovisão', 'country-comparator': 'Comparador de países', 'points-by-country': 'Pontos por país' },
+  ca: { vote: 'Vota Eurovisió 2026', prediction: 'Quiniela Eurovisió 2026', history: 'Històric d’Eurovisió', countries: 'Països', timeline: 'Línia temporal d’Eurovisió', rankings: 'Rànquings d’Eurovisió', 'country-comparator': 'Comparador de països', 'points-by-country': 'Punts per país' },
+  eu: { vote: 'Bozkatu Eurovision 2026', prediction: 'Eurovision 2026 kiniela', history: 'Eurovision historia', countries: 'Herrialdeak', timeline: 'Eurovisioneko denbora-lerroa', rankings: 'Eurovision rankingak', 'country-comparator': 'Herrialdeen konparatzailea', 'points-by-country': 'Puntuak herrialdeka' },
+  gl: { vote: 'Vota Eurovisión 2026', prediction: 'Quiniela Eurovisión 2026', history: 'Histórico de Eurovisión', countries: 'Países', timeline: 'Liña temporal de Eurovisión', rankings: 'Rankings de Eurovisión', 'country-comparator': 'Comparador de países', 'points-by-country': 'Puntos por país' },
+};
+
 const unique = <T>(values: T[]) => [...new Set(values.filter(Boolean))] as T[];
 
 export function normalizeSearchText(value: string) {
@@ -59,22 +71,23 @@ function rankingTitle(slug: string) {
 
 function toolItems(locale: Locale): SearchIndexItem[] {
   const labels = getSearchLabels(locale);
-  const tools = [
-    { id: 'vote', title: 'Vota Eurovision 2026', href: '/vota/', keywords: ['votar', 'puntuaciones', 'semifinal', 'final'] },
-    { id: 'prediction', title: 'Quiniela Eurovision 2026', href: '/quiniela/', keywords: ['prediccion', 'quiniela', 'pronostico'] },
-    { id: 'history', title: 'Histórico de Eurovision', href: '/historico/', keywords: ['historia', 'ediciones', 'resultados'] },
-    { id: 'countries', title: labels.groups.country, href: '/paises/', keywords: ['paises', 'participantes'] },
-    { id: 'timeline', title: 'Línea temporal de Eurovision', href: '/linea-tiempo/', keywords: ['timeline', 'cronologia', 'historia'] },
-    { id: 'rankings', title: 'Rankings de Eurovision', href: '/rankings/', keywords: ['ranking', 'estadisticas', 'top'] },
-    { id: 'country-comparator', title: 'Comparador de países', href: '/comparador-paises/', keywords: ['comparar', 'paises', 'estadisticas'] },
-    { id: 'points-by-country', title: 'Puntos por país', href: '/puntos-por-pais/', keywords: ['puntos', 'votos', 'pais'] },
+  const titles = toolTitles[locale] ?? toolTitles[defaultLocale];
+  const tools: Array<{ id: ToolId; href: string; keywords: string[] }> = [
+    { id: 'vote', href: '/vota/', keywords: ['votar', 'vote', 'puntuaciones', 'semifinal', 'final'] },
+    { id: 'prediction', href: '/quiniela/', keywords: ['prediccion', 'prediction', 'quiniela', 'pronostico'] },
+    { id: 'history', href: '/historico/', keywords: ['historia', 'history', 'ediciones', 'resultados'] },
+    { id: 'countries', href: '/paises/', keywords: ['paises', 'countries', 'participantes'] },
+    { id: 'timeline', href: '/linea-tiempo/', keywords: ['timeline', 'cronologia', 'historia'] },
+    { id: 'rankings', href: '/rankings/', keywords: ['ranking', 'estadisticas', 'top'] },
+    { id: 'country-comparator', href: '/comparador-paises/', keywords: ['comparar', 'compare', 'paises', 'estadisticas'] },
+    { id: 'points-by-country', href: '/puntos-por-pais/', keywords: ['puntos', 'points', 'votos', 'pais'] },
   ];
 
   return [
     ...tools.map((tool) => ({
       id: `tool:${tool.id}`,
       type: 'tool' as const,
-      title: tool.title,
+      title: titles[tool.id],
       description: labels.typeLabels.tool,
       href: getLocalizedPath(tool.href, locale),
       keywords: tool.keywords,
