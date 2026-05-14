@@ -11,7 +11,7 @@ export function normalizePrediction(prediction) {
     return value;
   });
 
-  return { name: String(prediction.name || '').slice(0, 40), winner: prediction.winner || '', top };
+  return { name: String(prediction.name || '').slice(0, 40), top };
 }
 
 export function encodePrediction(prediction) {
@@ -28,15 +28,12 @@ export function decodePrediction(value) {
 }
 
 export function predictionHasContent(prediction) {
-  return Boolean(prediction.winner || prediction.top.some(Boolean));
+  return prediction.top.some(Boolean);
 }
 
 export function buildPredictionSummary({ candidates, labels, prediction }) {
-  const winner = getCandidate(candidates, prediction.winner);
   const title = prediction.name ? labels.byName.replaceAll('{name}', prediction.name) : labels.summaryTitle;
-  const lines = [title];
-  lines.push(labels.winnerSummary.replaceAll('{country}', winner?.country || '—'));
-  lines.push(labels.topSummary);
+  const lines = [title, labels.topSummary];
   prediction.top.forEach((flag, index) => {
     const candidate = getCandidate(candidates, flag);
     if (candidate) lines.push(`${index + 1}. ${candidate.country} — ${candidate.artist} — «${candidate.song}»`);
