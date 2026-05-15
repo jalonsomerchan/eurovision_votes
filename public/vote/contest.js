@@ -57,11 +57,19 @@ export function getSongsForContest(contests, control, contest) {
   return qualified;
 }
 
+function findLastContest(contests, predicate) {
+  for (let index = contests.length - 1; index >= 0; index -= 1) {
+    if (predicate(contests[index])) return contests[index];
+  }
+  return null;
+}
+
 export function getLatestOpenContestId(contests, control) {
   const withSongs = contests.filter((contest) => getSongsForContest(contests, control, contest).length > 0);
-  const openContest = withSongs.findLast((contest) => getContestStatus(control, contest.id) === 'open');
-  const availableContest = withSongs.findLast((contest) => getContestStatus(control, contest.id) !== 'closed');
-  return openContest?.id || availableContest?.id || withSongs.at(-1)?.id || contests[0]?.id || 'semi-1';
+  const openContest = findLastContest(withSongs, (contest) => getContestStatus(control, contest.id) === 'open');
+  const availableContest = findLastContest(withSongs, (contest) => getContestStatus(control, contest.id) !== 'closed');
+  const lastContest = withSongs.length ? withSongs[withSongs.length - 1] : null;
+  return openContest?.id || availableContest?.id || lastContest?.id || contests[0]?.id || 'semi-1';
 }
 
 export function getPreviousSemiVote(contests, votes, song) {
