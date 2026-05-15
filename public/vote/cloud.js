@@ -2,12 +2,18 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/fireba
 import { initializeFirestore, collection, doc, getDoc, getDocs, onSnapshot, serverTimestamp, setDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import { controlCollection, controlDocument, votesCollection } from './config.js';
 
+const emptyControl = { semifinals: {}, final: { positions: {}, status: 'open' } };
+
 async function withTimeout(promise, ms) {
   let timeoutId;
   const timeout = new Promise((_, reject) => {
     timeoutId = window.setTimeout(() => reject(new Error('timeout')), ms);
   });
   return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timeoutId));
+}
+
+function normalizeControl(data = {}) {
+  return { ...emptyControl, ...data, final: { ...emptyControl.final, ...(data.final || {}) } };
 }
 
 export function initCloud(firebaseConfig, { setCloudStatus, t }) {
@@ -35,7 +41,8 @@ export function createCloudApi({ db, deviceId, getState, renderSongs, setCloudSt
         getDoc(doc(db, controlCollection, controlDocument)),
       ]);
       getState().setAllVoters(votesSnapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
-      if (controlSnapshot.exists()) getState().setControl({ ...getState().control, ...controlSnapshot.data() });
+      if (controlSnapshot.exists()) getState().setControl(normalizeControl({ ...getState().control, ...controlSnapshot.data() }));
+      getState().selectLatestOpenContest();
       renderSongs();
     } catch (error) {
       console.error('Cloud data load error:', error);
@@ -47,9 +54,8 @@ export function createCloudApi({ db, deviceId, getState, renderSongs, setCloudSt
     realtimeReady = true;
 
     onSnapshot(doc(db, controlCollection, controlDocument), (snapshot) => {
-      getState().setControl(snapshot.exists()
-        ? { semifinals: {}, final: { positions: {} }, ...snapshot.data() }
-        : { semifinals: {}, final: { positions: {} } });
+      getState().setControl(snapshot.exists() ? normalizeControl(snapshot.data()) : emptyControl);
+      getState().selectLatestOpenContest();
       renderSongs();
     }, (error) => {
       console.error('Control realtime error:', error);
