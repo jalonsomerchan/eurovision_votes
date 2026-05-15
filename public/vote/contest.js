@@ -24,8 +24,22 @@ export function getSemiStatus(control, contestId) {
   return state.closed ? 'closed' : 'open';
 }
 
+export function getFinalState(control) {
+  return control?.final || { positions: {}, status: 'open', closed: false };
+}
+
+export function getFinalStatus(control) {
+  const state = getFinalState(control);
+  if (state.status) return state.status;
+  return state.closed ? 'closed' : 'open';
+}
+
+export function getContestStatus(control, contestId) {
+  return isSemi(contestId) ? getSemiStatus(control, contestId) : getFinalStatus(control);
+}
+
 export function getFinalPositions(control) {
-  return control?.final?.positions || {};
+  return getFinalState(control).positions || {};
 }
 
 export function getSongsForContest(contests, control, contest) {
@@ -41,6 +55,22 @@ export function getSongsForContest(contests, control, contest) {
     });
   });
   return qualified;
+}
+
+export function getLatestOpenContestId(contests, control) {
+  const withSongs = contests.filter((contest) => getSongsForContest(contests, control, contest).length > 0);
+  const openContest = withSongs.findLast((contest) => getContestStatus(control, contest.id) === 'open');
+  const availableContest = withSongs.findLast((contest) => getContestStatus(control, contest.id) !== 'closed');
+  return openContest?.id || availableContest?.id || withSongs.at(-1)?.id || contests[0]?.id || 'semi-1';
+}
+
+export function getPreviousSemiVote(contests, votes, song) {
+  const songKey = getSongKey(song);
+  for (const contest of contests.filter((item) => isSemi(item.id))) {
+    const score = votes?.[contest.id]?.[songKey];
+    if (Number.isFinite(score)) return { contestName: contest.name, score };
+  }
+  return null;
 }
 
 export function getAverage(allVoters, contestId, songKey) {
