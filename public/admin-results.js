@@ -11,7 +11,7 @@ const controlCollection = 'eurovision2026Control';
 const controlDocument = 'results';
 let db = null;
 let saveTimer = null;
-let control = { semifinals: {}, final: { positions: {} } };
+let control = { semifinals: {}, final: { positions: {}, status: 'open', closed: false } };
 
 const keyFor = (song) => `${song.flag}-${song.country}`.toLowerCase();
 const html = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char]);
@@ -30,15 +30,26 @@ function getSemiState(contestId) {
   return control.semifinals?.[contestId] || { qualifiers: [], status: 'pending', closed: false };
 }
 
-function normalizeStatus(state) {
+function getFinalState() {
+  return control.final || { positions: {}, status: 'open', closed: false };
+}
+
+function normalizeStatus(state, fallback = 'pending') {
   if (state?.status) return state.status;
-  return state?.closed ? 'closed' : 'pending';
+  if (state?.closed) return 'closed';
+  return fallback;
 }
 
 function statusLabel(status) {
   if (status === 'open') return 'Votación abierta';
   if (status === 'closed') return 'Votación cerrada';
   return 'Votación pendiente';
+}
+
+function statusButtons(status, target) {
+  const attribute = target === 'final' ? 'data-final-set-status' : 'data-semi-set-status';
+  const contestAttribute = target === 'final' ? '' : ` data-contest-id="${html(target)}"`;
+  return `<div class="admin-actions"><button class="action-button ${status === 'pending' ? 'action-button--primary' : ''}" type="button" ${attribute}="pending"${contestAttribute}>Pendiente</button><button class="action-button ${status === 'open' ? 'action-button--primary' : ''}" type="button" ${attribute}="open"${contestAttribute}>Iniciar votación</button><button class="action-button ${status === 'closed' ? 'action-button--primary' : ''}" type="button" ${attribute}="closed"${contestAttribute}>Cerrar votación</button></div>`;
 }
 
 function getFinalSongs() {
@@ -56,16 +67,18 @@ function getFinalSongs() {
 function render() {
   const semifinals = contests.filter((contest) => isSemi(contest.id));
   const finalSongs = getFinalSongs();
-  const finalPositions = control.final?.positions || {};
+  const finalState = getFinalState();
+  const finalStatus = normalizeStatus(finalState, 'open');
+  const finalPositions = finalState.positions || {};
 
   listNode.innerHTML = [
     ...semifinals.map((contest) => {
       const state = getSemiState(contest.id);
       const status = normalizeStatus(state);
       const qualifiers = new Set(state.qualifiers || []);
-      return `<section class="admin-card" data-admin-semi="${contest.id}"><header><div><p class="eyebrow">Semifinal</p><h3>${html(contest.name)}</h3><small>${statusLabel(status)}</small></div><div class="admin-actions"><button class="action-button ${status === 'pending' ? 'action-button--primary' : ''}" type="button" data-semi-set-status="pending" data-contest-id="${contest.id}">Pendiente</button><button class="action-button ${status === 'open' ? 'action-button--primary' : ''}" type="button" data-semi-set-status="open" data-contest-id="${contest.id}">Iniciar votación</button><button class="action-button ${status === 'closed' ? 'action-button--primary' : ''}" type="button" data-semi-set-status="closed" data-contest-id="${contest.id}">Cerrar votación</button></div></header><div class="admin-grid">${contest.songs.map((song) => `<div class="admin-row"><label><input type="checkbox" data-qualifier-contest="${contest.id}" data-song-key="${keyFor(song)}" ${qualifiers.has(keyFor(song)) ? 'checked' : ''}><span><strong>${html(song.country)}</strong><small>${html(song.artist)} - ${html(song.song)}</small></span></label></div>`).join('')}</div></section>`;
+      return `<section class="admin-card" data-admin-semi="${contest.id}"><header><div><p class="eyebrow">Semifinal</p><h3>${html(contest.name)}</h3><small>${statusLabel(status)}</small></div>${statusButtons(status, contest.id)}</header><div class="admin-grid">${contest.songs.map((song) => `<div class="admin-row"><label><input type="checkbox" data-qualifier-contest="${contest.id}" data-song-key="${keyFor(song)}" ${qualifiers.has(keyFor(song)) ? 'checked' : ''}><span><strong>${html(song.country)}</strong><small>${html(song.artist)} - ${html(song.song)}</small></span></label></div>`).join('')}</div></section>`;
     }),
-    `<section class="admin-card"><header><div><p class="eyebrow">Final</p><h3>Posiciones finales</h3><small>${finalSongs.length ? 'Ordena los puestos cuando termine la final' : 'Aparecerán aquí los clasificados'}</small></div></header><div class="admin-grid">${finalSongs.length ? finalSongs.map((song) => `<div class="admin-row"><label><span><strong>${html(song.country)}</strong><small>${html(song.artist)} - ${html(song.song)}</small></span></label><input class="position-input" type="number" min="1" step="1" data-final-position="${keyFor(song)}" value="${finalPositions[keyFor(song)] || ''}" placeholder="Puesto"></div>`).join('') : '<p class="stats-empty">Todavía no hay países clasificados.</p>'}</div></section>`,
+    `<section class="admin-card" data-admin-final><header><div><p class="eyebrow">Final</p><h3>Votación y posiciones finales</h3><small>${statusLabel(finalStatus)} · ${finalSongs.length ? 'Ordena los puestos cuando termine la final' : 'Aparecerán aquí los clasificados'}</small></div>${statusButtons(finalStatus, 'final')}</header><div class="admin-grid">${finalSongs.length ? finalSongs.map((song) => `<div class="admin-row"><label><span><strong>${html(song.country)}</strong><small>${html(song.artist)} - ${html(song.song)}</small></span></label><input class="position-input" type="number" min="1" step="1" data-final-position="${keyFor(song)}" value="${finalPositions[keyFor(song)] || ''}" placeholder="Puesto"></div>`).join('') : '<p class="stats-empty">Todavía no hay países clasificados.</p>'}</div></section>`,
   ].join('');
 }
 
@@ -93,7 +106,17 @@ function syncFormToControl() {
       closed: status === 'closed',
     };
   });
-  control = { semifinals, final: { positions: readPositionsFromDom() }, updatedAt: new Date().toISOString() };
+  const finalStatus = normalizeStatus(getFinalState(), 'open');
+  control = {
+    semifinals,
+    final: {
+      ...getFinalState(),
+      positions: readPositionsFromDom(),
+      status: finalStatus,
+      closed: finalStatus === 'closed',
+    },
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 function setSemiStatus(contestId, status) {
@@ -114,6 +137,20 @@ function setSemiStatus(contestId, status) {
   queueSave(false);
 }
 
+function setFinalStatus(status) {
+  syncFormToControl();
+  control = {
+    ...control,
+    final: {
+      ...getFinalState(),
+      status,
+      closed: status === 'closed',
+    },
+  };
+  render();
+  queueSave(false);
+}
+
 function queueSave(renderAfterSave = false) {
   window.clearTimeout(saveTimer);
   setStatus('Cambios pendientes de guardar...');
@@ -125,7 +162,7 @@ async function loadControl() {
   try {
     setStatus('Cargando resultados...');
     const snapshot = await getDoc(doc(db, controlCollection, controlDocument));
-    if (snapshot.exists()) control = { ...control, ...snapshot.data() };
+    if (snapshot.exists()) control = { ...control, ...snapshot.data(), final: { ...getFinalState(), ...(snapshot.data().final || {}) } };
     render();
     setStatus('Resultados cargados. Los cambios se guardan automáticamente.');
   } catch (error) {
@@ -149,6 +186,12 @@ async function saveControl(renderAfterSave = false) {
 }
 
 listNode?.addEventListener('click', (event) => {
+  const finalButton = event.target.closest('[data-final-set-status]');
+  if (finalButton) {
+    setFinalStatus(finalButton.dataset.finalSetStatus);
+    return;
+  }
+
   const button = event.target.closest('[data-semi-set-status]');
   if (!button) return;
   setSemiStatus(button.dataset.contestId, button.dataset.semiSetStatus);
