@@ -12,7 +12,7 @@ function readText(path) {
 describe('Eurovision 2026 contest data', () => {
   it('includes the complete second semi-final lineup', () => {
     const config = readText('src/config/eurovision2026.ts');
-    const semi2Block = config.match(/id: 'semi-2',[\s\S]*?\n  \},\n  \{ id: 'final'/)?.[0] ?? '';
+    const semi2Block = config.match(/id: 'semi-2',[\s\S]*?\n  \},\n  \{/)?.[0] ?? '';
 
     assert.match(semi2Block, /Orden de actuación publicado para la segunda semifinal/);
     assert.match(semi2Block, /runningOrder: '01', country: 'Bulgaria'/);
@@ -35,5 +35,27 @@ describe('Eurovision 2026 contest data', () => {
     assert.equal(runningOrders.length, 15);
     assert.equal(directFinalists.length, 3);
     assert.doesNotMatch(semi2Block, /songs: \[\]/);
+  });
+
+  it('includes the complete final running order', () => {
+    const config = readText('src/config/eurovision2026.ts');
+    const finalBlock = config.match(/id: 'final',[\s\S]*?\n  \},\n\];/)?.[0] ?? '';
+
+    assert.match(finalBlock, /Orden de actuación publicado para la final de Eurovisión 2026/);
+    assert.match(finalBlock, /runningOrder: '01', country: 'Noruega'/);
+    assert.match(finalBlock, /artist: 'Kyle Alessandro', song: 'Lighter'/);
+    assert.match(finalBlock, /runningOrder: '06', country: 'España', flag: 'ES', artist: 'Melody', song: 'Esa Diva'/);
+    assert.match(finalBlock, /runningOrder: '08', country: 'Reino Unido', flag: 'GB', artist: 'Remember Monday'/);
+    assert.match(finalBlock, /runningOrder: '12', country: 'Países Bajos', flag: 'NL', artist: 'Claude', song: "C'est La Vie"/);
+    assert.match(finalBlock, /runningOrder: '19', country: 'Suiza', flag: 'CH', artist: 'Zoë Më', song: 'Voyage'/);
+    assert.match(finalBlock, /runningOrder: '25', country: 'San Marino', flag: 'SM', artist: 'Gabry Ponte', song: "Tutta L'Italia"/);
+    assert.match(finalBlock, /runningOrder: '26', country: 'Albania', flag: 'AL', artist: 'Shkodra Elektronike', song: 'Zjerm'/);
+
+    const runningOrders = finalBlock.match(/runningOrder: '/g) ?? [];
+    const directFinalists = finalBlock.match(/directFinalist: true/g) ?? [];
+
+    assert.equal(runningOrders.length, 26);
+    assert.equal(directFinalists.length, 0);
+    assert.doesNotMatch(finalBlock, /songs: \[\]/);
   });
 });
