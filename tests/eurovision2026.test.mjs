@@ -37,25 +37,17 @@ describe('Eurovision 2026 contest data', () => {
     assert.doesNotMatch(semi2Block, /songs: \[\]/);
   });
 
-  it('includes the complete final running order', () => {
+  it('keeps the 2026 final pending until confirmed data is configured', () => {
     const config = readText('src/config/eurovision2026.ts');
     const finalBlock = config.match(/id: 'final',[\s\S]*?\n  \},\n\];/)?.[0] ?? '';
 
-    assert.match(finalBlock, /Orden de actuación publicado para la final de Eurovisión 2026/);
-    assert.match(finalBlock, /runningOrder: '01', country: 'Noruega'/);
-    assert.match(finalBlock, /artist: 'Kyle Alessandro', song: 'Lighter'/);
-    assert.match(finalBlock, /runningOrder: '06', country: 'España', flag: 'ES', artist: 'Melody', song: 'Esa Diva'/);
-    assert.match(finalBlock, /runningOrder: '08', country: 'Reino Unido', flag: 'GB', artist: 'Remember Monday'/);
-    assert.match(finalBlock, /runningOrder: '12', country: 'Países Bajos', flag: 'NL', artist: 'Claude', song: "C'est La Vie"/);
-    assert.match(finalBlock, /runningOrder: '19', country: 'Suiza', flag: 'CH', artist: 'Zoë Më', song: 'Voyage'/);
-    assert.match(finalBlock, /runningOrder: '25', country: 'San Marino', flag: 'SM', artist: 'Gabry Ponte', song: "Tutta L'Italia"/);
-    assert.match(finalBlock, /runningOrder: '26', country: 'Albania', flag: 'AL', artist: 'Shkodra Elektronike', song: 'Zjerm'/);
-
-    const runningOrders = finalBlock.match(/runningOrder: '/g) ?? [];
-    const directFinalists = finalBlock.match(/directFinalist: true/g) ?? [];
-
-    assert.equal(runningOrders.length, 26);
-    assert.equal(directFinalists.length, 0);
-    assert.doesNotMatch(finalBlock, /songs: \[\]/);
+    assert.match(finalBlock, /pendiente de completar con finalistas y orden de actuación confirmados/);
+    assert.match(finalBlock, /songs: \[\]/);
+    assert.doesNotMatch(finalBlock, /Kyle Alessandro/);
+    assert.doesNotMatch(finalBlock, /Melody/);
+    assert.doesNotMatch(finalBlock, /KAJ/);
+    assert.doesNotMatch(finalBlock, /Lucio Corsi/);
+    assert.doesNotMatch(finalBlock, /Louane/);
+    assert.doesNotMatch(finalBlock, /Gabry Ponte/);
   });
 });
