@@ -1,12 +1,12 @@
-import { createVoteActions } from './vote/actions.js?v=20260514-7';
-import { createCloudApi, initCloud } from './vote/cloud.js?v=20260514-7';
-import { isSemi, getContest, getSemiStatus } from './vote/contest.js?v=20260514-7';
-import { deviceKey, readInitialData, storageKey, voterKey } from './vote/config.js?v=20260514-7';
-import { $, createUi, getVoteNodes } from './vote/dom.js?v=20260514-7';
-import { createRenderer } from './vote/render.js?v=20260514-7';
-import { buildVoteShareImage, downloadTopCardImagePayload, shareTopCardImagePayload } from './vote/top-card-canvas.js?v=20260514-7';
-import { buildVoteShareVariants } from './vote/share-variants.js?v=20260514-7';
-import { getOrCreateDeviceId, loadJson, saveJson } from './vote/storage.js?v=20260514-7';
+import { createVoteActions } from './vote/actions.js?v=20260515-1';
+import { createCloudApi, initCloud } from './vote/cloud.js?v=20260515-1';
+import { getContest, getContestStatus, getLatestOpenContestId } from './vote/contest.js?v=20260515-1';
+import { deviceKey, readInitialData, storageKey, voterKey } from './vote/config.js?v=20260515-1';
+import { $, createUi, getVoteNodes } from './vote/dom.js?v=20260515-1';
+import { createRenderer } from './vote/render.js?v=20260515-1';
+import { buildVoteShareImage, downloadTopCardImagePayload, shareTopCardImagePayload } from './vote/top-card-canvas.js?v=20260515-1';
+import { buildVoteShareVariants } from './vote/share-variants.js?v=20260515-1';
+import { getOrCreateDeviceId, loadJson, saveJson } from './vote/storage.js?v=20260515-1';
 
 const { contests, firebaseConfig, shareLabels, t, topCardLabels } = readInitialData();
 const nodes = getVoteNodes();
@@ -23,14 +23,28 @@ const voteImageNodes = {
 };
 
 let activeContestId = contests[0]?.id || 'semi-1';
+let activeContestTouched = false;
 let allVoters = [];
-let control = { semifinals: {}, final: { positions: {} } };
+let control = { semifinals: {}, final: { positions: {}, status: 'open' } };
 let imagePayload = null;
 let imagePayloads = [];
 let saveTimeoutId;
 let shareFeedbackTimeoutId;
 let voter = loadJson(voterKey, null);
 let votes = loadJson(storageKey, {});
+
+function setActiveContestId(contestId, { userSelected = false } = {}) {
+  if (!contestId || contestId === activeContestId) return;
+  activeContestId = contestId;
+  if (userSelected) activeContestTouched = true;
+  clearImagePayload();
+  closeImageModal();
+}
+
+function selectLatestOpenContest({ force = false } = {}) {
+  if (activeContestTouched && !force) return;
+  setActiveContestId(getLatestOpenContestId(contests, control), { userSelected: false });
+}
 
 function getState() {
   return {
@@ -39,6 +53,7 @@ function getState() {
     control,
     isVotingAllowed,
     openNameModal,
+    selectLatestOpenContest,
     setAllVoters: (nextVoters) => {
       allVoters = nextVoters;
     },
@@ -163,13 +178,14 @@ function openNameModal() {
 }
 
 function isVotingAllowed() {
-  if (!isSemi(activeContestId) || getSemiStatus(control, activeContestId) === 'open') return true;
+  const status = getContestStatus(control, activeContestId);
+  if (status === 'open') return true;
 
-  const status = getSemiStatus(control, activeContestId);
+  const isFinal = activeContestId === 'final';
   ui.setCloudStatus(status === 'closed' ? t('closed', 'Votación cerrada') : t('comingSoon', 'Próximamente'));
   ui.showFeedback(status === 'closed'
-    ? t('semiClosed', 'La votación de esta semifinal está cerrada.')
-    : t('semiComingSoon', 'La votación de esta semifinal todavía no ha empezado.'));
+    ? t(isFinal ? 'finalClosed' : 'semiClosed', isFinal ? 'La votación de la final está cerrada.' : 'La votación de esta semifinal está cerrada.')
+    : t(isFinal ? 'finalComingSoon' : 'semiComingSoon', isFinal ? 'La votación de la final todavía no ha empezado.' : 'La votación de esta semifinal todavía no ha empezado.'));
   return false;
 }
 
@@ -181,9 +197,7 @@ function queueCloudSave() {
 nodes.tabs?.addEventListener('click', (event) => {
   const button = event.target.closest('[data-contest-id]');
   if (!button) return;
-  activeContestId = button.dataset.contestId;
-  clearImagePayload();
-  closeImageModal();
+  setActiveContestId(button.dataset.contestId, { userSelected: true });
   renderVoteUi();
 });
 
@@ -293,6 +307,7 @@ $('[data-export]')?.addEventListener('click', actions.exportVotes);
 nodes.importInput?.addEventListener('change', (event) => actions.importVotes(event, queueCloudSave));
 $('[data-reset]')?.addEventListener('click', () => actions.resetVotes(queueCloudSave));
 
+selectLatestOpenContest({ force: true });
 renderer.renderVoter();
 renderVoteUi();
 cloud.startRealtimeListeners();
