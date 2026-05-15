@@ -49,15 +49,49 @@ describe('vote page improvements', () => {
     const contest = readText('public/vote/contest.js');
     const render = readText('public/vote/render.js');
     const script = readText('public/vote.js');
+    const app = readText('src/components/EurovisionVoteApp.astro');
 
     assert.match(contest, /isVotableSong/);
     assert.match(contest, /!song\.directFinalist/);
     assert.match(render, /votedCountForSongs/);
     assert.match(render, /songKeys\.has\(key\)/);
-    assert.match(script, /contest\.js\?v=20260514-7/);
-    assert.match(script, /render\.js\?v=20260514-7/);
-    assert.match(script, /top-card-canvas\.js\?v=20260514-7/);
-    assert.match(script, /share-variants\.js\?v=20260514-7/);
+    assert.match(app, /vote\.js\?v=20260515-1/);
+    assert.match(script, /contest\.js\?v=20260515-1/);
+    assert.match(script, /render\.js\?v=20260515-1/);
+    assert.match(script, /cloud\.js\?v=20260515-1/);
+    assert.match(script, /share-variants\.js\?v=20260515-1/);
+  });
+
+  it('opens the latest unclosed contest and lets the final be closed', () => {
+    const contest = readText('public/vote/contest.js');
+    const cloud = readText('public/vote/cloud.js');
+    const script = readText('public/vote.js');
+    const render = readText('public/vote/render.js');
+
+    assert.match(contest, /getFinalStatus/);
+    assert.match(contest, /getContestStatus/);
+    assert.match(contest, /getLatestOpenContestId/);
+    assert.match(contest, /findLast/);
+    assert.match(cloud, /final: \{ positions: \{\}, status: 'open' \}/);
+    assert.match(cloud, /selectLatestOpenContest/);
+    assert.match(script, /selectLatestOpenContest\(\{ force: true \}\)/);
+    assert.match(script, /activeContestTouched/);
+    assert.match(script, /finalClosed/);
+    assert.match(render, /contestStatus === 'closed'/);
+    assert.match(render, /contest\.id === 'final' \? 'finalClosed'/);
+  });
+
+  it('shows the previous semi-final score inside final song cards', () => {
+    const contest = readText('public/vote/contest.js');
+    const render = readText('public/vote/render.js');
+    const app = readText('src/components/EurovisionVoteApp.astro');
+
+    assert.match(contest, /getPreviousSemiVote/);
+    assert.match(render, /previousSemiVote/);
+    assert.match(render, /previous-vote-note/);
+    assert.match(render, /previousSemiVote\.score\/10/);
+    assert.match(render, /previousSemiVote\.contestName/);
+    assert.match(app, /previous-vote-note/);
   });
 
   it('generates shareable image payloads and variant galleries', () => {
