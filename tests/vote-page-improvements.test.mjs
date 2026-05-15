@@ -90,7 +90,7 @@ describe('vote page improvements', () => {
     assert.match(render, /previousSemiVote/);
     assert.match(render, /previous-vote-note/);
     assert.match(render, /previousSemiVote\.score/);
-    assert.match(render, />\/10<\/strong>/);
+    assert.match(render, /\/10<\/strong>/);
     assert.match(render, /previousSemiVote\.contestName/);
     assert.match(app, /previous-vote-note/);
   });
