@@ -48,7 +48,7 @@ function statusLabel(status) {
 
 function statusButtons(status, target) {
   const attribute = target === 'final' ? 'data-final-set-status' : 'data-semi-set-status';
-  const contestAttribute = target === 'final' ? '' : ' data-contest-id="${target}"';
+  const contestAttribute = target === 'final' ? '' : ` data-contest-id="${html(target)}"`;
   return `<div class="admin-actions"><button class="action-button ${status === 'pending' ? 'action-button--primary' : ''}" type="button" ${attribute}="pending"${contestAttribute}>Pendiente</button><button class="action-button ${status === 'open' ? 'action-button--primary' : ''}" type="button" ${attribute}="open"${contestAttribute}>Iniciar votación</button><button class="action-button ${status === 'closed' ? 'action-button--primary' : ''}" type="button" ${attribute}="closed"${contestAttribute}>Cerrar votación</button></div>`;
 }
 
