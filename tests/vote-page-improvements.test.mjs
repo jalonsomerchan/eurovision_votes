@@ -71,7 +71,10 @@ describe('vote page improvements', () => {
     assert.match(contest, /getFinalStatus/);
     assert.match(contest, /getContestStatus/);
     assert.match(contest, /getLatestOpenContestId/);
-    assert.match(contest, /findLast/);
+    assert.match(contest, /findLastContest/);
+    assert.match(contest, /for \(let index = contests\.length - 1/);
+    assert.doesNotMatch(contest, /\.findLast\(/);
+    assert.doesNotMatch(contest, /\.at\(/);
     assert.match(cloud, /final: \{ positions: \{\}, status: 'open' \}/);
     assert.match(cloud, /selectLatestOpenContest/);
     assert.match(script, /selectLatestOpenContest\(\{ force: true \}\)/);
